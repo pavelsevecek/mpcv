@@ -46,7 +46,7 @@ public:
     }
 
     Pvl::Mat33f matrix() const {
-        return Pvl::Mat33f(Pvl::normalize(-left_), Pvl::normalize(up_), dir_);
+        return Pvl::Mat33f(Pvl::normalize(left_), Pvl::normalize(up_), dir_);
     }
 
     void zoom(float factor) {

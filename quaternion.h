@@ -92,7 +92,7 @@ public:
             q[2] = perp[2];
             q[3] = Pvl::dotProd(start_, end);
 
-            return Pvl::invert(mat_) * q.convert() * mat_;
+            return Pvl::invert(Pvl::invert(mat_) * q.convert() * mat_);
             //   return mat_ * q.convert() * Pvl::invert(mat_);
         } else {
             return Pvl::Mat33f::identity();
@@ -103,7 +103,7 @@ private:
     Pvl::Vec3f mapToSphere(const Pvl::Vec2i point) {
         // rescale to <-1, 1> and invert y
         const Pvl::Vec3f p(
-            2.f * float(point[0]) / size_[0] - 1.f, 1.f - 2.f * float(point[1]) / size_[1], 0.f);
+            2.f * float(point[0]) / size_[0] - 1.f, 2.f * float(point[1]) / size_[1] - 1.f, 0.f);
 
         const float lengthSqr = Pvl::normSqr(p);
         if (lengthSqr > 1.f) {

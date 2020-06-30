@@ -1,5 +1,19 @@
 #include "openglwidget.h"
 
+static void updateLights(const float dist) {
+    GLfloat pos1[] = { 2 * dist, -2 * dist, -4 * dist };
+    glLightfv(GL_LIGHT0, GL_POSITION, pos1);
+    GLfloat diffuse1[] = { 1.1f, 1.05f, 1.f, 1.0 };
+    // GLfloat diffuse1[] = { 0., 0., 0., 1.0 };
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse1);
+
+    GLfloat pos2[] = { 5.f * dist, 0.f, -1.f * dist };
+    glLightfv(GL_LIGHT1, GL_POSITION, pos2);
+    // GLfloat diffuse2[] = { 0.f, 0.f, 0.f, 1.f };
+    GLfloat diffuse2[] = { 0.6f, 0.65f, 0.7f, 1.f };
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuse2);
+}
+
 void OpenGLWidget::resizeGL(const int width, const int height) {
     std::cout << "Resizing" << std::endl;
     glViewport(0, 0, width, height);
@@ -16,6 +30,8 @@ void OpenGLWidget::resizeGL(const int width, const int height) {
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 
+        updateLights(dist);
+
     } else {
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
@@ -29,20 +45,26 @@ void OpenGLWidget::initializeGL() {
     initializeOpenGLFunctions();
     glClearColor(0, 0, 0, 0);
     glEnable(GL_LIGHT0);
+    glEnable(GL_LIGHT1);
     glEnable(GL_LIGHTING);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
     glShadeModel(GL_FLAT);
     // glEnable(GL_AUTO_NORMAL);
-    glEnable(GL_COLOR_MATERIAL);
-    glColorMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE);
-    GLfloat pos[] = { 0.5, 0, 2 };
-    glLightfv(GL_LIGHT0, GL_POSITION, pos);
-    GLfloat diffuse[] = { 0.6, 0.6, 0.6, 1.0 };
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
-    GLfloat ambient[] = { 0.01, 0.01, 0.01, 1.0 };
-    glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
+    // glEnable(GL_COLOR_MATERIAL);
+    // glColorMaterial(GL_FRONT, GL_DIFFUSE);
+    // glColorMaterial(GL_FRONT, GL_SPECULAR);
+
+    updateLights(1.);
+    // GLfloat specular[] = { 1., 1., 1., 1.0 };
+    // glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
+
+    // glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
+    // glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
+    // glMaterialf(GL_FRONT, GL_SHININESS, 128);
+    // GLfloat ambient[] = { 0.01, 0.01, 0.01, 1.0 };
+    // glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
 
     glPointSize(4);
 }
@@ -53,6 +75,10 @@ void OpenGLWidget::paintGL() {
     glClearColor(0, 0.1, 0.3, 1);
 
     glLoadIdentity();
+    /*GLfloat pos[] = { 5000., 0, 100. };
+    glLightfv(GL_LIGHT0, GL_POSITION, pos);
+    GLfloat diffuse[] = { 1., 1., 1., 1.0 };
+   glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);*/
     {
         Pvl::Vec3f target = camera_.target();
         Pvl::Vec3f eye = camera_.eye();
@@ -65,7 +91,7 @@ void OpenGLWidget::paintGL() {
     /*glVertex3f(0.1, 0, 0);
     glVertex3f(0, 0, 0.1);
     glVertex3f(0, 0.1, 0);*/
-    GLfloat color[] = { 0.5, 0.5, 0.5, 1.0 };
+    GLfloat color[] = { 0.75, 0.75, 0.75, 1.0 };
     GLfloat sel[] = { 1., 1., 0.0, 1.0 };
     glColor3fv(color);
     //  glMaterialfv(GL_FRONT, GL_DIFFUSE, color);

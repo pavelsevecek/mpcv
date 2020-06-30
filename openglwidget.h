@@ -42,12 +42,17 @@ inline bool intersection(const Ray& ray, const Triangle& tri, float& t) {
 class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
     Q_OBJECT
 
-    using Mesh = std::vector<Triangle>;
     struct MeshData {
-        Mesh mesh;
+        Pvl::TriangleMesh<Pvl::Vec3f> mesh;
         bool enabled = true;
+
+        struct {
+            std::vector<float> vertices;
+            std::vector<float> normals;
+            // std::vector<int> indices;
+        } vis;
     };
-    const Triangle* selected = nullptr;
+    // const Triangle* selected = nullptr;
 
     int width_ = 0, height_ = 0;
     Camera camera_;
@@ -70,25 +75,7 @@ public:
 
     virtual void paintGL() override;
 
-    void view(const void* handle, const Pvl::TriangleMesh<Pvl::Vec3f>& mesh) {
-        MeshData& data = meshes_[handle];
-        for (Pvl::FaceHandle fh : mesh.faceRange()) {
-            data.mesh.push_back(mesh.triangle(fh));
-        }
-        Pvl::Box3f box;
-        for (Pvl::VertexHandle vh : mesh.vertexRange()) {
-            box.extend(mesh.point(vh));
-        }
-        Pvl::Vec3f center = box.center();
-        float zoom = 2 * box.size()[0];
-
-        camera_ = Camera(center + Pvl::Vec3f(0, 0, zoom),
-            center,
-            Pvl::Vec3f(0, 1, 0),
-            M_PI / 4.,
-            Pvl::Vec2i(width_, height_));
-        //   mesh_ = mesh;
-    }
+    void view(const void* handle, Pvl::TriangleMesh<Pvl::Vec3f>&& mesh);
 
     void toggle(const void* handle, bool on) {
         meshes_[handle].enabled = on;

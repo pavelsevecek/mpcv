@@ -44,7 +44,7 @@ void MainWindow::open(const QString& file) const {
     Pvl::PlyReader reader(in);
     Pvl::TriangleMesh<Pvl::Vec3f> mesh = reader.readMesh();
     OpenGLWidget* viewport = this->findChild<OpenGLWidget*>("Viewport");
-    viewport->view(item, mesh);
+    viewport->view(item, std::move(mesh));
 }
 
 void MainWindow::on_actionOpen_triggered() {

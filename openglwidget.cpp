@@ -3,17 +3,25 @@
 void OpenGLWidget::resizeGL(const int width, const int height) {
     std::cout << "Resizing" << std::endl;
     glViewport(0, 0, width, height);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(45, float(width) / height, 0.001, 1.);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
 
     bool first = width_ == 0;
     width_ = width;
     height_ = height;
     if (!first) {
         updateCamera();
+        float dist = Pvl::norm(camera_.eye() - camera_.target());
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        gluPerspective(45, float(width) / height, 0.001 * dist, 1000. * dist);
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+
+    } else {
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        gluPerspective(45, float(width) / height, 1., 1000.);
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
     }
 }
 
@@ -53,7 +61,6 @@ void OpenGLWidget::paintGL() {
     }
 
     // glRotatef(angle_, 0, 0, 1);
-    glBegin(GL_TRIANGLES);
     // glColor3f(1, 1, 1);
     /*glVertex3f(0.1, 0, 0);
     glVertex3f(0, 0, 0.1);
@@ -62,11 +69,19 @@ void OpenGLWidget::paintGL() {
     GLfloat sel[] = { 1., 1., 0.0, 1.0 };
     glColor3fv(color);
     //  glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
+    glEnableClientState(GL_NORMAL_ARRAY);
+    // glEnableClientState(GL_COLOR_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
+
     for (auto& p : meshes_) {
         if (!p.second.enabled) {
             continue;
         }
-        for (auto& t : p.second.mesh) {
+        glNormalPointer(GL_FLOAT, 0, p.second.vis.normals.data());
+        glVertexPointer(3, GL_FLOAT, 0, p.second.vis.vertices.data());
+        glDrawArrays(GL_TRIANGLES, 0, p.second.vis.vertices.size() / 3);
+
+        /*for (auto& t : p.second.mesh) {
             if (&t == selected) {
                 glColor3fv(sel);
             } else {
@@ -79,10 +94,43 @@ void OpenGLWidget::paintGL() {
             glVertex3f(t[1][0], t[1][1], t[1][2]);
             glNormal3f(n[0], n[1], n[2]);
             glVertex3f(t[2][0], t[2][1], t[2][2]);
+
+        }*/
+    }
+
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glFlush();
+}
+
+void OpenGLWidget::view(const void* handle, Pvl::TriangleMesh<Pvl::Vec3f>&& mesh) {
+    MeshData& data = meshes_[handle];
+    data.mesh = std::move(mesh);
+    data.vis = {};
+    for (Pvl::FaceHandle fh : data.mesh.faceRange()) {
+        Pvl::Vec3f normal = data.mesh.normal(fh);
+        for (Pvl::VertexHandle vh : data.mesh.vertexRing(fh)) {
+            //    data.vis.indices.push_back(vh.index());
+            Pvl::Vec3f vertex = data.mesh.point(vh);
+            data.vis.vertices.push_back(vertex[0]);
+            data.vis.vertices.push_back(vertex[1]);
+            data.vis.vertices.push_back(vertex[2]);
+
+            data.vis.normals.push_back(normal[0]);
+            data.vis.normals.push_back(normal[1]);
+            data.vis.normals.push_back(normal[2]);
         }
     }
-    glEnd();
-    glFlush();
+    Pvl::Box3f box;
+    for (Pvl::VertexHandle vh : data.mesh.vertexRange()) {
+        box.extend(data.mesh.point(vh));
+    }
+    Pvl::Vec3f center = box.center();
+    float zoom = 2 * box.size()[0];
+
+    camera_ = Camera(
+        center + Pvl::Vec3f(0, 0, zoom), center, Pvl::Vec3f(0, 1, 0), M_PI / 4., Pvl::Vec2i(width_, height_));
+    //   mesh_ = mesh;
 }
 
 
@@ -105,7 +153,8 @@ void OpenGLWidget::mouseDoubleClickEvent(QMouseEvent* event) {
     float t_min = std::numeric_limits<float>::max();
     const Triangle* tri_min = nullptr;
     for (const auto& p : meshes_) {
-        for (const auto& tri : p.second.mesh) {
+        for (Pvl::FaceHandle fh : p.second.mesh.faceRange()) {
+            Triangle tri = p.second.mesh.triangle(fh);
             if (intersection(ray, tri, t)) {
                 std::cout << "Intersected triangle at " << t << std::endl;
                 if (t < t_min) {
@@ -115,7 +164,7 @@ void OpenGLWidget::mouseDoubleClickEvent(QMouseEvent* event) {
             }
         }
     }
-    selected = tri_min;
+    // selected = tri_min;
     if (tri_min) {
         Pvl::Vec3f target = ray.origin + ray.dir * t_min;
         camera_.lookAt(target);

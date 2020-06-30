@@ -41,6 +41,9 @@ void MainWindow::open(const QString& file) const {
     list->addItem(item);
 
     std::ifstream in(file.toStdString());
+    if (!in) {
+        throw std::runtime_error("Cannot open file " + file.toStdString());
+    }
     Pvl::PlyReader reader(in);
     Pvl::TriangleMesh<Pvl::Vec3f> mesh = reader.readMesh();
     OpenGLWidget* viewport = this->findChild<OpenGLWidget*>("Viewport");

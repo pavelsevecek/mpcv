@@ -1,6 +1,6 @@
 #include "openglwidget.h"
 
-static void updateLights(const float dist) {
+/*static void updateLights(const float dist) {
     GLfloat pos1[] = { 2 * dist, -2 * dist, -4 * dist };
     glLightfv(GL_LIGHT0, GL_POSITION, pos1);
     GLfloat diffuse1[] = { 1.1f, 1.05f, 1.f, 1.0 };
@@ -11,6 +11,23 @@ static void updateLights(const float dist) {
     glLightfv(GL_LIGHT1, GL_POSITION, pos2);
     // GLfloat diffuse2[] = { 0.f, 0.f, 0.f, 1.f };
     GLfloat diffuse2[] = { 0.6f, 0.65f, 0.7f, 1.f };
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuse2);
+}*/
+
+static void updateLights(const Camera& camera) {
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    float dist = Pvl::norm(camera.eye() - camera.target());
+    GLfloat pos1[] = { 0, 0, -4 * dist };
+    glLightfv(GL_LIGHT0, GL_POSITION, pos1);
+    GLfloat diffuse1[] = { 1.1f, 1.05f, 1.f, 1.0 };
+    // GLfloat diffuse1[] = { 0., 0., 0., 1.0 };
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse1);
+
+    GLfloat pos2[] = { 5.f * dist, 0.f, -1.f * dist };
+    glLightfv(GL_LIGHT1, GL_POSITION, pos2);
+    GLfloat diffuse2[] = { 0.f, 0.f, 0.f, 1.f };
+    // GLfloat diffuse2[] = { 0.6f, 0.65f, 0.7f, 1.f };
     glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuse2);
 }
 
@@ -30,15 +47,15 @@ void OpenGLWidget::resizeGL(const int width, const int height) {
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 
-        updateLights(dist);
+        // updateLights(dist);
 
-    } else {
+    } /*else {
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
         gluPerspective(45, float(width) / height, 1., 1000.);
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
-    }
+    }*/
 }
 
 void OpenGLWidget::initializeGL() {
@@ -56,7 +73,7 @@ void OpenGLWidget::initializeGL() {
     // glColorMaterial(GL_FRONT, GL_DIFFUSE);
     // glColorMaterial(GL_FRONT, GL_SPECULAR);
 
-    updateLights(1.);
+    // updateLights(1000.);
     // GLfloat specular[] = { 1., 1., 1., 1.0 };
     // glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
 
@@ -157,6 +174,8 @@ void OpenGLWidget::view(const void* handle, Pvl::TriangleMesh<Pvl::Vec3f>&& mesh
     camera_ = Camera(
         center + Pvl::Vec3f(0, 0, zoom), center, Pvl::Vec3f(0, 1, 0), M_PI / 4., Pvl::Vec2i(width_, height_));
     //   mesh_ = mesh;
+    // updateLights(camera_);
+    update();
 }
 
 
@@ -195,6 +214,7 @@ void OpenGLWidget::mouseDoubleClickEvent(QMouseEvent* event) {
         Pvl::Vec3f target = ray.origin + ray.dir * t_min;
         camera_.lookAt(target);
     }
+    updateLights(camera_);
     update();
 }
 
@@ -210,5 +230,6 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent* ev) {
     }
 
     // mouse_.pos0 = ev->pos();
+    updateLights(camera_);
     update();
 }

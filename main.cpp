@@ -29,7 +29,7 @@ void setPalette(QApplication& a) {
 
 int main(int argc, char* argv[]) {
     QApplication a(argc, argv);
-
+    setlocale(LC_NUMERIC, "C"); // needed for sscanf
     setPalette(a);
 
     MainWindow w;

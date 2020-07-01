@@ -33,6 +33,8 @@ private slots:
 
     void on_actionShowDots_changed();
 
+    void on_actionScreenshot_triggered();
+
 private:
     Ui::MainWindow* ui;
 };

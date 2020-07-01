@@ -93,6 +93,7 @@
    </attribute>
    <addaction name="actionShowDots"/>
    <addaction name="actionShowWireframe"/>
+   <addaction name="actionScreenshot"/>
   </widget>
   <action name="actionOpenFile">
    <property name="text">
@@ -130,6 +131,15 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+P</string>
+   </property>
+  </action>
+  <action name="actionScreenshot">
+   <property name="icon">
+    <iconset>
+     <normaloff>/home/pavel/projects/resources/icon.png</normaloff>/home/pavel/projects/resources/icon.png</iconset>
+   </property>
+   <property name="text">
+    <string>Screenshot</string>
    </property>
   </action>
  </widget>

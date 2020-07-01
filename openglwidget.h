@@ -8,6 +8,8 @@
 #include "mesh.h"
 #include "quaternion.h"
 #include <GL/glu.h>
+#include <QFileInfo>
+#include <QImageWriter>
 #include <QMouseEvent>
 #include <QOpenGLFunctions>
 #include <QOpenGLWidget>
@@ -42,6 +44,21 @@ inline bool intersection(const Ray& ray, const Triangle& tri, float& t) {
     return true;
 }
 
+inline bool intersection(const Ray& ray, const Pvl::Vec3f& point, float radius, float& t) {
+    Pvl::Vector<double, 3> delta = Pvl::vectorCast<double>(point) - Pvl::vectorCast<double>(ray.origin);
+    double cosPhi = Pvl::dotProd(delta, Pvl::vectorCast<double>(ray.dir));
+    if (cosPhi < 0) {
+        return false;
+    }
+    Pvl::Vector<double, 3> r0 = Pvl::vectorCast<double>(ray.dir) * cosPhi;
+    if (Pvl::norm(r0 - delta) < radius) {
+        t = cosPhi;
+        return true;
+    } else {
+        return false;
+    }
+}
+
 class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
     Q_OBJECT
 
@@ -67,7 +84,7 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
             return !mesh.colors.empty();
         }
     };
-    Pvl::Optional<Triangle> selected;
+    // Pvl::Optional<Triangle> selected;
 
     Camera camera_;
     Srs srs_;
@@ -112,11 +129,15 @@ public:
         update();
     }
 
-    /*void orientation(const bool outward) {
-        std::cout << "Changing orientation to " << outward << std::endl;
-        glFrontFace(outward ? GL_CCW : GL_CW);
-        update();
-    }*/
+    void screenshot(const QString& file) {
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        glReadBuffer(GL_FRONT);
+        std::vector<uint8_t> pixels(width() * height() * 3);
+        glReadPixels(0, 0, width(), height(), GL_BGR_EXT, GL_UNSIGNED_BYTE, pixels.data());
+        QImage image(pixels.data(), width(), height(), width() * 3, QImage::Format_BGR888);
+        QImageWriter writer(file);
+        writer.write(std::move(image).mirrored());
+    }
 
     virtual void wheelEvent(QWheelEvent* event) override {
         if (event->modifiers() & Qt::CTRL) {

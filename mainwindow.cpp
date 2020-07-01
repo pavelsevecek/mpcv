@@ -184,3 +184,15 @@ void MainWindow::on_actionShowDots_changed() {
     OpenGLWidget* viewport = this->findChild<OpenGLWidget*>("Viewport");
     viewport->dots(act->isChecked());
 }
+
+void MainWindow::on_actionScreenshot_triggered() {
+    QString file = QFileDialog::getSaveFileName(
+        this, tr("Save screenshot"), ".", tr("PNG image (*.png);;JPEG image (*.jpg);;Targa image (*.tga)"));
+    if (!file.isEmpty()) {
+        OpenGLWidget* viewport = this->findChild<OpenGLWidget*>("Viewport");
+        if (QFileInfo(file).completeSuffix().isEmpty()) {
+            file += ".png";
+        }
+        viewport->screenshot(file);
+    }
+}

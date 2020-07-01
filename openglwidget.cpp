@@ -390,33 +390,46 @@ void OpenGLWidget::mouseDoubleClickEvent(QMouseEvent* event) {
     std::cout << "Clicked at " << mouse_.pos0.x() << "," << mouse_.pos0.y() << std::endl;
     Ray ray = camera_.project(Pvl::Vec2f(mouse_.pos0.x(), mouse_.pos0.y()));
 
-    float t;
     float t_min = std::numeric_limits<float>::max();
-    selected = Pvl::NONE;
+    // selected = Pvl::NONE;
     tbb::mutex mutex;
     for (const auto& p : meshes_) {
-        tbb::parallel_for<std::size_t>(0, p.second.mesh.faces.size(), [&](std::size_t fi) {
-            Triangle tri;
-            for (int i = 0; i < 3; ++i) {
-                tri[i] = p.second.mesh.vertices[p.second.mesh.faces[fi][i]];
-            }
-            if (intersection(ray, tri, t)) {
-                std::cout << "Intersected triangle at " << t << std::endl;
-                if (t > 0 && t < t_min) {
+        if (p.second.pointCloud()) {
+            /*float dist = Pvl::norm(camera_.eye() - camera_.target());
+            float radius = 1.f; // * pointSize_ * dist / std::tan(fov_ / 2.f) / height();
+            tbb::parallel_for<std::size_t>(0, p.second.mesh.vertices.size(), [&](std::size_t vi) {
+                const Pvl::Vec3f& point = p.second.mesh.vertices[vi];
+                float t;
+                if (intersection(ray, point, radius, t) && t > 0 && t < t_min) {
                     mutex.lock();
-                    selected = tri;
                     t_min = t;
                     mutex.unlock();
                 }
+            });*/
+            if (ray.dir[2] < 0) {
+                t_min = -ray.origin[2] / ray.dir[2];
             }
-        });
+        } else {
+            tbb::parallel_for<std::size_t>(0, p.second.mesh.faces.size(), [&](std::size_t fi) {
+                Triangle tri;
+                for (int i = 0; i < 3; ++i) {
+                    tri[i] = p.second.mesh.vertices[p.second.mesh.faces[fi][i]];
+                }
+                float t;
+                if (intersection(ray, tri, t) && t > 0 && t < t_min) {
+                    mutex.lock();
+                    t_min = t;
+                    mutex.unlock();
+                }
+            });
+        }
     }
 
-    if (selected) {
+    if (t_min != std::numeric_limits<float>::max()) {
         Pvl::Vec3f target = ray.origin + ray.dir * t_min;
         camera_.lookAt(target);
     }
-    selected = Pvl::NONE;
+    // selected = Pvl::NONE;
     update();
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pvl/Matrix.hpp"
+#include <iostream>
 
 struct Ray {
     Pvl::Vec3f origin;
@@ -18,7 +19,7 @@ class Camera {
 public:
     Camera() = default;
 
-    Camera(Pvl::Vec3f eye, Pvl::Vec3f target, Pvl::Vec3f up, float fov, Pvl::Vec2i size)
+    Camera(Pvl::Vec3f eye, Pvl::Vec3f target, Pvl::Vec3f up, float fov_y, Pvl::Vec2i size)
         : eye_(eye)
         , target_(target)
         , up_(up)
@@ -28,9 +29,10 @@ public:
         up_ = Pvl::normalize(up_ - Pvl::dotProd(up_, dir_) * dir_);
 
         const float aspect = float(size_[0]) / float(size_[1]);
-        const float tgfov = tan(0.5f * fov);
-        up_ = tgfov / aspect * up_;
-        left_ = tgfov * Pvl::normalize(Pvl::crossProd(up_, dir_));
+        const float tgfov = tan(0.5f * fov_y);
+        up_ = tgfov * up_;
+        left_ = aspect * tgfov * Pvl::normalize(Pvl::crossProd(up_, dir_));
+        std::cout << "Creating camera with aspect " << aspect << std::endl;
     }
 
     Pvl::Vec3f eye() const {
@@ -43,6 +45,10 @@ public:
 
     Pvl::Vec3f up() const {
         return up_;
+    }
+
+    Pvl::Vec3f direction() const {
+        return dir_;
     }
 
     Pvl::Mat33f matrix() const {
@@ -72,7 +78,9 @@ public:
     }
 
     void lookAt(const Pvl::Vec3f& pos) {
-        target_ = pos;
+        Pvl::Vec3f offset = pos - target_;
+        target_ += offset;
+        eye_ += offset;
     }
 
     Ray project(const Pvl::Vec2f& coords) const {
@@ -85,5 +93,5 @@ public:
         return ray;
     }
 
-    Pvl::Vec2f unproject(const Pvl::Vec3f& coords) const {}
+    // Pvl::Vec2f unproject(const Pvl::Vec3f& coords) const {}
 };

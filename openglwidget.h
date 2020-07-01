@@ -2,7 +2,9 @@
 
 #include "camera.h"
 #include "pvl/Box.hpp"
-#include "pvl/TriangleMesh.hpp"
+#include "pvl/Optional.hpp"
+//#include "pvl/TriangleMesh.hpp"
+#include "mesh.h"
 #include "quaternion.h"
 #include <GL/glu.h>
 #include <QMouseEvent>
@@ -43,7 +45,7 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
     Q_OBJECT
 
     struct MeshData {
-        Pvl::TriangleMesh<Pvl::Vec3f> mesh;
+        Mesh mesh;
         bool enabled = true;
 
         struct {
@@ -51,13 +53,17 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
             std::vector<float> normals;
             // std::vector<int> indices;
         } vis;
-    };
-    // const Triangle* selected = nullptr;
 
-    int width_ = 0, height_ = 0;
+        GLuint vbo;
+    };
+    Pvl::Optional<Triangle> selected;
+
     Camera camera_;
 
     std::map<const void*, MeshData> meshes_;
+    bool wireframe_ = false;
+    bool dots_ = false;
+    bool vbos = true;
 
     struct {
         QPoint pos0;
@@ -75,12 +81,23 @@ public:
 
     virtual void paintGL() override;
 
-    void view(const void* handle, Pvl::TriangleMesh<Pvl::Vec3f>&& mesh);
+    void view(const void* handle, Mesh&& mesh);
 
     void toggle(const void* handle, bool on) {
         meshes_[handle].enabled = on;
         update();
     }
+
+    void wireframe(const bool on) {
+        wireframe_ = on;
+        update();
+    }
+
+    void dots(const bool on) {
+        dots_ = on;
+        update();
+    }
+
 
     virtual void wheelEvent(QWheelEvent* event) override {
         std::cout << "Wheel event!" << std::endl;
@@ -96,10 +113,5 @@ public:
     virtual void mouseMoveEvent(QMouseEvent* ev) override;
 
 private:
-    void updateCamera() {
-        Pvl::Vec3f eye = camera_.eye();
-        Pvl::Vec3f target = camera_.target();
-        Pvl::Vec3f up = camera_.up();
-        camera_ = Camera(eye, target, up, M_PI / 4., Pvl::Vec2i(width_, height_));
-    }
+    void updateCamera();
 };

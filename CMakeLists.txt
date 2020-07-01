@@ -43,6 +43,7 @@ else()
     openglwidget.cpp
     camera.h
     quaternion.h
+    mesh.h
   )
 endif()
 

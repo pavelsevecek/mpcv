@@ -77,7 +77,7 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionOpen"/>
+    <addaction name="actionOpenFile"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -91,16 +91,45 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actiontest"/>
+   <addaction name="actionShowDots"/>
+   <addaction name="actionShowWireframe"/>
   </widget>
-  <action name="actionOpen">
+  <action name="actionOpenFile">
    <property name="text">
     <string>Open</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
   </action>
-  <action name="actiontest">
+  <action name="actionShowWireframe">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+        <normaloff>/home/pavel/projects/resources/wire.png</normaloff>/home/pavel/projects/resources/wire.png</iconset>
+   </property>
    <property name="text">
-    <string>test</string>
+    <string>ShowWireframe</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+W</string>
+   </property>
+  </action>
+  <action name="actionShowDots">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+        <normaloff>/home/pavel/projects/resources/dots.png</normaloff>/home/pavel/projects/resources/dots.png</iconset>
+   </property>
+   <property name="text">
+    <string>ShowDots</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
    </property>
   </action>
  </widget>

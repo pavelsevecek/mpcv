@@ -32,7 +32,7 @@ struct Mesh {
 };
 
 template <typename Progress>
-inline Pvl::Optional<Mesh> loadPly(std::istream& in, const Progress& prog) {
+inline Mesh loadPly(std::istream& in, const Progress& prog) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     std::string line;
     std::size_t numVertices = 0;
@@ -75,7 +75,7 @@ inline Pvl::Optional<Mesh> loadPly(std::istream& in, const Progress& prog) {
 
         if (i == nextProg) {
             if (prog(i * indexToProg)) {
-                return Pvl::NONE;
+                return {};
             }
             nextProg += progStep;
         }
@@ -91,7 +91,7 @@ inline Pvl::Optional<Mesh> loadPly(std::istream& in, const Progress& prog) {
 
         if (i == nextProg) {
             if (prog((i + numVertices) * indexToProg)) {
-                return Pvl::NONE;
+                return {}; // Pvl::NONE;
             }
             nextProg += progStep;
         }

@@ -75,29 +75,38 @@ MainWindow::~MainWindow() {
 
 void MainWindow::open(const QString& file) {
     QCoreApplication::processEvents();
-
     try {
         QProgressDialog dialog("Loading '" + file + "'", "Cancel", 0, 100);
         dialog.setWindowModality(Qt::WindowModal);
-        Mesh mesh;
+        auto callback = [&dialog](float prog) {
+            dialog.setValue(prog);
+            return dialog.wasCanceled();
+        };
 
+        // Pvl::Optional<Mesh> mesh;
+        Mesh mesh;
         QString ext = QFileInfo(file).completeSuffix();
         if (ext == "ply") {
             std::ifstream in;
             in.exceptions(std::ifstream::badbit | std::ifstream::failbit);
             in.open(file.toStdString());
-            Pvl::Optional<Mesh> loaded = loadPly(in, [&dialog](float prog) {
-                dialog.setValue(prog);
-                return dialog.wasCanceled();
-            });
-            if (!loaded) {
+            // Pvl::Optional<Mesh> loaded
+            mesh = loadPly(in, callback);
+            /*if (!loaded) {
                 return;
             }
-            mesh = std::move(loaded.value());
-        } else if (ext == "las") {
-            mesh = loadLas(file.toStdString());
+            mesh = std::move(loaded.value());*/
+        } else if (ext == "las" || ext == "laz") {
+            mesh = loadLas(file.toStdString(), callback);
+        } else {
+            QMessageBox box(QMessageBox::Warning, "Error", "Unknown file format of file '" + file + "'");
+            box.exec();
+            return;
         }
         dialog.close();
+        if (mesh.vertices.empty()) {
+            return;
+        }
 
         QListWidget* list = this->findChild<QListWidget*>("MeshList");
         QFileInfo info(file);
@@ -119,7 +128,7 @@ void MainWindow::open(const QString& file) {
 
 void MainWindow::on_actionOpenFile_triggered() {
     QStringList names = QFileDialog::getOpenFileNames(
-        this, tr("Open mesh"), ".", tr("all files (*);;.ply object (*.ply);;.las point cloud (*.las)"));
+        this, tr("Open mesh"), ".", tr("all files (*);;.ply object (*.ply);;LAS point cloud (*.las *.laz)"));
     if (!names.empty()) {
         for (QString name : names) {
             open(name);

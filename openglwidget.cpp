@@ -130,22 +130,29 @@ void OpenGLWidget::paintGL() {
             continue;
         }
 
-        glBindBuffer(GL_ARRAY_BUFFER, p.second.vbo);
+        if (vbos) {
+            glBindBuffer(GL_ARRAY_BUFFER, p.second.vbo);
+        }
 
         glEnableClientState(GL_NORMAL_ARRAY);
         glEnableClientState(GL_VERTEX_ARRAY);
 
-        /* glVertexPointer(3, GL_FLOAT, 0, p.second.vis.vertices.data());
-         glNormalPointer(GL_FLOAT, 0, p.second.vis.normals.data());
-         glDrawArrays(GL_TRIANGLES, 0, p.second.vis.vertices.size() / 3);*/
-        glVertexPointer(3, GL_FLOAT, 0, (void*)0);
-        glNormalPointer(GL_FLOAT, 0, (void*)(p.second.vis.vertices.size() * sizeof(float)));
-        glDrawArrays(GL_TRIANGLES, 0, p.second.vis.vertices.size() / 3);
+        if (!vbos) {
+            glVertexPointer(3, GL_FLOAT, 0, p.second.vis.vertices.data());
+            glNormalPointer(GL_FLOAT, 0, p.second.vis.normals.data());
+            glDrawArrays(GL_TRIANGLES, 0, p.second.vis.vertices.size() / 3);
+        } else {
+            glVertexPointer(3, GL_FLOAT, 0, (void*)0);
+            glNormalPointer(GL_FLOAT, 0, (void*)(p.second.vis.vertices.size() * sizeof(float)));
+            glDrawArrays(GL_TRIANGLES, 0, p.second.vis.vertices.size() / 3);
+        }
 
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_NORMAL_ARRAY);
 
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        if (vbos) {
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
     }
     // glDisableClientState(GL_VERTEX_ARRAY);
     // glDisableClientState(GL_NORMAL_ARRAY);
@@ -302,7 +309,7 @@ void OpenGLWidget::mouseDoubleClickEvent(QMouseEvent* event) {
             }
             if (intersection(ray, tri, t)) {
                 std::cout << "Intersected triangle at " << t << std::endl;
-                if (t < t_min) {
+                if (t > 0 && t < t_min) {
                     selected = tri;
                     t_min = t;
                 }

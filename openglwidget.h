@@ -51,6 +51,7 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
         struct {
             std::vector<float> vertices;
             std::vector<float> normals;
+            std::vector<uint8_t> colors;
         } vis;
 
         GLuint vbo;
@@ -60,6 +61,9 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
         }
         bool hasNormals() const {
             return !pointCloud() || !mesh.normals.empty();
+        }
+        bool hasColors() const {
+            return !mesh.colors.empty();
         }
     };
     Pvl::Optional<Triangle> selected;

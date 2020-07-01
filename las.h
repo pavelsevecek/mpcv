@@ -18,9 +18,12 @@ inline Mesh loadLas(std::string file, const Progress& prog) {
     int step = lasreader->npoints / 100;
     int nextProg = step;
     float iToProg = 100.f / lasreader->npoints;
+    mesh.vertices.reserve(lasreader->npoints);
+    mesh.colors.reserve(lasreader->npoints);
     while (lasreader->read_point()) {
         const LASpoint& p = lasreader->point;
         mesh.vertices.push_back(Pvl::Vec3f(p.get_x(), p.get_y(), p.get_z()));
+        mesh.colors.push_back(Color(p.get_R() >> 8, p.get_G() >> 8, p.get_B() >> 8));
         i++;
         if (i == nextProg) {
             if (prog(i * iToProg)) {

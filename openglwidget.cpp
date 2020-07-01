@@ -168,6 +168,9 @@ void OpenGLWidget::paintGL() {
         } else {
             glDisable(GL_LIGHTING);
         }
+        if (p.second.hasColors()) {
+            glEnableClientState(GL_COLOR_ARRAY);
+        }
         glEnableClientState(GL_VERTEX_ARRAY);
 
         if (!vbos_) {
@@ -180,6 +183,12 @@ void OpenGLWidget::paintGL() {
             if (p.second.hasNormals()) {
                 glNormalPointer(GL_FLOAT, 0, (void*)(p.second.vis.vertices.size() * sizeof(float)));
             }
+            if (p.second.hasColors()) {
+                glColorPointer(3,
+                    GL_UNSIGNED_BYTE,
+                    0,
+                    (void*)((p.second.vis.vertices.size() + p.second.vis.normals.size()) * sizeof(float)));
+            }
         }
 
         if (p.second.pointCloud()) {
@@ -189,6 +198,9 @@ void OpenGLWidget::paintGL() {
         }
 
         glDisableClientState(GL_VERTEX_ARRAY);
+        if (p.second.hasColors()) {
+            glDisableClientState(GL_COLOR_ARRAY);
+        }
         if (p.second.hasNormals()) {
             glDisableClientState(GL_NORMAL_ARRAY);
         } else {
@@ -257,9 +269,13 @@ void OpenGLWidget::view(const void* handle, Mesh&& mesh) {
     if (data.mesh.faces.empty()) {
         // point cloud
         bool hasNormals = !data.mesh.normals.empty();
+        bool hasColors = !data.mesh.colors.empty();
         data.vis.vertices.reserve(data.mesh.vertices.size() * 3);
         if (hasNormals) {
             data.vis.normals.reserve(data.mesh.vertices.size() * 3);
+        }
+        if (hasColors) {
+            data.vis.colors.reserve(data.mesh.vertices.size() * 3);
         }
         for (std::size_t vi = 0; vi < data.mesh.vertices.size(); ++vi) {
             const Pvl::Vec3f& vertex = data.mesh.vertices[vi];
@@ -272,6 +288,12 @@ void OpenGLWidget::view(const void* handle, Mesh&& mesh) {
                 data.vis.normals.push_back(normal[0]);
                 data.vis.normals.push_back(normal[1]);
                 data.vis.normals.push_back(normal[2]);
+            }
+            if (hasColors) {
+                const Color& c = data.mesh.colors[vi];
+                data.vis.colors.push_back(c[0]);
+                data.vis.colors.push_back(c[1]);
+                data.vis.colors.push_back(c[2]);
             }
         }
     } else {
@@ -297,7 +319,8 @@ void OpenGLWidget::view(const void* handle, Mesh&& mesh) {
         glGenBuffers(1, &data.vbo);
         glBindBuffer(GL_ARRAY_BUFFER, data.vbo);
         glBufferData(GL_ARRAY_BUFFER,
-            (data.vis.vertices.size() + data.vis.normals.size()) * sizeof(float),
+            (data.vis.vertices.size() + data.vis.normals.size()) * sizeof(float) +
+                data.vis.colors.size() * sizeof(uint8_t),
             0,
             GL_STATIC_DRAW);
         glBufferSubData(
@@ -306,6 +329,10 @@ void OpenGLWidget::view(const void* handle, Mesh&& mesh) {
             data.vis.vertices.size() * sizeof(float),
             data.vis.normals.size() * sizeof(float),
             data.vis.normals.data());
+        glBufferSubData(GL_ARRAY_BUFFER,
+            data.vis.vertices.size() * sizeof(float) + data.vis.normals.size() * sizeof(float),
+            data.vis.colors.size() * sizeof(uint8_t),
+            data.vis.colors.data());
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 

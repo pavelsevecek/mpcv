@@ -8,15 +8,17 @@
 #include <sstream>
 #include <vector>
 
+using Color = Pvl::Vector<uint8_t, 3>;
+
 struct Mesh {
     using Face = std::array<int, 3>;
 
     std::vector<Pvl::Vec3f> vertices;
     std::vector<Pvl::Vec3f> normals;
+    std::vector<Color> colors;
     std::vector<Face> faces;
 
     Pvl::Vec3f normal(const int fi) const {
-
         Pvl::Vec3f p0 = vertices[faces[fi][0]];
         Pvl::Vec3f p1 = vertices[faces[fi][1]];
         Pvl::Vec3f p2 = vertices[faces[fi][2]];
@@ -38,36 +40,83 @@ inline Mesh loadPly(std::istream& in, const Progress& prog) {
     std::size_t numVertices = 0;
     std::size_t numFaces = 0;
     char prop[256];
-    bool hasNormals = false;
+
+    int propIdx = 0;
+    int xyzProp = 0;
+    int normalProp = -1;
+    int colorProp = -1;
     while (std::getline(in, line)) {
         sscanf(line.c_str(), "element vertex %zu", &numVertices);
         sscanf(line.c_str(), "element face %zu", &numFaces);
         sscanf(line.c_str(), "property float %s", prop);
-        hasNormals |= std::string(prop) == "nx";
+        if (std::string(prop) == "x") {
+            propIdx++;
+        }
+        if (std::string(prop) == "nx") {
+            normalProp = propIdx++;
+        }
+        sscanf(line.c_str(), "property uchar %s", prop);
+        if (std::string(prop) == "red") {
+            colorProp = propIdx++;
+        }
 
         if (line == "end_header") {
             break;
         }
     }
     std::cout << "Loading mesh with " << numVertices << " vertices and " << numFaces << " faces" << std::endl;
-    if (hasNormals) {
+    if (normalProp != -1) {
         std::cout << "Has point normals" << std::endl;
     }
+    if (colorProp != -1) {
+        std::cout << "Has point colors" << std::endl;
+    }
+
     Mesh mesh;
     mesh.vertices.reserve(numVertices);
     mesh.faces.reserve(numFaces);
+    if (normalProp != -1) {
+        mesh.normals.reserve(numVertices);
+    }
+    if (colorProp != -1) {
+        mesh.colors.reserve(numVertices);
+    }
+
 
     const int progStep = (numVertices + numFaces) / 100;
     int nextProg = progStep;
     float indexToProg = 100.f / (numVertices + numFaces);
     for (std::size_t i = 0; i < numVertices; ++i) {
         std::getline(in, line);
+        /// \todo simplify
         Pvl::Vec3f p;
-        if (hasNormals) {
+        if (normalProp == 1 && colorProp == 2) {
+            Pvl::Vec3f n;
+            Color c;
+            sscanf(line.c_str(),
+                "%f%f%f%f%f%f%hhu%hhu%hhu",
+                &p[0],
+                &p[1],
+                &p[2],
+                &n[0],
+                &n[1],
+                &n[2],
+                &c[0],
+                &c[1],
+                &c[2]);
+            mesh.vertices.push_back(p);
+            mesh.normals.push_back(n);
+            mesh.colors.push_back(c);
+        } else if (normalProp == 1) {
             Pvl::Vec3f n;
             sscanf(line.c_str(), "%f%f%f%f%f%f", &p[0], &p[1], &p[2], &n[0], &n[1], &n[2]);
             mesh.vertices.push_back(p);
             mesh.normals.push_back(n);
+        } else if (colorProp == 1) {
+            Color c;
+            sscanf(line.c_str(), "%f%f%f%hhu%hhu%hhu", &p[0], &p[1], &p[2], &c[0], &c[1], &c[2]);
+            mesh.vertices.push_back(p);
+            mesh.colors.push_back(c);
         } else {
             sscanf(line.c_str(), "%f%f%f", &p[0], &p[1], &p[2]);
             mesh.vertices.push_back(p);

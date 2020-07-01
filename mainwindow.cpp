@@ -6,6 +6,7 @@
 #include <QFileDialog>
 #include <QListWidget>
 #include <QListWidgetItem>
+#include <QMessageBox>
 #include <QProgressDialog>
 #include <QShortcut>
 #include <fstream>
@@ -64,30 +65,38 @@ MainWindow::~MainWindow() {
 
 void MainWindow::open(const QString& file) {
     QCoreApplication::processEvents();
-    std::ifstream in(file.toStdString());
-    if (!in) {
-        throw std::runtime_error("Cannot open file " + file.toStdString());
-    }
-    // Pvl::PlyReader reader(in);
-    QProgressDialog dialog("Loading '" + file + "'", "Cancel", 0, 100);
-    dialog.setWindowModality(Qt::WindowModal);
-    Pvl::Optional<Mesh> mesh = loadPly(in, [&dialog](float prog) {
-        dialog.setValue(prog);
-        return dialog.wasCanceled();
-    });
-    dialog.close();
-    if (mesh) {
-        QListWidget* list = this->findChild<QListWidget*>("MeshList");
-        QFileInfo info(file);
-        QString identifier = info.absoluteDir().dirName() + "/" + info.baseName();
-        QListWidgetItem* item = new QListWidgetItem(identifier, list);
-        list->addItem(item);
 
-        OpenGLWidget* viewport = this->findChild<OpenGLWidget*>("Viewport");
-        viewport->view(item, std::move(mesh.value()));
+    try {
+        std::ifstream in;
+        in.exceptions(std::ifstream::badbit | std::ifstream::failbit);
+        /*if (!in) {
+            throw std::runtime_error("Cannot open file " + file.toStdString());
+        }*/
+        in.open(file.toStdString());
+        // Pvl::PlyReader reader(in);
+        QProgressDialog dialog("Loading '" + file + "'", "Cancel", 0, 100);
+        dialog.setWindowModality(Qt::WindowModal);
+        Pvl::Optional<Mesh> mesh = loadPly(in, [&dialog](float prog) {
+            dialog.setValue(prog);
+            return dialog.wasCanceled();
+        });
+        dialog.close();
+        if (mesh) {
+            QListWidget* list = this->findChild<QListWidget*>("MeshList");
+            QFileInfo info(file);
+            QString identifier = info.absoluteDir().dirName() + "/" + info.baseName();
+            QListWidgetItem* item = new QListWidgetItem(identifier, list);
+            list->addItem(item);
 
-        /// \todo avoid firing signal
-        item->setCheckState(Qt::CheckState::Checked);
+            OpenGLWidget* viewport = this->findChild<OpenGLWidget*>("Viewport");
+            viewport->view(item, std::move(mesh.value()));
+
+            /// \todo avoid firing signal
+            item->setCheckState(Qt::CheckState::Checked);
+        }
+    } catch (const std::exception& e) {
+        QMessageBox box(QMessageBox::Warning, "Error", "Cannot open file '" + file + "'\n" + e.what());
+        box.exec();
     }
 }
 

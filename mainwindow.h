@@ -29,8 +29,6 @@ private slots:
 
     void on_actionOpenFile_triggered();
 
-    void showOnly();
-
     void on_actionShowWireframe_changed();
 
     void on_actionShowDots_changed();

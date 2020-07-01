@@ -33,8 +33,17 @@ MainWindow::MainWindow(QWidget* parent)
         std::cout << "NO VIEWPORT" << std::endl;
     }*/
 
-    for (int key = 0; key < 9; key++) {
-        QShortcut* showOnly = new QShortcut(QKeySequence(Qt::CTRL + (Qt::Key_1 + key)), this);
+    /*QShortcut* flipNormals = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_F), this);
+    QObject::connect(flipNormals, &QShortcut::activated, this, [this] {
+        OpenGLWidget* viewport = this->findChild<OpenGLWidget*>("Viewport");
+        static bool outward = true;
+        viewport->orientation(outward);
+        outward = !outward;
+    });*/
+
+    for (int key = 0; key < 10; key++) {
+        Qt::Key k = Qt::Key((key == 9) ? Qt::Key_0 : (Qt::Key_1 + key));
+        QShortcut* showOnly = new QShortcut(QKeySequence(Qt::CTRL + k), this);
         QObject::connect(showOnly, &QShortcut::activated, this, [this, key] {
             std::cout << "Showing only " << key << std::endl;
             QListWidget* list = this->findChild<QListWidget*>("MeshList");
@@ -46,7 +55,7 @@ MainWindow::MainWindow(QWidget* parent)
             }
         });
 
-        QShortcut* showToggle = new QShortcut(QKeySequence(Qt::SHIFT + (Qt::Key_1 + key)), this);
+        QShortcut* showToggle = new QShortcut(QKeySequence(Qt::SHIFT + k), this);
         QObject::connect(showToggle, &QShortcut::activated, this, [this, key] {
             std::cout << "Showing toggle " << key << std::endl;
             QListWidget* list = this->findChild<QListWidget*>("MeshList");
@@ -109,14 +118,24 @@ void MainWindow::on_actionOpenFile_triggered() {
     }
 }
 void MainWindow::on_MeshList_itemChanged(QListWidgetItem* item) {
-    std::cout << "Item check state = " << item->checkState() << std::endl;
-    bool on = item->checkState() == Qt::Checked;
+    static int reentrant = 0;
+    if (reentrant > 0) {
+        return;
+    }
+    reentrant++;
     OpenGLWidget* viewport = this->findChild<OpenGLWidget*>("Viewport");
-    viewport->toggle(item, on);
-}
-
-void MainWindow::showOnly() {
-    std::cout << "Show only" << std::endl;
+    if (QApplication::queryKeyboardModifiers() & Qt::CTRL) {
+        QListWidget* list = item->listWidget();
+        for (int i = 0; i < list->count(); ++i) {
+            QListWidgetItem* it = list->item(i);
+            it->setCheckState(it == item ? Qt::Checked : Qt::Unchecked);
+            viewport->toggle(it, it == item);
+        }
+    } else {
+        bool on = item->checkState() == Qt::Checked;
+        viewport->toggle(item, on);
+    }
+    reentrant--;
 }
 
 void MainWindow::on_actionShowWireframe_changed() {

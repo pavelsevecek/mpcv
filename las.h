@@ -15,7 +15,7 @@ inline Mesh loadLas(std::string file, const Progress& prog) {
         0.5 * (lasreader->header.min_y + lasreader->header.max_y),
         0.5 * (lasreader->header.min_z + lasreader->header.max_z));*/
     int i = 0;
-    int step = lasreader->npoints / 100;
+    int step = std::max(lasreader->npoints / 100, I64(100));
     int nextProg = step;
     float iToProg = 100.f / lasreader->npoints;
     mesh.vertices.reserve(lasreader->npoints);

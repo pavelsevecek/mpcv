@@ -83,7 +83,7 @@ inline Mesh loadPly(std::istream& in, const Progress& prog) {
     }
 
 
-    const int progStep = (numVertices + numFaces) / 100;
+    const int progStep = std::max((numVertices + numFaces) / 100, std::size_t(100));
     int nextProg = progStep;
     float indexToProg = 100.f / (numVertices + numFaces);
     for (std::size_t i = 0; i < numVertices; ++i) {

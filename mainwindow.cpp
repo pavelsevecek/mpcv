@@ -96,6 +96,7 @@ void MainWindow::open(const QString& file) {
         dialog.setWindowModality(Qt::WindowModal);
         auto callback = [&dialog](float prog) {
             dialog.setValue(prog);
+            QCoreApplication::processEvents();
             return dialog.wasCanceled();
         };
 

@@ -351,18 +351,6 @@ void OpenGLWidget::view(const void* handle, Mesh&& mesh) {
             Pvl::Vec3f(0, 1, 0),
             fov_,
             Pvl::Vec2i(width(), height()));
-
-        /*    glViewport(0, 0, width(), height());
-
-            float dist = Pvl::norm(camera_.eye() - camera_.target());
-            glMatrixMode(GL_PROJECTION);
-            glLoadIdentity();
-            gluPerspective(45, float(width()) / height(), 0.01 * zoom, 100. * zoom);
-            glMatrixMode(GL_MODELVIEW);
-            glLoadIdentity();
-
-            update();*/
-        // resize(width(), height());
     }
     update();
 }
@@ -371,7 +359,6 @@ void OpenGLWidget::updateCamera() {
     Pvl::Vec3f eye = camera_.eye();
     Pvl::Vec3f target = camera_.target();
     Pvl::Vec3f up = camera_.up();
-    float aspect = 1.f; // float(width()) / height();
     camera_ = Camera(eye, target, up, fov_, Pvl::Vec2i(width(), height()));
 }
 

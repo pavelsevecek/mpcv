@@ -13,6 +13,8 @@
 #include <fstream>
 #include <iostream>
 
+static bool checkMod = true;
+
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow) {
@@ -42,11 +44,22 @@ MainWindow::MainWindow(QWidget* parent)
         outward = !outward;
     });*/
 
+    QShortcut* showAll = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_A), this);
+    QObject::connect(showAll, &QShortcut::activated, this, [this] {
+        std::cout << "Showing all" << std::endl;
+        QListWidget* list = this->findChild<QListWidget*>("MeshList");
+        checkMod = false;
+        for (int i = 0; i < list->count(); ++i) {
+            list->item(i)->setCheckState(Qt::Checked);
+        }
+        checkMod = true;
+    });
     for (int key = 0; key < 10; key++) {
         Qt::Key k = Qt::Key((key == 9) ? Qt::Key_0 : (Qt::Key_1 + key));
         QShortcut* showOnly = new QShortcut(QKeySequence(Qt::CTRL + k), this);
         QObject::connect(showOnly, &QShortcut::activated, this, [this, key] {
             std::cout << "Showing only " << key << std::endl;
+            checkMod = false;
             QListWidget* list = this->findChild<QListWidget*>("MeshList");
             if (list->count() <= key) {
                 return;
@@ -54,17 +67,20 @@ MainWindow::MainWindow(QWidget* parent)
             for (int i = 0; i < list->count(); ++i) {
                 list->item(i)->setCheckState(i == key ? Qt::Checked : Qt::Unchecked);
             }
+            checkMod = true;
         });
 
         QShortcut* showToggle = new QShortcut(QKeySequence(Qt::SHIFT + k), this);
         QObject::connect(showToggle, &QShortcut::activated, this, [this, key] {
             std::cout << "Showing toggle " << key << std::endl;
+            checkMod = false;
             QListWidget* list = this->findChild<QListWidget*>("MeshList");
             if (list->count() <= key) {
                 return;
             }
             Qt::CheckState state = list->item(key)->checkState();
             list->item(key)->setCheckState(state == Qt::Unchecked ? Qt::Checked : Qt::Unchecked);
+            checkMod = true;
         });
     }
 }
@@ -142,7 +158,7 @@ void MainWindow::on_MeshList_itemChanged(QListWidgetItem* item) {
     }
     reentrant++;
     OpenGLWidget* viewport = this->findChild<OpenGLWidget*>("Viewport");
-    if (QApplication::queryKeyboardModifiers() & Qt::CTRL) {
+    if (checkMod && QApplication::queryKeyboardModifiers() & Qt::CTRL) {
         QListWidget* list = item->listWidget();
         for (int i = 0; i < list->count(); ++i) {
             QListWidgetItem* it = list->item(i);

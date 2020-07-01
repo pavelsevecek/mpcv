@@ -63,7 +63,7 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
     std::map<const void*, MeshData> meshes_;
     bool wireframe_ = false;
     bool dots_ = false;
-    bool vbos = false;
+    bool vbos_ = true;
 
     struct {
         QPoint pos0;

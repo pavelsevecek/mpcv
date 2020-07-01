@@ -13,6 +13,8 @@ static void updateLights(const Camera& camera) {
 
     glLightfv(GL_LIGHT1, GL_POSITION, reinterpret_cast<const float*>(&pos2));
     // GLfloat diffuse2[] = { 0.f, 0.f, 0.f, 1.f };
+    GLfloat diffuse1[] = { 1.1f, 1.05f, 1.f, 1.0 };
+
     GLfloat diffuse2[] = { 0.6f, 0.65f, 0.7f, 1.f };
     glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuse2);
 }
@@ -38,7 +40,7 @@ void OpenGLWidget::resizeGL(const int width, const int height) {
         PVL_ASSERT(dist > 0.0001);
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        gluPerspective(45, float(width) / height, 0.001 * dist, 1000. * dist);
+        gluPerspective(fov_ * 180.f / M_PI, float(width) / height, 0.001 * dist, 1000. * dist);
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 
@@ -59,9 +61,35 @@ void OpenGLWidget::initializeGL() {
     glShadeModel(GL_FLAT);
     // updateLights();
     glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
+
+#if 0
     GLfloat ambient[] = { 0, 0, 0, 1 };
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
+
+    GLfloat pos1[] = { -2.e4f, 2.e4f, 4.e4f };
+    GLfloat pos2[] = { 5.e4f, 0.f, 1.e4f };
+    GLfloat diffuse1[] = { 1.f, 0.95f, 0.9f, 1.0 };
+    GLfloat diffuse2[] = { 0.4f, 0.45f, 0.5f, 1.f };
+    glEnable(GL_LIGHT0);
+    glLightfv(GL_LIGHT0, GL_POSITION, pos1);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse1);
+    glEnable(GL_LIGHT1);
+    glLightfv(GL_LIGHT1, GL_POSITION, pos2);
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuse2);
+#else
+
+    // GLfloat ambient[] = { 0, 0, 0, 1 };
+    // glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
+
+    // GLfloat pos1[] = { -2.e4f, 2.e4f, 4.e4f };
+    // GLfloat pos2[] = { 5.e4f, 0.f, 1.e4f };
+    GLfloat diffuse1[] = { 0.9f, 0.9f, 0.9f, 1.0 };
+    // GLfloat diffuse2[] = { 0.4f, 0.45f, 0.5f, 1.f };
+    glEnable(GL_LIGHT0);
+    // glLightfv(GL_LIGHT0, GL_POSITION, pos1);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse1);
+#endif
+
     // glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
     // glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
     // glEnable(GL_LIGHT1);
@@ -105,7 +133,7 @@ void OpenGLWidget::paintGL() {
     glLoadIdentity();
     float dist = Pvl::norm(camera_.eye() - camera_.target());
 
-    gluPerspective(45, float(width()) / height(), 0.001 * dist, 1000. * dist);
+    gluPerspective(fov_ * 180.f / M_PI, float(width()) / height(), 0.001 * dist, 1000. * dist);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -121,7 +149,7 @@ void OpenGLWidget::paintGL() {
     //  updateLights(camera_);
 
 
-    glColor3f(0.9, 0.9, 0.9);
+    glColor3f(0.75, 0.75, 0.75);
     // glColor3f(0, 0, 0);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
@@ -253,7 +281,7 @@ void OpenGLWidget::view(const void* handle, Mesh&& mesh) {
         camera_ = Camera(center + Pvl::Vec3f(0, 0, zoom),
             center,
             Pvl::Vec3f(0, 1, 0),
-            M_PI / 4.,
+            fov_,
             Pvl::Vec2i(width(), height()));
 
         /*    glViewport(0, 0, width(), height());
@@ -276,7 +304,7 @@ void OpenGLWidget::updateCamera() {
     Pvl::Vec3f target = camera_.target();
     Pvl::Vec3f up = camera_.up();
     float aspect = 1.f; // float(width()) / height();
-    camera_ = Camera(eye, target, up, M_PI / 4, Pvl::Vec2i(width(), height()));
+    camera_ = Camera(eye, target, up, fov_, Pvl::Vec2i(width(), height()));
 }
 
 

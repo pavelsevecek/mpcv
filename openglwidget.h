@@ -59,6 +59,7 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
     Pvl::Optional<Triangle> selected;
 
     Camera camera_;
+    float fov_ = M_PI / 4.f;
 
     std::map<const void*, MeshData> meshes_;
     bool wireframe_ = false;
@@ -100,10 +101,18 @@ public:
 
 
     virtual void wheelEvent(QWheelEvent* event) override {
-        std::cout << "Wheel event!" << std::endl;
-        camera_.zoom(1 + 0.0004 * event->angleDelta().y());
+        if (event->modifiers() & Qt::CTRL) {
+            float y0 = std::atan(0.5 * fov_);
+            fov_ += 0.0004 * event->angleDelta().y();
+            fov_ = std::max(0.01f, std::min(fov_, float(M_PI) / 2.f - 0.01f));
+            std::cout << "Setting fov = " << fov_ * 180.f / M_PI << std::endl;
+            float y1 = std::atan(0.5 * fov_);
+            camera_.zoom(y0 / y1);
+            updateCamera();
+        } else {
+            camera_.zoom(1 + 0.0004 * event->angleDelta().y());
+        }
         update();
-        // updateCamera();
     }
 
     virtual void mousePressEvent(QMouseEvent* event) override;

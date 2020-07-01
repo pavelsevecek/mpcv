@@ -3,6 +3,7 @@
 #include "mesh.h"
 #include "openglwidget.h"
 //#include "pvl/PlyReader.hpp"
+#include "las.h"
 #include <QFileDialog>
 #include <QListWidget>
 #include <QListWidgetItem>
@@ -76,33 +77,40 @@ void MainWindow::open(const QString& file) {
     QCoreApplication::processEvents();
 
     try {
-        std::ifstream in;
-        in.exceptions(std::ifstream::badbit | std::ifstream::failbit);
-        /*if (!in) {
-            throw std::runtime_error("Cannot open file " + file.toStdString());
-        }*/
-        in.open(file.toStdString());
-        // Pvl::PlyReader reader(in);
         QProgressDialog dialog("Loading '" + file + "'", "Cancel", 0, 100);
         dialog.setWindowModality(Qt::WindowModal);
-        Pvl::Optional<Mesh> mesh = loadPly(in, [&dialog](float prog) {
-            dialog.setValue(prog);
-            return dialog.wasCanceled();
-        });
-        dialog.close();
-        if (mesh) {
-            QListWidget* list = this->findChild<QListWidget*>("MeshList");
-            QFileInfo info(file);
-            QString identifier = info.absoluteDir().dirName() + "/" + info.baseName();
-            QListWidgetItem* item = new QListWidgetItem(identifier, list);
-            list->addItem(item);
+        Mesh mesh;
 
-            OpenGLWidget* viewport = this->findChild<OpenGLWidget*>("Viewport");
-            viewport->view(item, std::move(mesh.value()));
-
-            /// \todo avoid firing signal
-            item->setCheckState(Qt::CheckState::Checked);
+        QString ext = QFileInfo(file).completeSuffix();
+        if (ext == "ply") {
+            std::ifstream in;
+            in.exceptions(std::ifstream::badbit | std::ifstream::failbit);
+            in.open(file.toStdString());
+            Pvl::Optional<Mesh> loaded = loadPly(in, [&dialog](float prog) {
+                dialog.setValue(prog);
+                return dialog.wasCanceled();
+            });
+            if (!loaded) {
+                return;
+            }
+            mesh = std::move(loaded.value());
+        } else if (ext == "las") {
+            mesh = loadLas(file.toStdString());
         }
+        dialog.close();
+
+        QListWidget* list = this->findChild<QListWidget*>("MeshList");
+        QFileInfo info(file);
+        QString identifier = info.absoluteDir().dirName() + "/" + info.baseName();
+        QListWidgetItem* item = new QListWidgetItem(identifier, list);
+        list->addItem(item);
+
+        OpenGLWidget* viewport = this->findChild<OpenGLWidget*>("Viewport");
+        viewport->view(item, std::move(mesh));
+
+        /// \todo avoid firing signal
+        item->setCheckState(Qt::CheckState::Checked);
+
     } catch (const std::exception& e) {
         QMessageBox box(QMessageBox::Warning, "Error", "Cannot open file '" + file + "'\n" + e.what());
         box.exec();
@@ -110,7 +118,8 @@ void MainWindow::open(const QString& file) {
 }
 
 void MainWindow::on_actionOpenFile_triggered() {
-    QStringList names = QFileDialog::getOpenFileNames(this, tr("Open mesh"), ".", tr(".ply object (*.ply)"));
+    QStringList names = QFileDialog::getOpenFileNames(
+        this, tr("Open mesh"), ".", tr("all files (*);;.ply object (*.ply);;.las point cloud (*.las)"));
     if (!names.empty()) {
         for (QString name : names) {
             open(name);

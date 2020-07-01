@@ -26,15 +26,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(TBB REQUIRED tbb)
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
-find_package(PDAL REQUIRED)
-if(ANDROID)
-  add_library(viewer SHARED
-    main.cpp
-    mainwindow.cpp
-    mainwindow.h
-    mainwindow.ui
-  )
-else()
+
   add_executable(viewer
     main.cpp
     mainwindow.cpp
@@ -45,7 +37,7 @@ else()
     camera.h
     quaternion.h
     mesh.h
+    las.h
   )
-endif()
 
-target_link_libraries(viewer PRIVATE Qt5::Widgets Qt5::Gui GL GLU tbb ${PDAL_LIBRARIES})
+target_link_libraries(viewer PRIVATE Qt5::Widgets Qt5::Gui GL GLU tbb "/usr/lib/liblaslib.a")

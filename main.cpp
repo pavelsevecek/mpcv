@@ -33,8 +33,10 @@ int main(int argc, char* argv[]) {
     setPalette(a);
 
     MainWindow w;
-#ifndef NDEBUG
-    w.setWindowTitle("Mesa DEBUG BUILD");
+#ifdef NDEBUG
+    w.setWindowTitle(QString("Mesa build ") + __DATE__ + " " + __TIME__);
+#else
+    w.setWindowTitle(QString("Mesa DEBUG BUILD ") + __DATE__ + " " + __TIME__);
 #endif
     w.showMaximized();
     QStringList files = a.arguments();

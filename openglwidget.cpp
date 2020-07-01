@@ -130,14 +130,14 @@ void OpenGLWidget::paintGL() {
             continue;
         }
 
-        if (vbos) {
+        if (vbos_) {
             glBindBuffer(GL_ARRAY_BUFFER, p.second.vbo);
         }
 
         glEnableClientState(GL_NORMAL_ARRAY);
         glEnableClientState(GL_VERTEX_ARRAY);
 
-        if (!vbos) {
+        if (!vbos_) {
             glVertexPointer(3, GL_FLOAT, 0, p.second.vis.vertices.data());
             glNormalPointer(GL_FLOAT, 0, p.second.vis.normals.data());
             glDrawArrays(GL_TRIANGLES, 0, p.second.vis.vertices.size() / 3);
@@ -150,7 +150,7 @@ void OpenGLWidget::paintGL() {
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_NORMAL_ARRAY);
 
-        if (vbos) {
+        if (vbos_) {
             glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
     }
@@ -224,7 +224,7 @@ void OpenGLWidget::view(const void* handle, Mesh&& mesh) {
         }
     }
 
-    if (vbos) {
+    if (vbos_) {
         glGenBuffers(1, &data.vbo);
         glBindBuffer(GL_ARRAY_BUFFER, data.vbo);
         glBufferData(GL_ARRAY_BUFFER,

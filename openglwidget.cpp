@@ -178,6 +178,9 @@ void OpenGLWidget::paintGL() {
             if (p.second.hasNormals()) {
                 glNormalPointer(GL_FLOAT, 0, p.second.vis.normals.data());
             }
+            if (p.second.hasColors()) {
+                glColorPointer(3, GL_UNSIGNED_BYTE, 0, p.second.vis.colors.data());
+            }
         } else {
             glVertexPointer(3, GL_FLOAT, 0, (void*)0);
             if (p.second.hasNormals()) {
@@ -192,7 +195,7 @@ void OpenGLWidget::paintGL() {
         }
 
         if (p.second.pointCloud()) {
-            glDrawArrays(GL_POINTS, 0, p.second.vis.vertices.size());
+            glDrawArrays(GL_POINTS, 0, p.second.vis.vertices.size() / 3);
         } else {
             glDrawArrays(GL_TRIANGLES, 0, p.second.vis.vertices.size() / 3);
         }
@@ -266,6 +269,11 @@ void OpenGLWidget::view(const void* handle, Mesh&& mesh) {
     data.mesh = std::move(mesh);
     data.vis = {};
 
+    if (firstMesh) {
+        srs_ = data.mesh.srs;
+    }
+
+    SrsConv conv(data.mesh.srs, srs_);
     if (data.mesh.faces.empty()) {
         // point cloud
         bool hasNormals = !data.mesh.normals.empty();
@@ -278,7 +286,7 @@ void OpenGLWidget::view(const void* handle, Mesh&& mesh) {
             data.vis.colors.reserve(data.mesh.vertices.size() * 3);
         }
         for (std::size_t vi = 0; vi < data.mesh.vertices.size(); ++vi) {
-            const Pvl::Vec3f& vertex = data.mesh.vertices[vi];
+            Pvl::Vec3f vertex = conv(data.mesh.vertices[vi]);
             data.vis.vertices.push_back(vertex[0]);
             data.vis.vertices.push_back(vertex[1]);
             data.vis.vertices.push_back(vertex[2]);
@@ -303,7 +311,7 @@ void OpenGLWidget::view(const void* handle, Mesh&& mesh) {
             Pvl::Vec3f normal = data.mesh.normal(fi);
             for (int i = 0; i < 3; ++i) {
                 //    data.vis.indices.push_back(vh.index());
-                const Pvl::Vec3f& vertex = data.mesh.vertices[data.mesh.faces[fi][i]];
+                Pvl::Vec3f vertex = conv(data.mesh.vertices[data.mesh.faces[fi][i]]);
                 data.vis.vertices.push_back(vertex[0]);
                 data.vis.vertices.push_back(vertex[1]);
                 data.vis.vertices.push_back(vertex[2]);
@@ -336,13 +344,14 @@ void OpenGLWidget::view(const void* handle, Mesh&& mesh) {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
-    std::cout << "First mesh = " << firstMesh << std::endl;
+    // std::cout << "First mesh = " << firstMesh << std::endl;
     if (firstMesh) {
-
         Pvl::Box3f box;
         for (const Pvl::Vec3f& p : data.mesh.vertices) {
             box.extend(p);
         }
+        std::cout << "Mesh has extents " << box.lower()[0] << "," << box.lower()[1] << ":" << box.upper()[0]
+                  << "," << box.upper()[1] << std::endl;
         Pvl::Vec3f center = box.center();
         float zoom = 1.5 * box.size()[0];
 

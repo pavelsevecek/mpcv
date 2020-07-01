@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(viewer LANGUAGES CXX)
+project(malosh LANGUAGES CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -27,7 +27,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(TBB REQUIRED tbb)
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 
-  add_executable(viewer
+  add_executable(malosh
     main.cpp
     mainwindow.cpp
     mainwindow.h
@@ -38,6 +38,7 @@ find_package(Qt5 COMPONENTS Widgets REQUIRED)
     quaternion.h
     mesh.h
     las.h
+    coordinates.h
   )
 
-target_link_libraries(viewer PRIVATE Qt5::Widgets Qt5::Gui GL GLU tbb "/usr/lib/liblaslib.a")
+target_link_libraries(malosh PRIVATE Qt5::Widgets Qt5::Gui GL GLU tbb "/usr/lib/liblaslib.a")

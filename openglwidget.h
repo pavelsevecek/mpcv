@@ -1,6 +1,7 @@
 #pragma once
 
 #include "camera.h"
+#include "coordinates.h"
 #include "pvl/Box.hpp"
 #include "pvl/Optional.hpp"
 //#include "pvl/TriangleMesh.hpp"
@@ -69,6 +70,7 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
     Pvl::Optional<Triangle> selected;
 
     Camera camera_;
+    Srs srs_;
     float fov_ = M_PI / 4.f;
     float pointSize_ = 2;
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "coordinates.h"
 #include "pvl/Optional.hpp"
 #include "pvl/Vector.hpp"
 #include <chrono>
@@ -13,10 +14,12 @@ using Color = Pvl::Vector<uint8_t, 3>;
 struct Mesh {
     using Face = std::array<int, 3>;
 
+    // in local coords
     std::vector<Pvl::Vec3f> vertices;
     std::vector<Pvl::Vec3f> normals;
     std::vector<Color> colors;
     std::vector<Face> faces;
+    Srs srs;
 
     Pvl::Vec3f normal(const int fi) const {
         Pvl::Vec3f p0 = vertices[faces[fi][0]];

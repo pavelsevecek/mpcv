@@ -24,6 +24,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #    endif()
 #endif()
 
+find_package(TBB REQUIRED tbb)
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 find_package(PDAL REQUIRED)
 if(ANDROID)
@@ -47,4 +48,4 @@ else()
   )
 endif()
 
-target_link_libraries(viewer PRIVATE Qt5::Widgets Qt5::Gui GL GLU ${PDAL_LIBRARIES})
+target_link_libraries(viewer PRIVATE Qt5::Widgets Qt5::Gui GL GLU tbb ${PDAL_LIBRARIES})

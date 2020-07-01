@@ -51,15 +51,22 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
         struct {
             std::vector<float> vertices;
             std::vector<float> normals;
-            // std::vector<int> indices;
         } vis;
 
         GLuint vbo;
+
+        bool pointCloud() const {
+            return mesh.faces.empty();
+        }
+        bool hasNormals() const {
+            return !pointCloud() || !mesh.normals.empty();
+        }
     };
     Pvl::Optional<Triangle> selected;
 
     Camera camera_;
     float fov_ = M_PI / 4.f;
+    float pointSize_ = 2;
 
     std::map<const void*, MeshData> meshes_;
     bool wireframe_ = false;
@@ -99,6 +106,11 @@ public:
         update();
     }
 
+    /*void orientation(const bool outward) {
+        std::cout << "Changing orientation to " << outward << std::endl;
+        glFrontFace(outward ? GL_CCW : GL_CW);
+        update();
+    }*/
 
     virtual void wheelEvent(QWheelEvent* event) override {
         if (event->modifiers() & Qt::CTRL) {
@@ -109,6 +121,12 @@ public:
             float y1 = std::atan(0.5 * fov_);
             camera_.zoom(y0 / y1);
             updateCamera();
+        } else if (event->modifiers() & Qt::ALT) {
+            // pointSize_ += 0.01 * event->angleDelta().x();
+            pointSize_ = std::max(std::min(pointSize_ + 0.005f * event->angleDelta().x(), 16.f), 1.f);
+
+            glPointSize(int(pointSize_));
+            std::cout << "Point size = " << pointSize_ << std::endl;
         } else {
             camera_.zoom(1 + 0.0004 * event->angleDelta().y());
         }

@@ -1,4 +1,5 @@
 #include "openglwidget.h"
+#include <tbb/tbb.h>
 
 #if 0
 static void updateLights(const Camera& camera) {
@@ -110,7 +111,7 @@ void OpenGLWidget::initializeGL() {
     // GLfloat ambient[] = { 0.01, 0.01, 0.01, 1.0 };
     // glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
 
-    glPointSize(2);
+    glPointSize(pointSize_);
 }
 
 void OpenGLWidget::paintGL() {
@@ -152,7 +153,7 @@ void OpenGLWidget::paintGL() {
     glColor3f(0.75, 0.75, 0.75);
     // glColor3f(0, 0, 0);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
+    glPointSize(pointSize_);
     for (auto& p : meshes_) {
         if (!p.second.enabled) {
             continue;
@@ -162,21 +163,37 @@ void OpenGLWidget::paintGL() {
             glBindBuffer(GL_ARRAY_BUFFER, p.second.vbo);
         }
 
-        glEnableClientState(GL_NORMAL_ARRAY);
+        if (p.second.hasNormals()) {
+            glEnableClientState(GL_NORMAL_ARRAY);
+        } else {
+            glDisable(GL_LIGHTING);
+        }
         glEnableClientState(GL_VERTEX_ARRAY);
 
         if (!vbos_) {
             glVertexPointer(3, GL_FLOAT, 0, p.second.vis.vertices.data());
-            glNormalPointer(GL_FLOAT, 0, p.second.vis.normals.data());
-            glDrawArrays(GL_TRIANGLES, 0, p.second.vis.vertices.size() / 3);
+            if (p.second.hasNormals()) {
+                glNormalPointer(GL_FLOAT, 0, p.second.vis.normals.data());
+            }
         } else {
             glVertexPointer(3, GL_FLOAT, 0, (void*)0);
-            glNormalPointer(GL_FLOAT, 0, (void*)(p.second.vis.vertices.size() * sizeof(float)));
+            if (p.second.hasNormals()) {
+                glNormalPointer(GL_FLOAT, 0, (void*)(p.second.vis.vertices.size() * sizeof(float)));
+            }
+        }
+
+        if (p.second.pointCloud()) {
+            glDrawArrays(GL_POINTS, 0, p.second.vis.vertices.size());
+        } else {
             glDrawArrays(GL_TRIANGLES, 0, p.second.vis.vertices.size() / 3);
         }
 
         glDisableClientState(GL_VERTEX_ARRAY);
-        glDisableClientState(GL_NORMAL_ARRAY);
+        if (p.second.hasNormals()) {
+            glDisableClientState(GL_NORMAL_ARRAY);
+        } else {
+            glEnable(GL_LIGHTING);
+        }
 
         if (vbos_) {
             glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -204,7 +221,7 @@ void OpenGLWidget::paintGL() {
                 }*/
 
         for (auto& p : meshes_) {
-            if (!p.second.enabled) {
+            if (!p.second.enabled || p.second.pointCloud()) {
                 continue;
             }
 
@@ -237,18 +254,42 @@ void OpenGLWidget::view(const void* handle, Mesh&& mesh) {
     data.mesh = std::move(mesh);
     data.vis = {};
 
-    for (std::size_t fi = 0; fi < data.mesh.faces.size(); ++fi) {
-        Pvl::Vec3f normal = data.mesh.normal(fi);
-        for (int i = 0; i < 3; ++i) {
-            //    data.vis.indices.push_back(vh.index());
-            const Pvl::Vec3f& vertex = data.mesh.vertices[data.mesh.faces[fi][i]];
+    if (data.mesh.faces.empty()) {
+        // point cloud
+        bool hasNormals = !data.mesh.normals.empty();
+        data.vis.vertices.reserve(data.mesh.vertices.size() * 3);
+        if (hasNormals) {
+            data.vis.normals.reserve(data.mesh.vertices.size() * 3);
+        }
+        for (std::size_t vi = 0; vi < data.mesh.vertices.size(); ++vi) {
+            const Pvl::Vec3f& vertex = data.mesh.vertices[vi];
             data.vis.vertices.push_back(vertex[0]);
             data.vis.vertices.push_back(vertex[1]);
             data.vis.vertices.push_back(vertex[2]);
 
-            data.vis.normals.push_back(normal[0]);
-            data.vis.normals.push_back(normal[1]);
-            data.vis.normals.push_back(normal[2]);
+            if (hasNormals) {
+                const Pvl::Vec3f normal = Pvl::normalize(data.mesh.normals[vi]);
+                data.vis.normals.push_back(normal[0]);
+                data.vis.normals.push_back(normal[1]);
+                data.vis.normals.push_back(normal[2]);
+            }
+        }
+    } else {
+        data.vis.vertices.reserve(data.mesh.faces.size() * 9);
+        data.vis.normals.reserve(data.mesh.faces.size() * 9);
+        for (std::size_t fi = 0; fi < data.mesh.faces.size(); ++fi) {
+            Pvl::Vec3f normal = data.mesh.normal(fi);
+            for (int i = 0; i < 3; ++i) {
+                //    data.vis.indices.push_back(vh.index());
+                const Pvl::Vec3f& vertex = data.mesh.vertices[data.mesh.faces[fi][i]];
+                data.vis.vertices.push_back(vertex[0]);
+                data.vis.vertices.push_back(vertex[1]);
+                data.vis.vertices.push_back(vertex[2]);
+
+                data.vis.normals.push_back(normal[0]);
+                data.vis.normals.push_back(normal[1]);
+                data.vis.normals.push_back(normal[2]);
+            }
         }
     }
 
@@ -329,8 +370,9 @@ void OpenGLWidget::mouseDoubleClickEvent(QMouseEvent* event) {
     float t;
     float t_min = std::numeric_limits<float>::max();
     selected = Pvl::NONE;
+    tbb::mutex mutex;
     for (const auto& p : meshes_) {
-        for (std::size_t fi = 0; fi < p.second.mesh.faces.size(); ++fi) {
+        tbb::parallel_for<std::size_t>(0, p.second.mesh.faces.size(), [&](std::size_t fi) {
             Triangle tri;
             for (int i = 0; i < 3; ++i) {
                 tri[i] = p.second.mesh.vertices[p.second.mesh.faces[fi][i]];
@@ -338,11 +380,13 @@ void OpenGLWidget::mouseDoubleClickEvent(QMouseEvent* event) {
             if (intersection(ray, tri, t)) {
                 std::cout << "Intersected triangle at " << t << std::endl;
                 if (t > 0 && t < t_min) {
+                    mutex.lock();
                     selected = tri;
                     t_min = t;
+                    mutex.unlock();
                 }
             }
-        }
+        });
     }
 
     if (selected) {

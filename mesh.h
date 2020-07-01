@@ -12,6 +12,7 @@ struct Mesh {
     using Face = std::array<int, 3>;
 
     std::vector<Pvl::Vec3f> vertices;
+    std::vector<Pvl::Vec3f> normals;
     std::vector<Face> faces;
 
     Pvl::Vec3f normal(const int fi) const {
@@ -36,14 +37,22 @@ inline Pvl::Optional<Mesh> loadPly(std::istream& in, const Progress& prog) {
     std::string line;
     std::size_t numVertices = 0;
     std::size_t numFaces = 0;
+    char prop[256];
+    bool hasNormals = false;
     while (std::getline(in, line)) {
         sscanf(line.c_str(), "element vertex %zu", &numVertices);
         sscanf(line.c_str(), "element face %zu", &numFaces);
+        sscanf(line.c_str(), "property float %s", prop);
+        hasNormals |= std::string(prop) == "nx";
+
         if (line == "end_header") {
             break;
         }
     }
     std::cout << "Loading mesh with " << numVertices << " vertices and " << numFaces << " faces" << std::endl;
+    if (hasNormals) {
+        std::cout << "Has point normals" << std::endl;
+    }
     Mesh mesh;
     mesh.vertices.reserve(numVertices);
     mesh.faces.reserve(numFaces);
@@ -54,8 +63,15 @@ inline Pvl::Optional<Mesh> loadPly(std::istream& in, const Progress& prog) {
     for (std::size_t i = 0; i < numVertices; ++i) {
         std::getline(in, line);
         Pvl::Vec3f p;
-        sscanf(line.c_str(), "%f%f%f", &p[0], &p[1], &p[2]);
-        mesh.vertices.push_back(p);
+        if (hasNormals) {
+            Pvl::Vec3f n;
+            sscanf(line.c_str(), "%f%f%f%f%f%f", &p[0], &p[1], &p[2], &n[0], &n[1], &n[2]);
+            mesh.vertices.push_back(p);
+            mesh.normals.push_back(n);
+        } else {
+            sscanf(line.c_str(), "%f%f%f", &p[0], &p[1], &p[2]);
+            mesh.vertices.push_back(p);
+        }
 
         if (i == nextProg) {
             if (prog(i * indexToProg)) {

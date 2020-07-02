@@ -34,9 +34,9 @@ int main(int argc, char* argv[]) {
 
     MainWindow w;
 #ifdef NDEBUG
-    w.setWindowTitle(QString("Malosh build ") + __DATE__ + " " + __TIME__);
+    w.setWindowTitle(QString("MPCV build ") + __DATE__ + " " + __TIME__);
 #else
-    w.setWindowTitle(QString("Malosh DEBUG BUILD ") + __DATE__ + " " + __TIME__);
+    w.setWindowTitle(QString("MPCV DEBUG BUILD ") + __DATE__ + " " + __TIME__);
 #endif
     w.showMaximized();
     QStringList files = a.arguments();

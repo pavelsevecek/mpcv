@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(malosh LANGUAGES CXX)
+project(mpcv LANGUAGES CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -10,6 +10,8 @@ set(CMAKE_AUTORCC ON)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 
 # QtCreator supports the following variables for Android, which are identical to qmake Android variables.
 # Check http://doc.qt.io/qt-5/deployment-android.html for more information.
@@ -27,7 +29,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(TBB REQUIRED tbb)
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 
-  add_executable(malosh
+  add_executable(mpcv
     main.cpp
     mainwindow.cpp
     mainwindow.h
@@ -41,4 +43,4 @@ find_package(Qt5 COMPONENTS Widgets REQUIRED)
     coordinates.h
   )
 
-target_link_libraries(malosh PRIVATE Qt5::Widgets Qt5::Gui GL GLU tbb "/usr/lib/liblaslib.a" "/usr/lib/libopenvdb.so" "/usr/lib/libHalf.so")
+target_link_libraries(mpcv PRIVATE Qt5::Widgets Qt5::Gui GL GLU tbb "/usr/lib/liblaslib.a" "/usr/lib/libopenvdb.so" "/usr/lib/libHalf.so")

@@ -142,6 +142,8 @@ public:
 
     void laplacianSmooth();
 
+    void simplify();
+
     void repair();
 
     void screenshot(const QString& file) {
@@ -183,4 +185,7 @@ public:
 
 private:
     void updateCamera();
+
+    template <typename MeshFunc>
+    void meshOperation(const MeshFunc& meshFunc);
 };

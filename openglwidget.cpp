@@ -1,5 +1,7 @@
 #include "openglwidget.h"
+#include "pvl/QuadricDecimator.hpp"
 #include "pvl/Refinement.hpp"
+#include "pvl/Simplification.hpp"
 #include "pvl/TriangleMesh.hpp"
 #include <tbb/tbb.h>
 
@@ -9,37 +11,6 @@
 #include <openvdb/openvdb.h>
 #include <openvdb/tools/MeshToVolume.h>
 #include <openvdb/tools/VolumeToMesh.h>
-
-
-#if 0
-static void updateLights(const Camera& camera) {
-    float dist = Pvl::norm(camera.eye() - camera.target()) * 100;
-    Pvl::Mat33f mat = Pvl::invert(camera.matrix());
-    Pvl::Vec3f pos1 = Pvl::prod(mat, Pvl::Vec3f(2, -2, -4)) * dist;
-    Pvl::Vec3f pos2 = Pvl::prod(mat, Pvl::Vec3f(5, 0, -1)) * dist;
-    glLightfv(GL_LIGHT0, GL_POSITION, reinterpret_cast<const float*>(&pos1));
-    GLfloat diffuse1[] = { 1.1f, 1.05f, 1.f, 1.0 };
-    // GLfloat diffuse1[] = { 0., 0., 0., 1.0 };
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse1);
-
-    glLightfv(GL_LIGHT1, GL_POSITION, reinterpret_cast<const float*>(&pos2));
-    // GLfloat diffuse2[] = { 0.f, 0.f, 0.f, 1.f };
-    GLfloat diffuse1[] = { 1.1f, 1.05f, 1.f, 1.0 };
-
-    GLfloat diffuse2[] = { 0.6f, 0.65f, 0.7f, 1.f };
-    glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuse2);
-}
-#else
-static void updateLights(const Camera& camera) {
-    float dist = Pvl::norm(camera.eye() - camera.target());
-    // Pvl::Vec3f eye = camera.eye() * 1000.f;
-    // GLfloat pos1[] = { eye[0], eye[1], eye[2] };
-    GLfloat pos1[] = { 0, 0, 0, 1.e3f * dist };
-    glLightfv(GL_LIGHT0, GL_POSITION, pos1);
-    GLfloat diffuse1[] = { 1.f, 1.f, 1.f, 1.f };
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse1);
-}
-#endif
 
 void OpenGLWidget::resizeGL(const int width, const int height) {
     std::cout << "Resizing " << width << " " << height << std::endl;
@@ -460,7 +431,8 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent* ev) {
     update();
 }
 
-void OpenGLWidget::laplacianSmooth() {
+template <typename MeshFunc>
+void OpenGLWidget::meshOperation(const MeshFunc& meshFunc) {
     std::vector<std::pair<const void*, MeshData*>> meshData;
     // cannot erase from meshes_ while iterating, so add it to a vector
     for (auto& p : meshes_) {
@@ -487,12 +459,15 @@ void OpenGLWidget::laplacianSmooth() {
         }
         mesh.faces = {};
 
-        Pvl::laplacianSmoothing(trimesh, true, 0.f);
+        meshFunc(trimesh);
 
         for (const Pvl::Vec3f& p : trimesh.points) {
             mesh.vertices.push_back(p);
         }
         for (Pvl::FaceHandle fh : trimesh.faceRange()) {
+            if (!trimesh.valid(fh)) {
+                continue;
+            }
             auto face = trimesh.faceVertices(fh);
             mesh.faces.push_back(Mesh::Face{ face[0].index(), face[1].index(), face[2].index() });
         }
@@ -501,6 +476,18 @@ void OpenGLWidget::laplacianSmooth() {
 
     camera_ = cameraState;
     update();
+}
+
+void OpenGLWidget::laplacianSmooth() {
+    meshOperation([](Pvl::TriangleMesh<Pvl::Vec3f>& mesh) { Pvl::laplacianSmoothing(mesh, true, 0.f); });
+}
+
+void OpenGLWidget::simplify() {
+    meshOperation([](Pvl::TriangleMesh<Pvl::Vec3f>& mesh) {
+        // decimate to 1/4 faces
+        Pvl::PreventFaceFoldDecorator<Pvl::QuadricDecimator<Pvl::TriangleMesh<Pvl::Vec3f>>> decimator(mesh);
+        Pvl::simplify(mesh, decimator, Pvl::FaceCountStop(3 * mesh.numFaces() / 4));
+    });
 }
 
 namespace {

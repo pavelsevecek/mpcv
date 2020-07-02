@@ -3,6 +3,7 @@
 #include "pvl/Refinement.hpp"
 #include "pvl/Simplification.hpp"
 #include "pvl/TriangleMesh.hpp"
+#include <QPainter>
 #include <tbb/tbb.h>
 
 #ifdef foreach
@@ -100,6 +101,7 @@ void OpenGLWidget::paintGL() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // glClearColor(0, 0.1, 0.3, 1);
     glClearColor(0.5, 0.5, 0.6, 1);
+    glEnable(GL_DEPTH_TEST); // gets disabled by text rendering
     if (meshes_.empty()) {
         glFlush();
         return;
@@ -113,6 +115,7 @@ void OpenGLWidget::paintGL() {
    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);*/
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
+
     float dist = Pvl::norm(camera_.eye() - camera_.target());
 
     gluPerspective(fov_ * 180.f / M_PI, float(width()) / height(), 0.001 * dist, 1000. * dist);
@@ -240,6 +243,31 @@ void OpenGLWidget::paintGL() {
         }
     }
 
+    {
+
+        /*glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        // glOrtho(0.0f, width(), height(), 0.0f, 0.0f, 1.0f);
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();*/
+
+        QPainter painter(this);
+        painter.setPen(Qt::black);
+        painter.setFont(QFont("Helvetica", 10));
+        painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
+        std::size_t numVertex = 0, numFaces = 0;
+        for (const auto& p : meshes_) {
+            if (p.second.enabled) {
+                numVertex += p.second.mesh.vertices.size();
+                numFaces += p.second.mesh.faces.size();
+            }
+        }
+        painter.drawText(30, height() - 50, "Vertices:");
+        painter.drawText(100, height() - 50, QString::number(numVertex));
+        painter.drawText(30, height() - 30, "Faces:");
+        painter.drawText(100, height() - 30, QString::number(numFaces));
+        painter.end();
+    }
 
     glFlush();
 }

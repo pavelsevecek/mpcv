@@ -39,6 +39,8 @@ private slots:
 
     void on_actionLaplacian_smoothing_triggered();
 
+    void on_actionRepair_triggered();
+
 private:
     Ui::MainWindow* ui_;
     OpenGLWidget* viewport_;

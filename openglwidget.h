@@ -142,6 +142,8 @@ public:
 
     void laplacianSmooth();
 
+    void repair();
+
     void screenshot(const QString& file) {
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
         glReadBuffer(GL_FRONT);

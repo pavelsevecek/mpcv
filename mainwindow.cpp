@@ -215,3 +215,7 @@ void MainWindow::on_actionScreenshot_triggered() {
 void MainWindow::on_actionLaplacian_smoothing_triggered() {
     viewport_->laplacianSmooth();
 }
+
+void MainWindow::on_actionRepair_triggered() {
+    viewport_->repair();
+}

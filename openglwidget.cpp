@@ -3,6 +3,14 @@
 #include "pvl/TriangleMesh.hpp"
 #include <tbb/tbb.h>
 
+#ifdef foreach
+#undef foreach // every time a programmer defines a macro, god kills a kitten
+#endif
+#include <openvdb/openvdb.h>
+#include <openvdb/tools/MeshToVolume.h>
+#include <openvdb/tools/VolumeToMesh.h>
+
+
 #if 0
 static void updateLights(const Camera& camera) {
     float dist = Pvl::norm(camera.eye() - camera.target()) * 100;
@@ -488,6 +496,92 @@ void OpenGLWidget::laplacianSmooth() {
             auto face = trimesh.faceVertices(fh);
             mesh.faces.push_back(Mesh::Face{ face[0].index(), face[1].index(), face[2].index() });
         }
+        view(handle, std::move(mesh));
+    }
+
+    camera_ = cameraState;
+    update();
+}
+
+namespace {
+class MeshAdapter {
+    Mesh& mesh_;
+    openvdb::math::Transform::Ptr tr_;
+
+
+public:
+    MeshAdapter(Mesh& mesh, openvdb::math::Transform::Ptr tr)
+        : mesh_(mesh)
+        , tr_(tr) {}
+
+    size_t polygonCount() const {
+        return mesh_.faces.size();
+    }
+    size_t pointCount() const {
+        return mesh_.vertices.size();
+    }
+    size_t vertexCount(size_t) const {
+        return 3;
+    }
+
+    void getIndexSpacePoint(size_t n, size_t v, openvdb::Vec3d& pos) const {
+        const Pvl::Vec3f& p = mesh_.vertices[mesh_.faces[n][v]];
+        pos = openvdb::Vec3d(p[0], p[1], p[2]);
+        pos = tr_->worldToIndex(pos);
+    }
+};
+} // namespace
+
+
+void repairMesh(Mesh& mesh) {
+    openvdb::initialize();
+
+    Pvl::Box3f box;
+    for (const Pvl::Vec3f& p : mesh.vertices) {
+        box.extend(p);
+    }
+    float size = std::max({ box.size()[0], box.size()[1], box.size()[2] });
+    openvdb::math::Transform::Ptr tr = openvdb::math::Transform::createLinearTransform(0.01 * size);
+    MeshAdapter adapter(mesh, tr);
+
+    std::cout << "converting to volume" << std::endl;
+    openvdb::FloatGrid::Ptr grid = openvdb::tools::meshToVolume<openvdb::FloatGrid>(adapter, *tr, 1., 1.);
+    std::cout << "Created volume with " << grid->activeVoxelCount() << " active voxels" << std::endl;
+    std::cout << "converting to mesh" << std::endl;
+    std::vector<openvdb::Vec3s> points;
+    std::vector<openvdb::Vec3I> triangles;
+    std::vector<openvdb::Vec4I> quads;
+    openvdb::tools::volumeToMesh(*grid, points, triangles, quads);
+
+    mesh = {};
+    for (auto p : points) {
+        mesh.vertices.emplace_back(p.x(), p.y(), p.z());
+    }
+    for (auto& f : triangles) {
+        mesh.faces.emplace_back(Mesh::Face{ f[0], f[2], f[1] });
+    }
+    for (auto& f : quads) {
+        mesh.faces.emplace_back(Mesh::Face{ f[0], f[2], f[1] });
+        mesh.faces.emplace_back(Mesh::Face{ f[0], f[3], f[2] });
+    }
+}
+
+void OpenGLWidget::repair() {
+    std::vector<std::pair<const void*, MeshData*>> meshData;
+    // cannot erase from meshes_ while iterating, so add it to a vector
+    for (auto& p : meshes_) {
+        if (!p.second.pointCloud()) {
+            meshData.emplace_back(p.first, &p.second);
+        }
+    }
+    // also backup camera
+    auto cameraState = camera_;
+
+    for (const auto& p : meshData) {
+        const void* handle = p.first;
+        Mesh mesh = std::move(p.second->mesh);
+        deleteMesh(handle);
+        repairMesh(mesh);
         view(handle, std::move(mesh));
     }
 

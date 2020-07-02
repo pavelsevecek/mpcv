@@ -41,4 +41,4 @@ find_package(Qt5 COMPONENTS Widgets REQUIRED)
     coordinates.h
   )
 
-target_link_libraries(malosh PRIVATE Qt5::Widgets Qt5::Gui GL GLU tbb "/usr/lib/liblaslib.a")
+target_link_libraries(malosh PRIVATE Qt5::Widgets Qt5::Gui GL GLU tbb "/usr/lib/liblaslib.a" "/usr/lib/libopenvdb.so" "/usr/lib/libHalf.so")

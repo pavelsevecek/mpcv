@@ -36,6 +36,26 @@ struct Mesh {
     }
 };
 
+
+inline void savePly(std::ostream& out, const Mesh& mesh) {
+    out << "ply\n";
+    out << "format ascii 1.0\n";
+    out << "comment Created by MPCV\n";
+    out << "element vertex " << mesh.vertices.size() << "\n";
+    out << "property float x\n";
+    out << "property float y\n";
+    out << "property float z\n";
+    out << "element face " << mesh.faces.size() << "\n";
+    out << "property list uchar int vertex_index\n";
+    out << "end_header\n";
+    for (const Pvl::Vec3f& p : mesh.vertices) {
+        out << p[0] << " " << p[1] << " " << p[2] << "\n";
+    }
+    for (const Mesh::Face& f : mesh.faces) {
+        out << "3 " << f[0] << " " << f[1] << " " << f[2] << "\n";
+    }
+}
+
 template <typename Progress>
 inline Mesh loadPly(std::istream& in, const Progress& prog) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();

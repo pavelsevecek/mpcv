@@ -223,3 +223,21 @@ void MainWindow::on_actionRepair_triggered() {
 void MainWindow::on_actionSimplify_triggered() {
     viewport_->simplify();
 }
+
+void MainWindow::on_actionQuit_triggered() {
+    close();
+}
+
+void MainWindow::on_actionSave_triggered() {
+    QListWidget* list = this->findChild<QListWidget*>("MeshList");
+    QListWidgetItem* item = list->currentItem();
+    if (!item) {
+        QMessageBox box(QMessageBox::Warning, "No selection", "Select a mesh to save");
+        box.exec();
+        return;
+    }
+    QString file = QFileDialog::getSaveFileName(this, tr("Save mesh"), ".", tr(".ply object (*.ply)"));
+    if (!file.isEmpty()) {
+        viewport_->saveMesh(file, item);
+    }
+}

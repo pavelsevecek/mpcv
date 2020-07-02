@@ -34,6 +34,13 @@ struct Mesh {
             return Pvl::Vec3f(0, 0, 1);
         }
     }
+    float area(const uint32_t fi) const {
+        Pvl::Vec3f p0 = vertices[faces[fi][0]];
+        Pvl::Vec3f p1 = vertices[faces[fi][1]];
+        Pvl::Vec3f p2 = vertices[faces[fi][2]];
+
+        return 0.5f * Pvl::norm(Pvl::crossProd(p1 - p0, p2 - p0));
+    }
 };
 
 

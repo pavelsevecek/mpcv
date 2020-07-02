@@ -41,6 +41,10 @@ find_package(Qt5 COMPONENTS Widgets REQUIRED)
     mesh.h
     las.h
     coordinates.h
+    bvh.h
+    bvh.cpp
+    ambient.h
+    ambient.cpp
   )
 
 target_link_libraries(mpcv PRIVATE Qt5::Widgets Qt5::Gui GL GLU tbb "/usr/lib/liblaslib.a" "/usr/lib/libopenvdb.so" "/usr/lib/libHalf.so")

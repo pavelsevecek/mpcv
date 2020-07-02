@@ -92,8 +92,15 @@
     <addaction name="actionSimplify"/>
     <addaction name="actionRepair"/>
    </widget>
+   <widget class="QMenu" name="menuShading">
+    <property name="title">
+     <string>Shading</string>
+    </property>
+    <addaction name="actionAmbient_occlusion"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuMesh"/>
+   <addaction name="menuShading"/>
   </widget>
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
@@ -185,6 +192,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="actionAmbient_occlusion">
+   <property name="text">
+    <string>Ambient occlusion</string>
    </property>
   </action>
  </widget>

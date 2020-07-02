@@ -1,4 +1,5 @@
 #include "openglwidget.h"
+#include "ambient.h"
 #include "pvl/QuadricDecimator.hpp"
 #include "pvl/Refinement.hpp"
 #include "pvl/Simplification.hpp"
@@ -154,6 +155,8 @@ void OpenGLWidget::paintGL() {
         }
         if (p.second.hasColors()) {
             glEnableClientState(GL_COLOR_ARRAY);
+            glDisable(GL_LIGHTING);
+            glShadeModel(GL_SMOOTH);
         }
         glEnableClientState(GL_VERTEX_ARRAY);
 
@@ -187,6 +190,8 @@ void OpenGLWidget::paintGL() {
         glDisableClientState(GL_VERTEX_ARRAY);
         if (p.second.hasColors()) {
             glDisableClientState(GL_COLOR_ARRAY);
+            glEnable(GL_LIGHTING);
+            glShadeModel(GL_FLAT);
         }
         if (p.second.hasNormals()) {
             glDisableClientState(GL_NORMAL_ARRAY);
@@ -274,6 +279,7 @@ void OpenGLWidget::paintGL() {
 
 void OpenGLWidget::view(const void* handle, Mesh&& mesh) {
     bool firstMesh = meshes_.empty();
+    bool updateOnly = meshes_.find(handle) != meshes_.end();
     MeshData& data = meshes_[handle];
     data.mesh = std::move(mesh);
     data.vis = {};
@@ -314,12 +320,16 @@ void OpenGLWidget::view(const void* handle, Mesh&& mesh) {
             }
         }
     } else {
+        // mesh
+        bool hasColors = !data.mesh.colors.empty();
         data.vis.vertices.reserve(data.mesh.faces.size() * 9);
         data.vis.normals.reserve(data.mesh.faces.size() * 9);
+        if (hasColors) {
+            data.vis.colors.reserve(data.mesh.faces.size() * 9);
+        }
         for (std::size_t fi = 0; fi < data.mesh.faces.size(); ++fi) {
             Pvl::Vec3f normal = data.mesh.normal(fi);
             for (int i = 0; i < 3; ++i) {
-                //    data.vis.indices.push_back(vh.index());
                 Pvl::Vec3f vertex = conv(data.mesh.vertices[data.mesh.faces[fi][i]]);
                 data.vis.vertices.push_back(vertex[0]);
                 data.vis.vertices.push_back(vertex[1]);
@@ -328,12 +338,21 @@ void OpenGLWidget::view(const void* handle, Mesh&& mesh) {
                 data.vis.normals.push_back(normal[0]);
                 data.vis.normals.push_back(normal[1]);
                 data.vis.normals.push_back(normal[2]);
+
+                if (hasColors) {
+                    Color c = data.mesh.colors[data.mesh.faces[fi][i]];
+                    data.vis.colors.push_back(c[0]);
+                    data.vis.colors.push_back(c[1]);
+                    data.vis.colors.push_back(c[2]);
+                }
             }
         }
     }
 
     if (vbos_) {
-        glGenBuffers(1, &data.vbo);
+        if (!updateOnly) {
+            glGenBuffers(1, &data.vbo);
+        }
         glBindBuffer(GL_ARRAY_BUFFER, data.vbo);
         glBufferData(GL_ARRAY_BUFFER,
             (data.vis.vertices.size() + data.vis.normals.size()) * sizeof(float) +
@@ -597,6 +616,31 @@ void OpenGLWidget::repair() {
         Mesh mesh = std::move(p.second->mesh);
         deleteMesh(handle);
         repairMesh(mesh);
+        view(handle, std::move(mesh));
+    }
+
+    camera_ = cameraState;
+    update();
+}
+
+void OpenGLWidget::computeAmbientOcclusion(std::function<bool(float)> progress) {
+    //  std::vector<std::pair<const void*, MeshData*>> meshData;
+    // cannot erase from meshes_ while iterating, so add it to a vector
+    /*   for (auto& p : meshes_) {
+           if (!p.second.pointCloud()) {
+               meshData.emplace_back(p.first, &p.second);
+           }
+       }
+       */
+    // also backup camera
+    auto cameraState = camera_;
+
+    /// \todo no need to delete mesh, only updates
+    for (const auto& p : meshes_) {
+        const void* handle = p.first;
+        Mesh mesh = std::move(p.second.mesh);
+        //  deleteMesh(handle);
+        ::computeAmbientOcclusion(mesh, progress);
         view(handle, std::move(mesh));
     }
 

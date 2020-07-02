@@ -241,3 +241,15 @@ void MainWindow::on_actionSave_triggered() {
         viewport_->saveMesh(file, item);
     }
 }
+
+void MainWindow::on_actionAmbient_occlusion_triggered() {
+    QProgressDialog dialog("Computing A0", "Cancel", 0, 100);
+    dialog.setWindowModality(Qt::WindowModal);
+    QCoreApplication::processEvents();
+    auto callback = [&dialog](float prog) {
+        dialog.setValue(prog);
+        QCoreApplication::processEvents();
+        return dialog.wasCanceled();
+    };
+    viewport_->computeAmbientOcclusion(callback);
+}

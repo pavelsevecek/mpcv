@@ -47,6 +47,8 @@ private slots:
 
     void on_actionSave_triggered();
 
+    void on_actionAmbient_occlusion_triggered();
+
 private:
     Ui::MainWindow* ui_;
     OpenGLWidget* viewport_;

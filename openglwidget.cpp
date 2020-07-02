@@ -541,7 +541,7 @@ void repairMesh(Mesh& mesh) {
         box.extend(p);
     }
     float size = std::max({ box.size()[0], box.size()[1], box.size()[2] });
-    openvdb::math::Transform::Ptr tr = openvdb::math::Transform::createLinearTransform(0.01 * size);
+    openvdb::math::Transform::Ptr tr = openvdb::math::Transform::createLinearTransform(0.000666 * size);
     MeshAdapter adapter(mesh, tr);
 
     std::cout << "converting to volume" << std::endl;
@@ -564,6 +564,8 @@ void repairMesh(Mesh& mesh) {
         mesh.faces.emplace_back(Mesh::Face{ f[0], f[2], f[1] });
         mesh.faces.emplace_back(Mesh::Face{ f[0], f[3], f[2] });
     }
+
+    openvdb::deinitialize();
 }
 
 void OpenGLWidget::repair() {

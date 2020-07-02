@@ -60,6 +60,9 @@
         <height>0</height>
        </size>
       </property>
+      <property name="selectionMode">
+       <enum>QAbstractItemView::ExtendedSelection</enum>
+      </property>
      </widget>
     </item>
    </layout>
@@ -79,7 +82,14 @@
     </property>
     <addaction name="actionOpenFile"/>
    </widget>
+   <widget class="QMenu" name="menuMesh">
+    <property name="title">
+     <string>Mesh</string>
+    </property>
+    <addaction name="actionLaplacian_smoothing"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuMesh"/>
   </widget>
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
@@ -140,6 +150,11 @@
    </property>
    <property name="text">
     <string>Screenshot</string>
+   </property>
+  </action>
+  <action name="actionLaplacian_smoothing">
+   <property name="text">
+    <string>Laplacian smoothing</string>
    </property>
   </action>
  </widget>

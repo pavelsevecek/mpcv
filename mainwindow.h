@@ -10,6 +10,8 @@ class MainWindow;
 class QListWidgetItem;
 QT_END_NAMESPACE
 
+class OpenGLWidget;
+
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
@@ -35,6 +37,10 @@ private slots:
 
     void on_actionScreenshot_triggered();
 
+    void on_actionLaplacian_smoothing_triggered();
+
 private:
-    Ui::MainWindow* ui;
+    Ui::MainWindow* ui_;
+    OpenGLWidget* viewport_;
+    std::vector<QListWidgetItem*> itemsA, itemsB;
 };

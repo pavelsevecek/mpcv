@@ -1,4 +1,6 @@
 #include "openglwidget.h"
+#include "pvl/Refinement.hpp"
+#include "pvl/TriangleMesh.hpp"
 #include <tbb/tbb.h>
 
 #if 0
@@ -447,5 +449,48 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent* ev) {
         camera_.pan(Pvl::Vec2i(dp.x(), dp.y()));
     }
 
+    update();
+}
+
+void OpenGLWidget::laplacianSmooth() {
+    std::vector<std::pair<const void*, MeshData*>> meshData;
+    // cannot erase from meshes_ while iterating, so add it to a vector
+    for (auto& p : meshes_) {
+        if (!p.second.pointCloud()) {
+            meshData.emplace_back(p.first, &p.second);
+        }
+    }
+    // also backup camera
+    auto cameraState = camera_;
+
+    for (const auto& p : meshData) {
+        const void* handle = p.first;
+        Mesh mesh = std::move(p.second->mesh);
+        deleteMesh(handle);
+        Pvl::TriangleMesh<Pvl::Vec3f> trimesh;
+        for (const Pvl::Vec3f& p : mesh.vertices) {
+            trimesh.addVertex();
+            trimesh.points.push_back(p);
+        }
+        /// \todo external point storage?
+        mesh.vertices = {}; // free memory
+        for (const Mesh::Face& f : mesh.faces) {
+            trimesh.addFace(Pvl::VertexHandle(f[0]), Pvl::VertexHandle(f[1]), Pvl::VertexHandle(f[2]));
+        }
+        mesh.faces = {};
+
+        Pvl::laplacianSmoothing(trimesh, true, 0.f);
+
+        for (const Pvl::Vec3f& p : trimesh.points) {
+            mesh.vertices.push_back(p);
+        }
+        for (Pvl::FaceHandle fh : trimesh.faceRange()) {
+            auto face = trimesh.faceVertices(fh);
+            mesh.faces.push_back(Mesh::Face{ face[0].index(), face[1].index(), face[2].index() });
+        }
+        view(handle, std::move(mesh));
+    }
+
+    camera_ = cameraState;
     update();
 }

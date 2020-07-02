@@ -17,32 +17,11 @@ static bool checkMod = true;
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
-    , ui(new Ui::MainWindow) {
-    ui->setupUi(this);
+    , ui_(new Ui::MainWindow) {
+    ui_->setupUi(this);
 
-    QWidget* viewport = this->findChild<QWidget*>("Viewport");
-    viewport->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    // centralWidget()->layout()->setContentsMargins(0, 0, 0, 0);
-    /*if (viewport) {
-        std::cout << "viewport found" << std::endl;
-        timer.setInterval(100);
-        // timer.setSingleShot(false);
-        timer.callOnTimeout([viewport] {
-            viewport->update();
-            // std::cout << "Timer timeout" << std::endl;
-        });
-        timer.start(100);
-    } else {
-        std::cout << "NO VIEWPORT" << std::endl;
-    }*/
-
-    /*QShortcut* flipNormals = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_F), this);
-    QObject::connect(flipNormals, &QShortcut::activated, this, [this] {
-        OpenGLWidget* viewport = this->findChild<OpenGLWidget*>("Viewport");
-        static bool outward = true;
-        viewport->orientation(outward);
-        outward = !outward;
-    });*/
+    viewport_ = this->findChild<OpenGLWidget*>("Viewport");
+    viewport_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     QShortcut* showAll = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_A), this);
     QObject::connect(showAll, &QShortcut::activated, this, [this] {
@@ -83,15 +62,56 @@ MainWindow::MainWindow(QWidget* parent)
             checkMod = true;
         });
     }
+
+    QListWidget* list = this->findChild<QListWidget*>("MeshList");
+    list->setContextMenuPolicy(Qt::CustomContextMenu);
+    QObject::connect(list, &QListWidget::customContextMenuRequested, this, [this, list](const QPoint& pos) {
+        QMenu submenu;
+        QAction* actReload = submenu.addAction("Reload");
+        QAction* actClose = submenu.addAction("Close");
+
+        QPoint item = list->mapToGlobal(pos);
+        QAction* clicked = submenu.exec(item);
+        if (clicked == actClose) {
+            viewport_->deleteMesh(list->currentItem());
+            list->takeItem(list->currentIndex().row());
+        } else if (clicked == actReload) {
+            QString file = list->currentItem()->data(Qt::UserRole).toString();
+            viewport_->deleteMesh(list->currentItem());
+            list->takeItem(list->currentIndex().row());
+            open(file);
+        }
+    });
+
+    QShortcut* reloadAll = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_R), this);
+    QObject::connect(reloadAll, &QShortcut::activated, this, [this] {
+        std::cout << "Reloading all" << std::endl;
+        QListWidget* list = this->findChild<QListWidget*>("MeshList");
+        checkMod = false;
+        for (QListWidgetItem* item : list->selectedItems()) {
+            QString file = item->data(Qt::UserRole).toString();
+            viewport_->deleteMesh(item);
+            list->takeItem(list->row(item));
+            open(file);
+        }
+        checkMod = true;
+    });
 }
 
 MainWindow::~MainWindow() {
-    delete ui;
+    delete ui_;
 }
 
 void MainWindow::open(const QString& file) {
     QCoreApplication::processEvents();
     try {
+        QString ext = QFileInfo(file).suffix();
+        if (ext != "ply" && ext != "las" && ext != "laz") {
+            QMessageBox box(QMessageBox::Warning, "Error", "Unknown file format of file '" + file + "'");
+            box.exec();
+            return;
+        }
+
         QProgressDialog dialog("Loading '" + file + "'", "Cancel", 0, 100);
         dialog.setWindowModality(Qt::WindowModal);
         auto callback = [&dialog](float prog) {
@@ -102,7 +122,6 @@ void MainWindow::open(const QString& file) {
 
         // Pvl::Optional<Mesh> mesh;
         Mesh mesh;
-        QString ext = QFileInfo(file).completeSuffix();
         if (ext == "ply") {
             std::ifstream in;
             in.exceptions(std::ifstream::badbit | std::ifstream::failbit);
@@ -115,10 +134,6 @@ void MainWindow::open(const QString& file) {
             mesh = std::move(loaded.value());*/
         } else if (ext == "las" || ext == "laz") {
             mesh = loadLas(file.toStdString(), callback);
-        } else {
-            QMessageBox box(QMessageBox::Warning, "Error", "Unknown file format of file '" + file + "'");
-            box.exec();
-            return;
         }
         dialog.close();
         if (mesh.vertices.empty()) {
@@ -131,11 +146,15 @@ void MainWindow::open(const QString& file) {
         QListWidgetItem* item = new QListWidgetItem(identifier, list);
         list->addItem(item);
 
-        OpenGLWidget* viewport = this->findChild<OpenGLWidget*>("Viewport");
-        viewport->view(item, std::move(mesh));
+        viewport_->view(item, std::move(mesh));
+        item->setData(Qt::UserRole, file);
+        item->setFlags(
+            Qt::ItemIsEditable | Qt::ItemIsSelectable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
 
         /// \todo avoid firing signal
+
         item->setCheckState(Qt::CheckState::Checked);
+
 
     } catch (const std::exception& e) {
         QMessageBox box(QMessageBox::Warning, "Error", "Cannot open file '" + file + "'\n" + e.what());
@@ -158,41 +177,41 @@ void MainWindow::on_MeshList_itemChanged(QListWidgetItem* item) {
         return;
     }
     reentrant++;
-    OpenGLWidget* viewport = this->findChild<OpenGLWidget*>("Viewport");
     if (checkMod && QApplication::queryKeyboardModifiers() & Qt::CTRL) {
         QListWidget* list = item->listWidget();
         for (int i = 0; i < list->count(); ++i) {
             QListWidgetItem* it = list->item(i);
             it->setCheckState(it == item ? Qt::Checked : Qt::Unchecked);
-            viewport->toggle(it, it == item);
+            viewport_->toggle(it, it == item);
         }
     } else {
         bool on = item->checkState() == Qt::Checked;
-        viewport->toggle(item, on);
+        viewport_->toggle(item, on);
     }
     reentrant--;
 }
 
 void MainWindow::on_actionShowWireframe_changed() {
     QAction* act = this->findChild<QAction*>("actionShowWireframe");
-    OpenGLWidget* viewport = this->findChild<OpenGLWidget*>("Viewport");
-    viewport->wireframe(act->isChecked());
+    viewport_->wireframe(act->isChecked());
 }
 
 void MainWindow::on_actionShowDots_changed() {
     QAction* act = this->findChild<QAction*>("actionShowDots");
-    OpenGLWidget* viewport = this->findChild<OpenGLWidget*>("Viewport");
-    viewport->dots(act->isChecked());
+    viewport_->dots(act->isChecked());
 }
 
 void MainWindow::on_actionScreenshot_triggered() {
     QString file = QFileDialog::getSaveFileName(
         this, tr("Save screenshot"), ".", tr("PNG image (*.png);;JPEG image (*.jpg);;Targa image (*.tga)"));
     if (!file.isEmpty()) {
-        OpenGLWidget* viewport = this->findChild<OpenGLWidget*>("Viewport");
-        if (QFileInfo(file).completeSuffix().isEmpty()) {
+        if (QFileInfo(file).suffix().isEmpty()) {
             file += ".png";
         }
-        viewport->screenshot(file);
+        viewport_->screenshot(file);
     }
+}
+
+void MainWindow::on_actionLaplacian_smoothing_triggered() {
+    viewport_->laplacianSmooth();
 }

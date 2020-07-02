@@ -2,10 +2,9 @@
 
 #include "camera.h"
 #include "coordinates.h"
+#include "mesh.h"
 #include "pvl/Box.hpp"
 #include "pvl/Optional.hpp"
-//#include "pvl/TriangleMesh.hpp"
-#include "mesh.h"
 #include "quaternion.h"
 #include <GL/glu.h>
 #include <QFileInfo>
@@ -128,6 +127,20 @@ public:
         dots_ = on;
         update();
     }
+
+    void deleteMesh(const void* handle) {
+        if (handle == nullptr) {
+            // nothing?
+            return;
+        }
+        if (vbos_) {
+            glDeleteBuffers(1, &meshes_.at(handle).vbo);
+        }
+        meshes_.erase(handle);
+        update();
+    }
+
+    void laplacianSmooth();
 
     void screenshot(const QString& file) {
         glPixelStorei(GL_PACK_ALIGNMENT, 1);

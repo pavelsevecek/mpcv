@@ -552,7 +552,7 @@ void repairMesh(Mesh& mesh) {
         mesh.faces.emplace_back(Mesh::Face{ f[0], f[3], f[2] });
     }
 
-    openvdb::deinitialize();
+    openvdb::uninitialize();
 }
 
 void OpenGLWidget::repair() {

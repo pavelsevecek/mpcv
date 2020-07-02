@@ -219,3 +219,7 @@ void MainWindow::on_actionLaplacian_smoothing_triggered() {
 void MainWindow::on_actionRepair_triggered() {
     viewport_->repair();
 }
+
+void MainWindow::on_actionSimplify_triggered() {
+    viewport_->simplify();
+}

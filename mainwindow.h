@@ -41,6 +41,8 @@ private slots:
 
     void on_actionRepair_triggered();
 
+    void on_actionSimplify_triggered();
+
 private:
     Ui::MainWindow* ui_;
     OpenGLWidget* viewport_;

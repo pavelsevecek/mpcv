@@ -87,6 +87,7 @@
      <string>Mesh</string>
     </property>
     <addaction name="actionLaplacian_smoothing"/>
+    <addaction name="actionSimplify"/>
     <addaction name="actionRepair"/>
    </widget>
    <addaction name="menuFile"/>
@@ -156,6 +157,11 @@
   <action name="actionLaplacian_smoothing">
    <property name="text">
     <string>Laplacian smoothing</string>
+   </property>
+  </action>
+  <action name="actionSimplify">
+   <property name="text">
+    <string>Simplify</string>
    </property>
   </action>
   <action name="actionRepair">

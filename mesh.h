@@ -12,7 +12,7 @@
 using Color = Pvl::Vector<uint8_t, 3>;
 
 struct Mesh {
-    using Face = std::array<int, 3>;
+    using Face = std::array<uint32_t, 3>;
 
     // in local coords
     std::vector<Pvl::Vec3f> vertices;
@@ -21,7 +21,7 @@ struct Mesh {
     std::vector<Face> faces;
     Srs srs;
 
-    Pvl::Vec3f normal(const int fi) const {
+    Pvl::Vec3f normal(const uint32_t fi) const {
         Pvl::Vec3f p0 = vertices[faces[fi][0]];
         Pvl::Vec3f p1 = vertices[faces[fi][1]];
         Pvl::Vec3f p2 = vertices[faces[fi][2]];
@@ -45,7 +45,6 @@ inline Mesh loadPly(std::istream& in, const Progress& prog) {
     char prop[256];
 
     int propIdx = 0;
-    int xyzProp = 0;
     int normalProp = -1;
     int colorProp = -1;
     while (std::getline(in, line)) {
@@ -87,7 +86,7 @@ inline Mesh loadPly(std::istream& in, const Progress& prog) {
 
 
     const int progStep = std::max((numVertices + numFaces) / 100, std::size_t(100));
-    int nextProg = progStep;
+    std::size_t nextProg = progStep;
     float indexToProg = 100.f / (numVertices + numFaces);
     for (std::size_t i = 0; i < numVertices; ++i) {
         std::getline(in, line);

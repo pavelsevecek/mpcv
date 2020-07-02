@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>Malosh</string>
+   <string>MPCV</string>
   </property>
   <widget class="QWidget" name="horizontalLayoutWidget">
    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0">

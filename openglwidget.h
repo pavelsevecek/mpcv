@@ -13,6 +13,7 @@
 #include <QOpenGLFunctions>
 #include <QOpenGLWidget>
 #include <QWheelEvent>
+#include <fstream>
 #include <iostream>
 
 using Triangle = std::array<Pvl::Vec3f, 3>;
@@ -154,6 +155,11 @@ public:
         QImage image(pixels.data(), width(), height(), width() * 3, QImage::Format_BGR888);
         QImageWriter writer(file);
         writer.write(std::move(image).mirrored());
+    }
+
+    void saveMesh(const QString& file, const void* handle) {
+        std::ofstream ofs(file.toStdString());
+        savePly(ofs, meshes_.at(handle).mesh);
     }
 
     virtual void wheelEvent(QWheelEvent* event) override {

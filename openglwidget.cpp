@@ -263,9 +263,9 @@ void OpenGLWidget::paintGL() {
             }
         }
         painter.drawText(30, height() - 50, "Vertices:");
-        painter.drawText(100, height() - 50, QString::number(numVertex));
+        painter.drawText(100, height() - 50, QString("%L1").arg(numVertex));
         painter.drawText(30, height() - 30, "Faces:");
-        painter.drawText(100, height() - 30, QString::number(numFaces));
+        painter.drawText(100, height() - 30, QString("%L1").arg(numFaces));
         painter.end();
     }
 

@@ -170,9 +170,9 @@ public:
         glReadBuffer(GL_FRONT);
         std::vector<uint8_t> pixels(width() * height() * 3);
         glReadPixels(0, 0, width(), height(), GL_BGR_EXT, GL_UNSIGNED_BYTE, pixels.data());
-        QImage image(pixels.data(), width(), height(), width() * 3, QImage::Format_BGR888);
+        QImage image(pixels.data(), width(), height(), width() * 3, QImage::Format_RGB888);
         QImageWriter writer(file);
-        writer.write(std::move(image).mirrored());
+        writer.write(std::move(image).mirrored().rgbSwapped());
     }
 
     void saveMesh(const QString& file, const void* handle) {

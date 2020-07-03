@@ -12,8 +12,65 @@
 #include <QShortcut>
 #include <fstream>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 
 static bool checkMod = true;
+
+
+std::string findBasename(const QString& file) {
+    std::cout << "Running for " << file.toStdString() << std::endl;
+    if (file.isEmpty()) {
+        return {};
+    }
+    QFileInfo info(file);
+    std::string name = info.baseName().toStdString();
+    int p1, p2;
+    std::cout << "Checking path " << name << " for basename" << std::endl;
+    if (sscanf(name.c_str(), "0%d-%d", &p1, &p2) == 2) {
+        std::cout << "Detected " << name << " as window basename" << std::endl;
+        return name;
+    }
+    if (!info.isRoot()) {
+        return findBasename(info.dir().dirName());
+    } else {
+        return "";
+    }
+}
+
+std::map<std::string, Coords> parseConfig() {
+    QFileInfo info("/home/pavel/.config/mpcv/extents.csv");
+    if (!info.exists()) {
+        return {};
+    }
+    std::map<std::string, Coords> extents;
+    std::ifstream in(info.filePath().toStdString());
+    std::string line;
+    while (std::getline(in, line)) {
+        std::cout << "Read line " << line << std::endl;
+        std::stringstream ss(line);
+        std::string basename;
+        std::getline(ss, basename, ',');
+
+        std::string value;
+        std::getline(ss, value, ',');
+        double llx = std::stod(value);
+        std::getline(ss, value, ',');
+        double lly = std::stod(value);
+        std::getline(ss, value, ',');
+        double urx = std::stod(value);
+        double ury;
+        ss >> ury;
+
+        //sscanf(line.c_str(), "%s, %lf, %lf, %lf, %lf", basename, &llx, &lly, &urx, &ury);
+        std::cout << std::setprecision(12) << "Parsed line: '" << basename << "' " << llx << " " << lly << " " << urx << " " << ury << std::endl;
+        extents[basename] = Coords((llx + urx) / 2, (lly + ury) / 2);
+    }
+
+    return extents;
+}
+
+static std::map<std::string, Coords> config;
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -96,11 +153,14 @@ MainWindow::MainWindow(QWidget* parent)
         }
         checkMod = true;
     });
+
+    config = parseConfig();
 }
 
 MainWindow::~MainWindow() {
     delete ui_;
 }
+
 
 void MainWindow::open(const QString& file) {
     QCoreApplication::processEvents();
@@ -128,6 +188,13 @@ void MainWindow::open(const QString& file) {
             in.open(file.toStdString());
             // Pvl::Optional<Mesh> loaded
             mesh = loadPly(in, callback);
+            std::string basename = findBasename(QFileInfo(file).absolutePath());
+            if (!basename.empty() && config.find(basename) != config.end()){ 
+                std::cout << "Setting srs to " << config[basename][0] << "," << config[basename][1] << std::endl;
+                mesh.srs = Srs(config[basename]);
+            } else {
+                std::cout << "No srs found in config" << std::endl;
+            }
             /*if (!loaded) {
                 return;
             }

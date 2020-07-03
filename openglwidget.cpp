@@ -675,6 +675,8 @@ void OpenGLWidget::computeAmbientOcclusion(std::function<bool(float)> progress) 
     auto cameraState = camera_;
 
     /// \todo no need to delete mesh, only updates
+    std::vector<Mesh> meshes;
+    std::map<const void*, int> handleIndexMap;
     for (auto& p : meshes_) {
         const void* handle = p.first;
         if (p.second.pointCloud() || !p.second.vis.colors.empty()) {
@@ -682,13 +684,20 @@ void OpenGLWidget::computeAmbientOcclusion(std::function<bool(float)> progress) 
             p.second.flat = false;
             continue;
         }
-        Mesh mesh = std::move(p.second.mesh);
+        /*Mesh mesh = std::move(p.second.mesh);
         //  deleteMesh(handle);
         ::computeAmbientOcclusion(mesh, progress);
         p.second.flat = false;
-        view(handle, std::move(mesh));
+        view(handle, std::move(mesh));*/
+		handleIndexMap[handle] = meshes.size();
+        meshes.emplace_back(std::move(p.second.mesh));
     }
-
+    ::computeAmbientOcclusion(meshes, progress);
+    for (auto& p : meshes_) {
+        const void* handle = p.first;
+        p.second.flat = false;
+        view(handle, std::move(meshes[handleIndexMap[handle]]));
+    }
     camera_ = cameraState;
     update();
 }

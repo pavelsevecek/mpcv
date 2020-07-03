@@ -65,6 +65,7 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
     struct MeshData {
         Mesh mesh;
         bool enabled = true;
+        bool flat = true;
 
         struct {
             std::vector<float> vertices;
@@ -81,7 +82,7 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
             return !pointCloud() || !mesh.normals.empty();
         }
         bool hasColors() const {
-            return !mesh.colors.empty();
+            return !flat && !mesh.colors.empty();
         }
     };
     // Pvl::Optional<Triangle> selected;
@@ -148,6 +149,13 @@ public:
     void repair();
 
     void computeAmbientOcclusion(std::function<bool(float)> progress);
+
+    void setFlat() {
+        for (auto& p : meshes_) {
+            p.second.flat = true;
+        }
+        update();
+    }
 
     void screenshot(const QString& file) {
         glPixelStorei(GL_PACK_ALIGNMENT, 1);

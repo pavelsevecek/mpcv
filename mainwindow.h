@@ -47,7 +47,9 @@ private slots:
 
     void on_actionSave_triggered();
 
-    void on_actionAmbient_occlusion_triggered();
+    void on_actionFlat_triggered();
+
+    void on_actionAo_triggered();
 
 private:
     Ui::MainWindow* ui_;

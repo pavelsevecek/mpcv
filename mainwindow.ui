@@ -92,15 +92,8 @@
     <addaction name="actionSimplify"/>
     <addaction name="actionRepair"/>
    </widget>
-   <widget class="QMenu" name="menuShading">
-    <property name="title">
-     <string>Shading</string>
-    </property>
-    <addaction name="actionAmbient_occlusion"/>
-   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuMesh"/>
-   <addaction name="menuShading"/>
   </widget>
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
@@ -114,6 +107,10 @@
    </attribute>
    <addaction name="actionShowDots"/>
    <addaction name="actionShowWireframe"/>
+   <addaction name="separator"/>
+   <addaction name="actionFlat"/>
+   <addaction name="actionAo"/>
+   <addaction name="separator"/>
    <addaction name="actionScreenshot"/>
   </widget>
   <action name="actionOpenFile">
@@ -194,9 +191,34 @@
     <string>Ctrl+Q</string>
    </property>
   </action>
-  <action name="actionAmbient_occlusion">
+  <action name="actionFlat">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>/home/pavel/projects/resources/flat.png</normaloff>/home/pavel/projects/resources/flat.png</iconset>
+   </property>
    <property name="text">
-    <string>Ambient occlusion</string>
+    <string>Flat</string>
+   </property>
+  </action>
+  <action name="actionAo">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>/home/pavel/projects/resources/ao.png</normaloff>/home/pavel/projects/resources/ao.png</iconset>
+   </property>
+   <property name="text">
+    <string>Ao</string>
    </property>
   </action>
  </widget>

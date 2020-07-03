@@ -626,23 +626,21 @@ void OpenGLWidget::repair() {
 }
 
 void OpenGLWidget::computeAmbientOcclusion(std::function<bool(float)> progress) {
-    //  std::vector<std::pair<const void*, MeshData*>> meshData;
-    // cannot erase from meshes_ while iterating, so add it to a vector
-    /*   for (auto& p : meshes_) {
-           if (!p.second.pointCloud()) {
-               meshData.emplace_back(p.first, &p.second);
-           }
-       }
-       */
     // also backup camera
     auto cameraState = camera_;
 
     /// \todo no need to delete mesh, only updates
-    for (const auto& p : meshes_) {
+    for (auto& p : meshes_) {
         const void* handle = p.first;
+        if (p.second.pointCloud() || !p.second.vis.colors.empty()) {
+            // pc or already computed
+            p.second.flat = false;
+            continue;
+        }
         Mesh mesh = std::move(p.second.mesh);
         //  deleteMesh(handle);
         ::computeAmbientOcclusion(mesh, progress);
+        p.second.flat = false;
         view(handle, std::move(mesh));
     }
 

@@ -242,7 +242,15 @@ void MainWindow::on_actionSave_triggered() {
     }
 }
 
-void MainWindow::on_actionAmbient_occlusion_triggered() {
+
+void MainWindow::on_actionFlat_triggered() {
+    viewport_->setFlat();
+    findChild<QAction*>("actionFlat")->setEnabled(false);
+    findChild<QAction*>("actionAo")->setEnabled(true);
+    findChild<QAction*>("actionAo")->setChecked(false);
+}
+
+void MainWindow::on_actionAo_triggered() {
     QProgressDialog dialog("Computing A0", "Cancel", 0, 100);
     dialog.setWindowModality(Qt::WindowModal);
     QCoreApplication::processEvents();
@@ -252,4 +260,9 @@ void MainWindow::on_actionAmbient_occlusion_triggered() {
         return dialog.wasCanceled();
     };
     viewport_->computeAmbientOcclusion(callback);
+    if (!dialog.wasCanceled()) {
+        findChild<QAction*>("actionFlat")->setEnabled(true);
+        findChild<QAction*>("actionFlat")->setChecked(false);
+        findChild<QAction*>("actionAo")->setEnabled(false);
+    }
 }

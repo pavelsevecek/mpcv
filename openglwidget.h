@@ -83,7 +83,7 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
             return !pointCloud() || !mesh.normals.empty();
         }
         bool hasColors() const {
-            return !flat && !mesh.colors.empty();
+            return (pointCloud() || !flat) && !mesh.colors.empty();
         }
     };
     // Pvl::Optional<Triangle> selected;

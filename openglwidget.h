@@ -164,11 +164,17 @@ public:
 
     void enableMeshColors(bool on) {
         enableMeshColors_ = on;
+        if (on) {
+            enableTextures_ = false;
+        }
         update();
     }
 
     void enableTextures(bool on) {
         enableTextures_ = on;
+        if (on) {
+            enableMeshColors_ = false;
+        }
         update();
     }
 

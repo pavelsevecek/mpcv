@@ -399,7 +399,8 @@ void OpenGLWidget::view(const void* handle, TexturedMesh&& mesh) {
                 }
             }
         }
-        if (hasTexture) {
+        if (hasTexture && !updateOnly) {
+            /// \todo allow editing texture?
             glGenTextures(1, &data.texture);
             glBindTexture(GL_TEXTURE_2D, data.texture);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -435,6 +436,8 @@ void OpenGLWidget::view(const void* handle, TexturedMesh&& mesh) {
                 throw std::runtime_error("Bad depth " + std::to_string(tex.depth()));
             }
             glGenerateMipmap(GL_TEXTURE_2D);
+            QImage dummy;
+            tex.swap(dummy);
         }
     }
     if (vbos_) {

@@ -147,8 +147,12 @@ public:
             // nothing?
             return;
         }
+        MeshData& mesh = meshes_.at(handle);
         if (vbos_) {
-            glDeleteBuffers(1, &meshes_.at(handle).vbo);
+            glDeleteBuffers(1, &mesh.vbo);
+        }
+        if (meshes_.at(handle).hasTexture()) {
+            glDeleteTextures(1, &mesh.texture);
         }
         meshes_.erase(handle);
         update();

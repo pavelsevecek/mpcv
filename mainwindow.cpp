@@ -73,6 +73,16 @@ std::map<std::string, Coords> parseConfig() {
 
 static std::map<std::string, Coords> config;
 
+void geolocalize(TexturedMesh& mesh, const QString& file) {
+    std::string basename = findBasename(QFileInfo(file).absoluteFilePath());
+    if (!basename.empty() && config.find(basename) != config.end()) {
+        std::cout << "Setting srs to " << config[basename][0] << "," << config[basename][1] << std::endl;
+        mesh.srs = Srs(config[basename]);
+    } else {
+        std::cout << "No srs found in config" << std::endl;
+    }
+}
+
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , ui_(new Ui::MainWindow) {
@@ -189,20 +199,14 @@ void MainWindow::open(const QString& file) {
             in.open(file.toStdString());
             // Pvl::Optional<Mesh> loaded
             mesh = loadPly(in, callback);
-            std::string basename = findBasename(QFileInfo(file).absoluteFilePath());
-            if (!basename.empty() && config.find(basename) != config.end()) {
-                std::cout << "Setting srs to " << config[basename][0] << "," << config[basename][1]
-                          << std::endl;
-                mesh.srs = Srs(config[basename]);
-            } else {
-                std::cout << "No srs found in config" << std::endl;
-            }
+            geolocalize(mesh, file);
             /*if (!loaded) {
                 return;
             }
             mesh = std::move(loaded.value());*/
         } else if (ext == "obj") {
             mesh = loadObj(file, callback);
+            geolocalize(mesh, file);
         } else if (ext == "las" || ext == "laz") {
             mesh = loadLas(file.toStdString(), callback);
         }

@@ -483,13 +483,15 @@ void OpenGLWidget::mouseDoubleClickEvent(QMouseEvent* event) {
                 t_min = -ray.origin[2] / ray.dir[2];
             }
         } else {
+            SrsConv conv(srs_, p.second.mesh.srs);
+            Ray localRay{conv(ray.origin), ray.dir};
             tbb::parallel_for<std::size_t>(0, p.second.mesh.faces.size(), [&](std::size_t fi) {
                 Triangle tri;
                 for (int i = 0; i < 3; ++i) {
                     tri[i] = p.second.mesh.vertices[p.second.mesh.faces[fi][i]];
                 }
                 float t;
-                if (intersection(ray, tri, t) && t > 0 && t < t_min) {
+                if (intersection(localRay, tri, t) && t > 0 && t < t_min) {
                     mutex.lock();
                     t_min = t;
                     mutex.unlock();

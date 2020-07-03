@@ -13,4 +13,4 @@ inline Pvl::Vec3f sampleUnitSphere(float x, float y) {
     return Pvl::Vec3f(u * std::cos(phi), u * std::sin(phi), z);
 }
 
-void computeAmbientOcclusion(Mesh& mesh, std::function<bool(float)> progress, int sampleCnt = 10);
+void computeAmbientOcclusion(Mesh& mesh, std::function<bool(float)> progress, int sampleCnt = 20);

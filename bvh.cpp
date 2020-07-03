@@ -75,11 +75,9 @@ void Bvh<TBvhObject>::getIntersections(const Ray& ray, const TAddIntersection& a
                 const TBvhObject& obj = objects[node.start + primIdx];
                 const bool hit = obj.getIntersection(ray, current);
 
-                if (hit) {
-                    if (!addIntersection(current)) {
-                        // bailout
-                        return;
-                    }
+                if (hit && !addIntersection(current)) {
+                    // bailout
+                    return;
                 }
             }
         } else {
@@ -97,11 +95,15 @@ void Bvh<TBvhObject>::getIntersections(const Ray& ray, const TAddIntersection& a
                     std::swap(closer, other);
                 }
 
-                stack[++stackIdx] = BvhTraversal{ other, boxHits[2] };
-                stack[++stackIdx] = BvhTraversal{ closer, boxHits[0] };
-            } else if (hitc0) {
+                if (boxHits[3] > 0) {
+                    stack[++stackIdx] = BvhTraversal{ other, boxHits[2] };
+                }
+                if (boxHits[1] > 0) {
+                    stack[++stackIdx] = BvhTraversal{ closer, boxHits[0] };
+                }
+            } else if (hitc0 && boxHits[1] > 0) {
                 stack[++stackIdx] = BvhTraversal{ idx + 1, boxHits[0] };
-            } else if (hitc1) {
+            } else if (hitc1 && boxHits[3] > 0) {
                 stack[++stackIdx] = BvhTraversal{ idx + node.rightOffset, boxHits[2] };
             }
         }
@@ -112,7 +114,7 @@ void Bvh<TBvhObject>::getIntersections(const Ray& ray, const TAddIntersection& a
 template <typename TBvhObject>
 bool Bvh<TBvhObject>::isOccluded(const Ray& ray) const {
     bool occluded = false;
-    this->getIntersections(ray, [&occluded](IntersectionInfo&) {
+    getIntersections(ray, [&occluded](IntersectionInfo&) {
         occluded = true;
         return false; // do not continue with traversal
     });

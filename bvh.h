@@ -134,7 +134,7 @@ struct BvhNode {
 template <typename TBvhObject>
 class Bvh {
 private:
-    const int leafSize;
+    const uint32_t leafSize;
     uint32_t nodeCnt = 0;
     uint32_t leafCnt = 0;
 
@@ -143,7 +143,7 @@ private:
     std::vector<BvhNode> nodes;
 
 public:
-    explicit Bvh(const int leafSize = 20)
+    explicit Bvh(const uint32_t leafSize = 10)
         : leafSize(leafSize) {}
 
     /// \brief Contructs the BVH from given set of objects.

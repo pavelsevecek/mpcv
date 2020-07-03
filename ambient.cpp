@@ -1,9 +1,10 @@
 #include "ambient.h"
 #include "bvh.h"
+#include <chrono>
 #include <tbb/tbb.h>
 
 void computeAmbientOcclusion(Mesh& mesh, std::function<bool(float)> progress, int sampleCnt) {
-    Pvl::Bvh<Pvl::BvhTriangle> bvh;
+    Pvl::Bvh<Pvl::BvhTriangle> bvh(10);
     float scale;
     progress(0);
     {
@@ -22,7 +23,7 @@ void computeAmbientOcclusion(Mesh& mesh, std::function<bool(float)> progress, in
     // ad hoc
     progress(2);
     float eps = 1.e-3 * scale;
-
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     std::vector<Pvl::Vec3f> normals(mesh.vertices.size(), Pvl::Vec3f(0));
     tbb::parallel_for(std::size_t(0), mesh.faces.size(), [&](std::size_t fi) {
         const Mesh::Face& f = mesh.faces[fi];
@@ -43,7 +44,7 @@ void computeAmbientOcclusion(Mesh& mesh, std::function<bool(float)> progress, in
     int progressStep = mesh.vertices.size() / 100;
     tbb::mutex mutex;
     tbb::atomic<bool> cancelled = false;
-    tbb::parallel_for(std::size_t(0), mesh.vertices.size(), [&](std::size_t vi) {
+    tbb::parallel_for(std::size_t(0), mesh.vertices.size(), std::size_t(1), [&](std::size_t vi) {
         if (cancelled) {
             return;
         }
@@ -58,9 +59,6 @@ void computeAmbientOcclusion(Mesh& mesh, std::function<bool(float)> progress, in
                 }
             }
         }
-        // for (int i = 0; i < sampleCnt; ++i) {
-
-        //   }
         float rati = std::min(1.75f * float(nonOccludedCnt) / Pvl::sqr(sampleCnt), 1.f);
         uint8_t value = uint8_t(rati * 255);
         mesh.colors[vi] = Color(value);
@@ -76,4 +74,8 @@ void computeAmbientOcclusion(Mesh& mesh, std::function<bool(float)> progress, in
             }
         }
     });
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout << "AO calculated in "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms"
+              << std::endl;
 }

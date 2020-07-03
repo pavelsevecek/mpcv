@@ -4,13 +4,13 @@
 #include "mesh.h"
 
 template <typename Progress>
-inline Mesh loadLas(std::string file, const Progress& prog) {
+inline TexturedMesh loadLas(std::string file, const Progress& prog) {
     LASreadOpener lasreadopener;
     lasreadopener.set_file_name(file.c_str());
     // lasreadopener.set_auto_reoffset(true);
     LASreader* lasreader = lasreadopener.open();
     std::cout << "LAS has " << lasreader->npoints << " points" << std::endl;
-    Mesh mesh;
+    TexturedMesh mesh;
     // to local coordinates
     Coords center(0.5 * (lasreader->header.min_x + lasreader->header.max_x),
         0.5 * (lasreader->header.min_y + lasreader->header.max_y),

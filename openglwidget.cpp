@@ -81,6 +81,7 @@ void OpenGLWidget::initializeGL() {
     // glEnable(GL_NORMALIZE);
     glEnable(GL_COLOR_MATERIAL);
     glColorMaterial(GL_FRONT, GL_DIFFUSE);
+    glEnable(GL_TEXTURE_2D);
     // glColorMaterial(GL_FRONT, GL_AMBIENT);
     // glColorMaterial(GL_FRONT, GL_SPECULAR);
 
@@ -137,74 +138,92 @@ void OpenGLWidget::paintGL() {
 
     glColor3f(0.75, 0.75, 0.75);
     // glColor3f(0, 0, 0);
+    // glEnable(GL_TEXTURE_2D);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glPointSize(pointSize_);
-    for (auto& p : meshes_) {
-        if (!p.second.enabled) {
+    for (const auto& p : meshes_) {
+        const MeshData& mesh = p.second;
+        if (!mesh.enabled) {
             continue;
         }
 
         if (vbos_) {
-            glBindBuffer(GL_ARRAY_BUFFER, p.second.vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
         }
 
-        if (p.second.hasNormals()) {
-            glEnableClientState(GL_NORMAL_ARRAY);
-        } else {
+        bool useNormals = mesh.hasNormals();
+        bool useColors = mesh.hasColors() && (mesh.pointCloud() || enableMeshColors_);
+        bool useTexture = enableTextures_ && mesh.hasTexture();
+
+        if (useColors || useTexture) {
             glDisable(GL_LIGHTING);
         }
-        if (p.second.hasColors()) {
+        if (useNormals) {
+            glEnableClientState(GL_NORMAL_ARRAY);
+        }
+        if (useColors) {
             glEnableClientState(GL_COLOR_ARRAY);
-            glDisable(GL_LIGHTING);
-            glShadeModel(GL_SMOOTH);
+            glShadeModel(GL_SMOOTH); // for AO
+        }
+        if (useTexture) {
+            glBindTexture(GL_TEXTURE_2D, mesh.texture);
+            glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         }
         glEnableClientState(GL_VERTEX_ARRAY);
 
+        int numVert = mesh.vis.vertices.size();
+        int numNorm = mesh.vis.normals.size();
+        int numClr = mesh.vis.colors.size();
+
         if (!vbos_) {
-            glVertexPointer(3, GL_FLOAT, 0, p.second.vis.vertices.data());
-            if (p.second.hasNormals()) {
-                glNormalPointer(GL_FLOAT, 0, p.second.vis.normals.data());
+            glVertexPointer(3, GL_FLOAT, 0, mesh.vis.vertices.data());
+            if (useNormals) {
+                glNormalPointer(GL_FLOAT, 0, mesh.vis.normals.data());
             }
-            if (p.second.hasColors()) {
-                glColorPointer(3, GL_UNSIGNED_BYTE, 0, p.second.vis.colors.data());
+            if (useColors) {
+                glColorPointer(3, GL_UNSIGNED_BYTE, 0, mesh.vis.colors.data());
+            }
+            if (useTexture) {
+                glTexCoordPointer(2, GL_FLOAT, 0, mesh.vis.uv.data());
             }
         } else {
             glVertexPointer(3, GL_FLOAT, 0, (void*)0);
-            if (p.second.hasNormals()) {
-                glNormalPointer(GL_FLOAT, 0, (void*)(p.second.vis.vertices.size() * sizeof(float)));
+            if (useNormals) {
+                glNormalPointer(GL_FLOAT, 0, (void*)(numVert * sizeof(float)));
             }
-            if (p.second.hasColors()) {
-                glColorPointer(3,
-                    GL_UNSIGNED_BYTE,
-                    0,
-                    (void*)((p.second.vis.vertices.size() + p.second.vis.normals.size()) * sizeof(float)));
+            if (useColors) {
+                glColorPointer(3, GL_UNSIGNED_BYTE, 0, (void*)((numVert + numNorm) * sizeof(float)));
+            }
+            if (useTexture) {
+                glTexCoordPointer(
+                    2, GL_FLOAT, 0, (void*)((numVert + numNorm) * sizeof(float) + numClr * sizeof(uint8_t)));
             }
         }
 
-        if (p.second.pointCloud()) {
-            glDrawArrays(GL_POINTS, 0, p.second.vis.vertices.size() / 3);
+        if (mesh.pointCloud()) {
+            glDrawArrays(GL_POINTS, 0, mesh.vis.vertices.size() / 3);
         } else {
-            glDrawArrays(GL_TRIANGLES, 0, p.second.vis.vertices.size() / 3);
+            glDrawArrays(GL_TRIANGLES, 0, mesh.vis.vertices.size() / 3);
         }
 
         glDisableClientState(GL_VERTEX_ARRAY);
-        if (p.second.hasColors()) {
+        if (useTexture) {
+            glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+        if (useColors) {
             glDisableClientState(GL_COLOR_ARRAY);
-            glEnable(GL_LIGHTING);
             glShadeModel(GL_FLAT);
         }
-        if (p.second.hasNormals()) {
+        if (useNormals) {
             glDisableClientState(GL_NORMAL_ARRAY);
-        } else {
-            glEnable(GL_LIGHTING);
         }
+        glEnable(GL_LIGHTING);
 
         if (vbos_) {
             glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
     }
-    // glDisableClientState(GL_VERTEX_ARRAY);
-    // glDisableClientState(GL_NORMAL_ARRAY);
 
     if (wireframe_ || dots_) {
         Pvl::Vec3f delta = -camera_.direction() * 5.e-4f * dist;
@@ -212,47 +231,37 @@ void OpenGLWidget::paintGL() {
         glColor3f(0, 0, 0);
         glPolygonMode(GL_FRONT_AND_BACK, wireframe_ ? GL_LINE : GL_POINT);
 
-        //  glEnableClientState(GL_NORMAL_ARRAY);
-        // glEnableClientState(GL_VERTEX_ARRAY);
-
-        /*        for (auto& p : meshes_) {
-                    if (!p.second.enabled) {
-                        continue;
-                    }
-                    glNormalPointer(GL_FLOAT, 0, p.second.vis.normals.data());
-                    glVertexPointer(3, GL_FLOAT, 0, p.second.vis.vertices.data());
-                    glDrawArrays(GL_TRIANGLES, 0, p.second.vis.vertices.size() / 3);
-                }*/
-
-        for (auto& p : meshes_) {
-            if (!p.second.enabled || p.second.pointCloud()) {
+        for (const auto& p : meshes_) {
+            const MeshData& mesh = p.second;
+            if (!mesh.enabled || mesh.pointCloud()) {
                 continue;
             }
 
-            glBindBuffer(GL_ARRAY_BUFFER, p.second.vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
 
-            glEnableClientState(GL_NORMAL_ARRAY);
+            // glEnableClientState(GL_NORMAL_ARRAY);
             glEnableClientState(GL_VERTEX_ARRAY);
 
-            /* glVertexPointer(3, GL_FLOAT, 0, p.second.vis.vertices.data());
-             glNormalPointer(GL_FLOAT, 0, p.second.vis.normals.data());
-             glDrawArrays(GL_TRIANGLES, 0, p.second.vis.vertices.size() / 3);*/
             glVertexPointer(3, GL_FLOAT, 0, (void*)0);
-            glNormalPointer(GL_FLOAT, 0, (void*)(p.second.vis.vertices.size() * sizeof(float)));
-            glDrawArrays(GL_TRIANGLES, 0, p.second.vis.vertices.size() / 3);
+            //            glNormalPointer(GL_FLOAT, 0, (void*)(p.second.vis.vertices.size() * sizeof(float)));
+            glDrawArrays(GL_TRIANGLES, 0, mesh.vis.vertices.size() / 3);
 
             glDisableClientState(GL_VERTEX_ARRAY);
-            glDisableClientState(GL_NORMAL_ARRAY);
+            // glDisableClientState(GL_NORMAL_ARRAY);
 
             glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 
     glColor3f(0, 0, 0);
     Pvl::Box3f bbox;
     for (const auto& p : meshes_) {
-        if (p.second.enabled) {
-            bbox.extend(p.second.box);
+        const MeshData& mesh = p.second;
+        if (mesh.enabled) {
+            SrsConv conv(mesh.mesh.srs, srs_);
+            bbox.extend(conv(mesh.box.lower()));
+            bbox.extend(conv(mesh.box.upper()));
         }
     }
     float x1 = bbox.lower()[0] - 0.5f * grid_;
@@ -311,7 +320,7 @@ void OpenGLWidget::paintGL() {
     glFlush();
 }
 
-void OpenGLWidget::view(const void* handle, Mesh&& mesh) {
+void OpenGLWidget::view(const void* handle, TexturedMesh&& mesh) {
     bool firstMesh = meshes_.empty();
     bool updateOnly = meshes_.find(handle) != meshes_.end();
     MeshData& data = meshes_[handle];
@@ -356,10 +365,14 @@ void OpenGLWidget::view(const void* handle, Mesh&& mesh) {
     } else {
         // mesh
         bool hasColors = !data.mesh.colors.empty();
+        bool hasTexture = !data.mesh.uv.empty();
         data.vis.vertices.reserve(data.mesh.faces.size() * 9);
         data.vis.normals.reserve(data.mesh.faces.size() * 9);
         if (hasColors) {
             data.vis.colors.reserve(data.mesh.faces.size() * 9);
+        }
+        if (hasTexture) {
+            data.vis.uv.reserve(data.mesh.faces.size() * 6);
         }
         for (std::size_t fi = 0; fi < data.mesh.faces.size(); ++fi) {
             Pvl::Vec3f normal = data.mesh.normal(fi);
@@ -379,30 +392,75 @@ void OpenGLWidget::view(const void* handle, Mesh&& mesh) {
                     data.vis.colors.push_back(c[1]);
                     data.vis.colors.push_back(c[2]);
                 }
+                if (hasTexture) {
+                    Pvl::Vec2f uv = data.mesh.uv[data.mesh.texIds[fi][i]];
+                    data.vis.uv.push_back(uv[0]);
+                    data.vis.uv.push_back(1.f - uv[1]);
+                }
             }
         }
-    }
+        if (hasTexture) {
+            glGenTextures(1, &data.texture);
+            glBindTexture(GL_TEXTURE_2D, data.texture);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+            QImage& tex = data.mesh.texture;
+
+            if (tex.depth() == 24) {
+                std::cout << "Using 24bit texture" << std::endl;
+                glTexImage2D(GL_TEXTURE_2D,
+                    0,
+                    GL_RGB,
+                    tex.width(),
+                    tex.height(),
+                    0,
+                    GL_RGB,
+                    GL_UNSIGNED_BYTE,
+                    tex.bits());
+            } else if (tex.depth() == 32) {
+                std::cout << "Using 32bit texture" << std::endl;
+                glTexImage2D(GL_TEXTURE_2D,
+                    0,
+                    GL_RGB,
+                    tex.width(),
+                    tex.height(),
+                    0,
+                    GL_BGRA,
+                    GL_UNSIGNED_BYTE,
+                    tex.bits());
+            } else {
+                throw std::runtime_error("Bad depth " + std::to_string(tex.depth()));
+            }
+            glGenerateMipmap(GL_TEXTURE_2D);
+        }
+    }
     if (vbos_) {
         if (!updateOnly) {
             glGenBuffers(1, &data.vbo);
         }
+        int numVert = data.vis.vertices.size();
+        int numNorm = data.vis.normals.size();
+        int numClr = data.vis.colors.size();
+        int numTex = data.vis.uv.size();
         glBindBuffer(GL_ARRAY_BUFFER, data.vbo);
         glBufferData(GL_ARRAY_BUFFER,
-            (data.vis.vertices.size() + data.vis.normals.size()) * sizeof(float) +
-                data.vis.colors.size() * sizeof(uint8_t),
+            (numVert + numNorm + numTex) * sizeof(float) + numClr * sizeof(uint8_t),
             0,
             GL_STATIC_DRAW);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, numVert * sizeof(float), data.vis.vertices.data());
         glBufferSubData(
-            GL_ARRAY_BUFFER, 0, data.vis.vertices.size() * sizeof(float), data.vis.vertices.data());
+            GL_ARRAY_BUFFER, numVert * sizeof(float), numNorm * sizeof(float), data.vis.normals.data());
         glBufferSubData(GL_ARRAY_BUFFER,
-            data.vis.vertices.size() * sizeof(float),
-            data.vis.normals.size() * sizeof(float),
-            data.vis.normals.data());
-        glBufferSubData(GL_ARRAY_BUFFER,
-            data.vis.vertices.size() * sizeof(float) + data.vis.normals.size() * sizeof(float),
-            data.vis.colors.size() * sizeof(uint8_t),
+            (numVert + numNorm) * sizeof(float),
+            numClr * sizeof(uint8_t),
             data.vis.colors.data());
+        glBufferSubData(GL_ARRAY_BUFFER,
+            (numVert + numNorm) * sizeof(float) + numClr * sizeof(uint8_t),
+            numTex * sizeof(float),
+            data.vis.uv.data());
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
@@ -484,7 +542,7 @@ void OpenGLWidget::mouseDoubleClickEvent(QMouseEvent* event) {
             }
         } else {
             SrsConv conv(srs_, p.second.mesh.srs);
-            Ray localRay{conv(ray.origin), ray.dir};
+            Ray localRay{ conv(ray.origin), ray.dir };
             tbb::parallel_for<std::size_t>(0, p.second.mesh.faces.size(), [&](std::size_t fi) {
                 Triangle tri;
                 for (int i = 0; i < 3; ++i) {
@@ -539,7 +597,7 @@ void OpenGLWidget::meshOperation(const MeshFunc& meshFunc) {
 
     for (const auto& p : meshData) {
         const void* handle = p.first;
-        Mesh mesh = std::move(p.second->mesh);
+        TexturedMesh mesh = std::move(p.second->mesh);
         deleteMesh(handle);
         Pvl::TriangleMesh<Pvl::Vec3f> trimesh;
         for (const Pvl::Vec3f& p : mesh.vertices) {
@@ -548,7 +606,7 @@ void OpenGLWidget::meshOperation(const MeshFunc& meshFunc) {
         }
         /// \todo external point storage?
         mesh.vertices = {}; // free memory
-        for (const Mesh::Face& f : mesh.faces) {
+        for (const TexturedMesh::Face& f : mesh.faces) {
             trimesh.addFace(Pvl::VertexHandle(f[0]), Pvl::VertexHandle(f[1]), Pvl::VertexHandle(f[2]));
         }
         mesh.faces = {};
@@ -563,7 +621,7 @@ void OpenGLWidget::meshOperation(const MeshFunc& meshFunc) {
                 continue;
             }
             auto face = trimesh.faceVertices(fh);
-            mesh.faces.push_back(Mesh::Face{ face[0].index(), face[1].index(), face[2].index() });
+            mesh.faces.push_back(TexturedMesh::Face{ face[0].index(), face[1].index(), face[2].index() });
         }
         view(handle, std::move(mesh));
     }
@@ -586,12 +644,12 @@ void OpenGLWidget::simplify() {
 
 namespace {
 class MeshAdapter {
-    Mesh& mesh_;
+    TexturedMesh& mesh_;
     openvdb::math::Transform::Ptr tr_;
 
 
 public:
-    MeshAdapter(Mesh& mesh, openvdb::math::Transform::Ptr tr)
+    MeshAdapter(TexturedMesh& mesh, openvdb::math::Transform::Ptr tr)
         : mesh_(mesh)
         , tr_(tr) {}
 
@@ -614,7 +672,7 @@ public:
 } // namespace
 
 
-void repairMesh(Mesh& mesh) {
+void repairMesh(TexturedMesh& mesh) {
     openvdb::initialize();
 
     Pvl::Box3f box;
@@ -639,11 +697,11 @@ void repairMesh(Mesh& mesh) {
         mesh.vertices.emplace_back(p.x(), p.y(), p.z());
     }
     for (auto& f : triangles) {
-        mesh.faces.emplace_back(Mesh::Face{ f[0], f[2], f[1] });
+        mesh.faces.emplace_back(TexturedMesh::Face{ f[0], f[2], f[1] });
     }
     for (auto& f : quads) {
-        mesh.faces.emplace_back(Mesh::Face{ f[0], f[2], f[1] });
-        mesh.faces.emplace_back(Mesh::Face{ f[0], f[3], f[2] });
+        mesh.faces.emplace_back(TexturedMesh::Face{ f[0], f[2], f[1] });
+        mesh.faces.emplace_back(TexturedMesh::Face{ f[0], f[3], f[2] });
     }
 
     openvdb::uninitialize();
@@ -662,7 +720,7 @@ void OpenGLWidget::repair() {
 
     for (const auto& p : meshData) {
         const void* handle = p.first;
-        Mesh mesh = std::move(p.second->mesh);
+        TexturedMesh mesh = std::move(p.second->mesh);
         deleteMesh(handle);
         repairMesh(mesh);
         view(handle, std::move(mesh));
@@ -677,13 +735,12 @@ void OpenGLWidget::computeAmbientOcclusion(std::function<bool(float)> progress) 
     auto cameraState = camera_;
 
     /// \todo no need to delete mesh, only updates
-    std::vector<Mesh> meshes;
+    std::vector<TexturedMesh> meshes;
     std::map<const void*, int> handleIndexMap;
     for (auto& p : meshes_) {
         const void* handle = p.first;
         if (p.second.pointCloud() || !p.second.vis.colors.empty()) {
             // pc or already computed
-            p.second.flat = false;
             continue;
         }
         /*Mesh mesh = std::move(p.second.mesh);
@@ -691,15 +748,16 @@ void OpenGLWidget::computeAmbientOcclusion(std::function<bool(float)> progress) 
         ::computeAmbientOcclusion(mesh, progress);
         p.second.flat = false;
         view(handle, std::move(mesh));*/
-		handleIndexMap[handle] = meshes.size();
+        handleIndexMap[handle] = meshes.size();
         meshes.emplace_back(std::move(p.second.mesh));
     }
-    ::computeAmbientOcclusion(meshes, progress);
-    for (auto& p : meshes_) {
-        const void* handle = p.first;
-        p.second.flat = false;
-        view(handle, std::move(meshes[handleIndexMap[handle]]));
+    if (!meshes.empty()) {
+        ambientOcclusion(meshes, progress);
+        for (auto& p : meshes_) {
+            const void* handle = p.first;
+            view(handle, std::move(meshes[handleIndexMap[handle]]));
+        }
     }
     camera_ = cameraState;
-    update();
+    enableMeshColors(true);
 }

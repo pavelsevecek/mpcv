@@ -11,22 +11,22 @@
 #include <QProgressDialog>
 #include <QShortcut>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <iomanip>
 
 static bool checkMod = true;
 
 
 std::string findBasename(const QString& file) {
     std::cout << "Running for " << file.toStdString() << std::endl;
-    if (file.isEmpty()) {
+    if (file.isEmpty() || file == ".") {
         return {};
     }
     QFileInfo info(file);
     std::string name = info.baseName().toStdString();
     int p1, p2;
-    std::cout << "Checking path " << name << " for basename" << std::endl;
+    std::cout << "Checking path '" << name << "' for basename" << std::endl;
     if (sscanf(name.c_str(), "0%d-%d", &p1, &p2) == 2) {
         std::cout << "Detected " << name << " as window basename" << std::endl;
         return name;
@@ -62,8 +62,9 @@ std::map<std::string, Coords> parseConfig() {
         double ury;
         ss >> ury;
 
-        //sscanf(line.c_str(), "%s, %lf, %lf, %lf, %lf", basename, &llx, &lly, &urx, &ury);
-        std::cout << std::setprecision(12) << "Parsed line: '" << basename << "' " << llx << " " << lly << " " << urx << " " << ury << std::endl;
+        // sscanf(line.c_str(), "%s, %lf, %lf, %lf, %lf", basename, &llx, &lly, &urx, &ury);
+        std::cout << std::setprecision(12) << "Parsed line: '" << basename << "' " << llx << " " << lly << " "
+                  << urx << " " << ury << std::endl;
         extents[basename] = Coords((llx + urx) / 2, (lly + ury) / 2);
     }
 
@@ -166,7 +167,7 @@ void MainWindow::open(const QString& file) {
     QCoreApplication::processEvents();
     try {
         QString ext = QFileInfo(file).suffix();
-        if (ext != "ply" && ext != "las" && ext != "laz") {
+        if (ext != "ply" && ext != "obj" && ext != "las" && ext != "laz") {
             QMessageBox box(QMessageBox::Warning, "Error", "Unknown file format of file '" + file + "'");
             box.exec();
             return;
@@ -181,16 +182,17 @@ void MainWindow::open(const QString& file) {
         };
 
         // Pvl::Optional<Mesh> mesh;
-        Mesh mesh;
+        TexturedMesh mesh;
         if (ext == "ply") {
             std::ifstream in;
             in.exceptions(std::ifstream::badbit | std::ifstream::failbit);
             in.open(file.toStdString());
             // Pvl::Optional<Mesh> loaded
             mesh = loadPly(in, callback);
-            std::string basename = findBasename(QFileInfo(file).absolutePath());
-            if (!basename.empty() && config.find(basename) != config.end()){ 
-                std::cout << "Setting srs to " << config[basename][0] << "," << config[basename][1] << std::endl;
+            std::string basename = findBasename(QFileInfo(file).absoluteFilePath());
+            if (!basename.empty() && config.find(basename) != config.end()) {
+                std::cout << "Setting srs to " << config[basename][0] << "," << config[basename][1]
+                          << std::endl;
                 mesh.srs = Srs(config[basename]);
             } else {
                 std::cout << "No srs found in config" << std::endl;
@@ -199,6 +201,8 @@ void MainWindow::open(const QString& file) {
                 return;
             }
             mesh = std::move(loaded.value());*/
+        } else if (ext == "obj") {
+            mesh = loadObj(file, callback);
         } else if (ext == "las" || ext == "laz") {
             mesh = loadLas(file.toStdString(), callback);
         }
@@ -309,12 +313,16 @@ void MainWindow::on_actionSave_triggered() {
     }
 }
 
-
-void MainWindow::on_actionFlat_triggered() {
-    viewport_->setFlat();
-    findChild<QAction*>("actionFlat")->setEnabled(false);
-    findChild<QAction*>("actionAo")->setEnabled(true);
-    findChild<QAction*>("actionAo")->setChecked(false);
+void MainWindow::buttonPushed(QAction* pushed) {
+    QAction* texture = findChild<QAction*>("actionTexture");
+    QAction* flat = findChild<QAction*>("actionFlat");
+    QAction* ao = findChild<QAction*>("actionAo");
+    texture->setEnabled(texture != pushed);
+    texture->setChecked(texture == pushed);
+    flat->setEnabled(flat != pushed);
+    flat->setChecked(flat == pushed);
+    ao->setEnabled(ao != pushed);
+    ao->setChecked(ao == pushed);
 }
 
 void MainWindow::on_actionAo_triggered() {
@@ -327,12 +335,20 @@ void MainWindow::on_actionAo_triggered() {
         return dialog.wasCanceled();
     };
     viewport_->computeAmbientOcclusion(callback);
-    if (!dialog.wasCanceled()) {
-        findChild<QAction*>("actionFlat")->setEnabled(true);
-        findChild<QAction*>("actionFlat")->setChecked(false);
-        findChild<QAction*>("actionAo")->setEnabled(false);
-    }
+    buttonPushed(findChild<QAction*>("actionAo"));
 }
+
+void MainWindow::on_actionTexture_triggered() {
+    viewport_->enableTextures(true);
+    buttonPushed(findChild<QAction*>("actionTexture"));
+}
+
+void MainWindow::on_actionFlat_triggered() {
+    viewport_->enableTextures(false);
+    viewport_->enableMeshColors(false);
+    buttonPushed(findChild<QAction*>("actionFlat"));
+}
+
 
 void MainWindow::on_actionGrid_triggered() {
     QAction* act = this->findChild<QAction*>("actionGrid");

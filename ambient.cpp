@@ -1,17 +1,19 @@
 #include "ambient.h"
-#include "coordinates.h"
 #include "bvh.h"
+#include "coordinates.h"
 #include <chrono>
-#include <tbb/tbb.h>
+#include <iostream>
 #include <map>
+#include <tbb/tbb.h>
 
 struct Edge {
     int i1, i2;
 
     Edge() = default;
 
-    Edge(int a, int b) 
-        : i1(a), i2(b) {
+    Edge(int a, int b)
+        : i1(a)
+        , i2(b) {
         if (i2 < i1) {
             std::swap(i1, i2);
         }
@@ -22,7 +24,7 @@ struct Edge {
     }
 };
 
-void computeAmbientOcclusion(std::vector<Mesh>& meshes, std::function<bool(float)> progress, int sampleCnt) {
+void ambientOcclusion(std::vector<TexturedMesh>& meshes, std::function<bool(float)> progress, int sampleCnt) {
     Pvl::Bvh<Pvl::BvhTriangle> bvh(10);
     Srs referenceSrs = meshes.front().srs;
 
@@ -30,10 +32,10 @@ void computeAmbientOcclusion(std::vector<Mesh>& meshes, std::function<bool(float
     Pvl::Box3f box;
     progress(0);
     std::vector<Pvl::BvhTriangle> triangles;
-    for (const Mesh& mesh : meshes) {
+    for (const TexturedMesh& mesh : meshes) {
         SrsConv meshToRef(mesh.srs, referenceSrs);
 
-        for (const Mesh::Face& f : mesh.faces) {
+        for (const TexturedMesh::Face& f : mesh.faces) {
             Pvl::Vec3f v1 = meshToRef(mesh.vertices[f[0]]);
             Pvl::Vec3f v2 = meshToRef(mesh.vertices[f[1]]);
             Pvl::Vec3f v3 = meshToRef(mesh.vertices[f[2]]);
@@ -45,15 +47,15 @@ void computeAmbientOcclusion(std::vector<Mesh>& meshes, std::function<bool(float
     triangles = {};
 
 
-    scale = std::max(box.size()[0], box.size()[1]); 
+    scale = std::max(box.size()[0], box.size()[1]);
 
     // ad hoc
     progress(2);
     float eps = 1.e-3 * scale;
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-/*    if (progress(4)) {
-        return;
-    }*/
+    /*    if (progress(4)) {
+            return;
+        }*/
     /*std::vector<bool> isBoundary(mesh.vertices.size(), false);
     for (auto&p : edgeMap) {
         if (p.second == 1) {
@@ -63,21 +65,21 @@ void computeAmbientOcclusion(std::vector<Mesh>& meshes, std::function<bool(float
     edgeMap.clear();*/
 
     tbb::tbb_thread::id mainThreadId = tbb::this_tbb_thread::get_id();
-    for (Mesh& mesh : meshes ){
+    for (TexturedMesh& mesh : meshes) {
         SrsConv meshToRef(mesh.srs, referenceSrs);
 
         std::vector<Pvl::Vec3f> normals(mesh.vertices.size(), Pvl::Vec3f(0));
-        //std::map<Edge, int> edgeMap;
+        // std::map<Edge, int> edgeMap;
 
         for (std::size_t fi = 0; fi < mesh.faces.size(); ++fi) {
-            const Mesh::Face& f = mesh.faces[fi];
+            const TexturedMesh::Face& f = mesh.faces[fi];
             const Pvl::Vec3f n = mesh.normal(fi) * mesh.area(fi);
             normals[f[0]] += n;
             normals[f[1]] += n;
             normals[f[2]] += n;
-          /*  edgeMap[Edge(f[0], f[1])]++;
-            edgeMap[Edge(f[1], f[2])]++;
-            edgeMap[Edge(f[2], f[0])]++;*/
+            /*  edgeMap[Edge(f[0], f[1])]++;
+              edgeMap[Edge(f[1], f[2])]++;
+              edgeMap[Edge(f[2], f[0])]++;*/
         }
 
         mesh.colors.resize(mesh.vertices.size());
@@ -87,7 +89,7 @@ void computeAmbientOcclusion(std::vector<Mesh>& meshes, std::function<bool(float
         tbb::atomic<int> computedCnt = 0;
         tbb::atomic<int> nextProgress = progressStep;
         tbb::mutex mutex;
-        tbb::atomic<bool> cancelled = false;        
+        tbb::atomic<bool> cancelled = false;
         tbb::parallel_for(std::size_t(0), mesh.vertices.size(), [&](std::size_t vi) {
             if (cancelled) {
                 return;

@@ -47,14 +47,18 @@ private slots:
 
     void on_actionSave_triggered();
 
-    void on_actionFlat_triggered();
-
     void on_actionAo_triggered();
 
     void on_actionGrid_triggered();
+
+    void on_actionTexture_triggered();
+
+    void on_actionFlat_triggered();
 
 private:
     Ui::MainWindow* ui_;
     OpenGLWidget* viewport_;
     std::vector<QListWidgetItem*> itemsA, itemsB;
+
+    void buttonPushed(QAction* pushed);
 };

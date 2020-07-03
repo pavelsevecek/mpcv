@@ -111,6 +111,7 @@
    <addaction name="separator"/>
    <addaction name="actionFlat"/>
    <addaction name="actionAo"/>
+   <addaction name="actionTexture"/>
    <addaction name="separator"/>
    <addaction name="actionScreenshot"/>
   </widget>
@@ -197,10 +198,10 @@
     <bool>true</bool>
    </property>
    <property name="checked">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="icon">
     <iconset>
@@ -238,6 +239,27 @@
    </property>
    <property name="text">
     <string>Grid</string>
+   </property>
+  </action>
+  <action name="actionTexture">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>/home/pavel/projects/resources/tex.png</normaloff>../../../resources/tex.png</iconset>
+   </property>
+   <property name="text">
+    <string>Texture</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+T</string>
    </property>
   </action>
  </widget>

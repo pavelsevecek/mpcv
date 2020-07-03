@@ -63,27 +63,33 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
     Q_OBJECT
 
     struct MeshData {
-        Mesh mesh;
+        TexturedMesh mesh;
         Pvl::Box3f box;
         bool enabled = true;
-        bool flat = true;
 
         struct {
             std::vector<float> vertices;
             std::vector<float> normals;
+            std::vector<float> uv;
             std::vector<uint8_t> colors;
         } vis;
 
+        GLuint texture;
         GLuint vbo;
 
         bool pointCloud() const {
             return mesh.faces.empty();
         }
         bool hasNormals() const {
+            // mesh always has (face) normals
             return !pointCloud() || !mesh.normals.empty();
         }
         bool hasColors() const {
-            return (pointCloud() || !flat) && !mesh.colors.empty();
+            return !mesh.colors.empty();
+        }
+        bool hasTexture() const {
+            // point cloud cannot have texture
+            return !pointCloud() && !mesh.uv.empty();
         }
     };
     // Pvl::Optional<Triangle> selected;
@@ -94,6 +100,9 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
     float pointSize_ = 2.f;
     float grid_ = 1.f;
     bool showGrid_ = false;
+
+    bool enableMeshColors_ = false; // currently only used for AO, needs to be computed first
+    bool enableTextures_ = true;
 
     std::map<const void*, MeshData> meshes_;
     bool wireframe_ = false;
@@ -116,7 +125,7 @@ public:
 
     virtual void paintGL() override;
 
-    void view(const void* handle, Mesh&& mesh);
+    void view(const void* handle, TexturedMesh&& mesh);
 
     void toggle(const void* handle, bool on) {
         meshes_[handle].enabled = on;
@@ -153,10 +162,13 @@ public:
 
     void computeAmbientOcclusion(std::function<bool(float)> progress);
 
-    void setFlat() {
-        for (auto& p : meshes_) {
-            p.second.flat = true;
-        }
+    void enableMeshColors(bool on) {
+        enableMeshColors_ = on;
+        update();
+    }
+
+    void enableTextures(bool on) {
+        enableTextures_ = on;
         update();
     }
 

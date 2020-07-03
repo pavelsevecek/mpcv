@@ -39,6 +39,7 @@ find_package(Qt5 COMPONENTS Widgets REQUIRED)
     camera.h
     quaternion.h
     mesh.h
+    mesh.cpp
     las.h
     coordinates.h
     bvh.h

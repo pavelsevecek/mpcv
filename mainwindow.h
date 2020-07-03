@@ -51,6 +51,8 @@ private slots:
 
     void on_actionAo_triggered();
 
+    void on_actionGrid_triggered();
+
 private:
     Ui::MainWindow* ui_;
     OpenGLWidget* viewport_;

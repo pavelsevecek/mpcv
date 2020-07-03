@@ -266,3 +266,8 @@ void MainWindow::on_actionAo_triggered() {
         findChild<QAction*>("actionAo")->setEnabled(false);
     }
 }
+
+void MainWindow::on_actionGrid_triggered() {
+    QAction* act = this->findChild<QAction*>("actionGrid");
+    viewport_->grid(act->isChecked());
+}

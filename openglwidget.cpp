@@ -248,31 +248,65 @@ void OpenGLWidget::paintGL() {
         }
     }
 
-    {
+    glColor3f(0, 0, 0);
+    Pvl::Box3f bbox;
+    for (const auto& p : meshes_) {
+        if (p.second.enabled) {
+            bbox.extend(p.second.box);
+        }
+    }
+    float x1 = bbox.lower()[0] - 0.5f * grid_;
+    float x2 = x1 + ceil(bbox.size()[0] / grid_ + 0.5f) * grid_;
+    float y1 = bbox.lower()[1] - 0.5f * grid_;
+    float y2 = y1 + ceil(bbox.size()[1] / grid_ + 0.5f) * grid_;
+    float z0 = bbox.center()[2];
+    if (showGrid_) {
+        glBegin(GL_LINES);
+        for (float x = x1; x <= x2; x += grid_) {
+            glVertex3f(x, y1, z0);
+            glVertex3f(x, y2, z0);
+        }
+        for (float y = y1; y <= y2; y += grid_) {
+            glVertex3f(x1, y, z0);
+            glVertex3f(x2, y, z0);
+        }
+        glEnd();
+    }
 
-        /*glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        // glOrtho(0.0f, width(), height(), 0.0f, 0.0f, 1.0f);
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();*/
 
-        QPainter painter(this);
-        painter.setPen(Qt::black);
-        painter.setFont(QFont("Helvetica", 10));
-        painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
-        std::size_t numVertex = 0, numFaces = 0;
-        for (const auto& p : meshes_) {
-            if (p.second.enabled) {
-                numVertex += p.second.mesh.vertices.size();
-                numFaces += p.second.mesh.faces.size();
+    QPainter painter(this);
+    painter.setPen(Qt::black);
+    painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
+
+    if (showGrid_) {
+        painter.setFont(QFont("Helvetica", 8));
+        for (float x = x1; x <= x2; x += grid_) {
+            if (Pvl::Optional<Pvl::Vec2f> proj = camera_.unproject(Pvl::Vec3f(x, y1 - 0.1 * grid_, z0))) {
+                painter.drawText(proj.value()[0], proj.value()[1], QString::number(x - x1));
             }
         }
-        painter.drawText(30, height() - 50, "Vertices:");
-        painter.drawText(100, height() - 50, QString("%L1").arg(numVertex));
-        painter.drawText(30, height() - 30, "Faces:");
-        painter.drawText(100, height() - 30, QString("%L1").arg(numFaces));
-        painter.end();
+        for (float y = y1; y <= y2; y += grid_) {
+            if (Pvl::Optional<Pvl::Vec2f> proj = camera_.unproject(Pvl::Vec3f(x1 - 0.16 * grid_, y, z0))) {
+                painter.drawText(proj.value()[0], proj.value()[1], QString::number(y - y1));
+            }
+        }
     }
+
+    painter.setFont(QFont("Helvetica", 10));
+
+    std::size_t numVertex = 0, numFaces = 0;
+    for (const auto& p : meshes_) {
+        if (p.second.enabled) {
+            numVertex += p.second.mesh.vertices.size();
+            numFaces += p.second.mesh.faces.size();
+        }
+    }
+    painter.drawText(30, height() - 50, "Vertices:");
+    painter.drawText(100, height() - 50, QString("%L1").arg(numVertex));
+    painter.drawText(30, height() - 30, "Faces:");
+    painter.drawText(100, height() - 30, QString("%L1").arg(numFaces));
+    painter.end();
+
 
     glFlush();
 }
@@ -372,22 +406,33 @@ void OpenGLWidget::view(const void* handle, Mesh&& mesh) {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
+    data.box = Pvl::Box3f{};
+    for (const Pvl::Vec3f& p : data.mesh.vertices) {
+        data.box.extend(p);
+    }
+    std::cout << "Mesh has extents " << data.box.lower()[0] << "," << data.box.lower()[1] << ":"
+              << data.box.upper()[0] << "," << data.box.upper()[1] << std::endl;
+
     // std::cout << "First mesh = " << firstMesh << std::endl;
     if (firstMesh) {
-        Pvl::Box3f box;
-        for (const Pvl::Vec3f& p : data.mesh.vertices) {
-            box.extend(p);
-        }
-        std::cout << "Mesh has extents " << box.lower()[0] << "," << box.lower()[1] << ":" << box.upper()[0]
-                  << "," << box.upper()[1] << std::endl;
-        Pvl::Vec3f center = box.center();
-        float zoom = 1.5 * box.size()[0];
+        Pvl::Vec3f center = data.box.center();
+        float scale = std::max(data.box.size()[0], data.box.size()[1]);
+        float zoom = 1.5 * scale;
 
         camera_ = Camera(center + Pvl::Vec3f(0, 0, zoom),
             center,
             Pvl::Vec3f(0, 1, 0),
             fov_,
             Pvl::Vec2i(width(), height()));
+
+        double gridBase = 0.2 * scale;
+        grid_ = std::pow(10., std::floor(std::log10(gridBase)));
+        if (5.f * grid_ < gridBase) {
+            grid_ *= 5.f; // allow 5e10^n grids
+        } else if (2.f * grid_ < gridBase) {
+            grid_ *= 2.f; // allow 2e10^n grids
+        }
+        std::cout << "Grid = " << grid_ << std::endl;
     }
     update();
 }

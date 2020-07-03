@@ -64,6 +64,7 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
 
     struct MeshData {
         Mesh mesh;
+        Pvl::Box3f box;
         bool enabled = true;
         bool flat = true;
 
@@ -90,7 +91,9 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
     Camera camera_;
     Srs srs_;
     float fov_ = M_PI / 4.f;
-    float pointSize_ = 2;
+    float pointSize_ = 2.f;
+    float grid_ = 1.f;
+    bool showGrid_ = false;
 
     std::map<const void*, MeshData> meshes_;
     bool wireframe_ = false;
@@ -154,6 +157,11 @@ public:
         for (auto& p : meshes_) {
             p.second.flat = true;
         }
+        update();
+    }
+
+    void grid(bool on) {
+        showGrid_ = on;
         update();
     }
 

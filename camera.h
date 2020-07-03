@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pvl/Matrix.hpp"
+#include "pvl/Optional.hpp"
 #include <iostream>
 
 struct Ray {
@@ -93,5 +94,22 @@ public:
         return ray;
     }
 
-    // Pvl::Vec2f unproject(const Pvl::Vec3f& coords) const {}
+    Pvl::Optional<Pvl::Vec2f> unproject(const Pvl::Vec3f& r) const {
+        const Pvl::Vec3f dr = r - eye_;
+        const float proj = Pvl::dotProd(dr, dir_);
+        if (proj <= 0.f) {
+            return Pvl::NONE;
+        }
+        const Pvl::Vec3f r0 = dr / proj;
+        // convert [-1, 1] to [0, imageSize]
+        Pvl::Vec3f left0 = Pvl::normalize(left_);
+        float leftLength = Pvl::norm(left_);
+        Pvl::Vec3f up0 = Pvl::normalize(up_);
+        float upLength = Pvl::norm(up_);
+        const float leftRel = float(Pvl::dotProd(left0, r0) / leftLength);
+        const float upRel = float(Pvl::dotProd(up0, r0) / upLength);
+        const float x = 0.5f * (1.f - leftRel) * size_[0];
+        const float y = 0.5f * (1.f - upRel) * size_[1];
+        return Pvl::Vec2f(x, y);
+    }
 };

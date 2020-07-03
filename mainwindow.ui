@@ -107,6 +107,7 @@
    </attribute>
    <addaction name="actionShowDots"/>
    <addaction name="actionShowWireframe"/>
+   <addaction name="actionGrid"/>
    <addaction name="separator"/>
    <addaction name="actionFlat"/>
    <addaction name="actionAo"/>
@@ -208,6 +209,9 @@
    <property name="text">
     <string>Flat</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+F</string>
+   </property>
   </action>
   <action name="actionAo">
    <property name="checkable">
@@ -219,6 +223,21 @@
    </property>
    <property name="text">
     <string>Ao</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+G</string>
+   </property>
+  </action>
+  <action name="actionGrid">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+        <normaloff>/home/pavel/projects/resources/grid.png</normaloff>/home/pavel/projects/resources/grid.png</iconset>
+   </property>
+   <property name="text">
+    <string>Grid</string>
    </property>
   </action>
  </widget>

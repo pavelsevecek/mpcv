@@ -238,9 +238,14 @@ void MainWindow::open(const QString& file) {
 }
 
 void MainWindow::on_actionOpenFile_triggered() {
-    QStringList names = QFileDialog::getOpenFileNames(
-        this, tr("Open mesh"), ".", tr("all files (*);;.ply object (*.ply);;LAS point cloud (*.las *.laz)"));
+    static QDir initialDir(".");
+    QStringList names = QFileDialog::getOpenFileNames(this,
+        tr("Open mesh"),
+        initialDir.path(),
+        tr("all files (*);;.ply object (*.ply);;LAS point cloud (*.las *.laz)"));
     if (!names.empty()) {
+        QFileInfo info(names.first());
+        initialDir = info.dir();
         for (QString name : names) {
             open(name);
         }
@@ -277,10 +282,15 @@ void MainWindow::on_actionShowDots_changed() {
 }
 
 void MainWindow::on_actionScreenshot_triggered() {
-    QString file = QFileDialog::getSaveFileName(
-        this, tr("Save screenshot"), ".", tr("PNG image (*.png);;JPEG image (*.jpg);;Targa image (*.tga)"));
+    static QDir initialDir(".");
+    QString file = QFileDialog::getSaveFileName(this,
+        tr("Save screenshot"),
+        initialDir.path(),
+        tr("PNG image (*.png);;JPEG image (*.jpg);;Targa image (*.tga)"));
     if (!file.isEmpty()) {
-        if (QFileInfo(file).suffix().isEmpty()) {
+        QFileInfo info(file);
+        initialDir = info.dir();
+        if (info.suffix().isEmpty()) {
             file += ".png";
         }
         viewport_->screenshot(file);

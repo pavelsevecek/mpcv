@@ -39,9 +39,9 @@ int main(int argc, char* argv[]) {
     w.setWindowTitle(QString("MPCV DEBUG BUILD ") + __DATE__ + " " + __TIME__);
 #endif
     w.showMaximized();
-    QStringList files = a.arguments();
-    for (int i = 1; i < files.size(); ++i) {
-        w.open(files.at(i), i, files.size());
+    QStringList args = a.arguments();
+    for (int i = 1; i < args.size(); ++i) {
+        w.open(args.at(i), i, args.size() - 1);
     }
     return a.exec();
 }

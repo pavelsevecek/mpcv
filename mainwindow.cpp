@@ -93,6 +93,12 @@ MainWindow::MainWindow(QWidget* parent)
 
     list_ = findChild<QListWidget*>("MeshList");
 
+#ifndef ENABLE_MESH_REPAIR
+    QMenu* menu = findChild<QMenu*>("menuMesh");
+    QAction* repair = findChild<QAction*>("actionRepair");
+    menu->removeAction(repair);
+#endif
+
     QShortcut* showAll = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_A), this);
     QObject::connect(showAll, &QShortcut::activated, this, [this] {
         std::cout << "Showing all" << std::endl;

@@ -2,7 +2,6 @@
 #include "laslib/lasreader.hpp"
 #include <iostream>
 
-
 TexturedMesh loadLas(std::string file, const Progress& prog) {
     LASreadOpener lasreadopener;
     lasreadopener.set_file_name(file.c_str());

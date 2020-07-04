@@ -13,8 +13,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/;${CMAKE_MODULE_PATH}")
+
 find_package(TBB REQUIRED tbb)
 add_definitions(-DTBB_SUPPRESS_DEPRECATED_MESSAGES)
+
+find_package(OpenVDB)
+if (OpenVDB_FOUND)
+    add_definitions(-DENABLE_MESH_REPAIR)
+    list(APPEND OpenVDB_LIBRARIES "Half")
+endif()
 
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 
@@ -32,4 +40,10 @@ add_executable(mpcv
     resources.qrc
   )
 
-target_link_libraries(mpcv PRIVATE Qt5::Widgets Qt5::Gui GL GLU tbb "laslib" "openvdb" "Half")
+target_link_libraries(mpcv PRIVATE
+    Qt5::Widgets Qt5::Gui
+    GL GLU
+    ${Tbb_LIBRARIES}
+    ${OpenVDB_LIBRARIES}
+    laslib
+    )

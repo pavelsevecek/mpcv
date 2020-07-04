@@ -8,12 +8,14 @@
 #include <QPainter>
 #include <tbb/tbb.h>
 
+#ifdef ENABLE_MESH_REPAIR
 #ifdef foreach
 #undef foreach // every time a programmer defines a macro, god kills a kitten
 #endif
 #include <openvdb/openvdb.h>
 #include <openvdb/tools/MeshToVolume.h>
 #include <openvdb/tools/VolumeToMesh.h>
+#endif
 
 void OpenGLWidget::resizeGL(const int width, const int height) {
     std::cout << "Resizing " << width << " " << height << std::endl;
@@ -640,6 +642,8 @@ void OpenGLWidget::simplify() {
     });
 }
 
+#ifdef ENABLE_MESH_REPAIR
+
 namespace {
 class MeshAdapter {
     TexturedMesh& mesh_;
@@ -668,7 +672,6 @@ public:
     }
 };
 } // namespace
-
 
 void repairMesh(TexturedMesh& mesh) {
     openvdb::initialize();
@@ -727,6 +730,11 @@ void OpenGLWidget::repair() {
     camera_ = cameraState;
     update();
 }
+
+#else
+void OpenGLWidget::repair() {}
+
+#endif
 
 void OpenGLWidget::estimateNormals(std::function<bool(float)> progress) {
     std::vector<std::pair<const void*, MeshData*>> meshData;

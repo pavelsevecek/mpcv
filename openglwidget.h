@@ -195,7 +195,8 @@ public:
                 continue;
             }
 
-            Pvl::Vec3f center = mesh.box.center();
+            SrsConv conv(mesh.mesh.srs, srs_);
+            Pvl::Vec3f center = conv(mesh.box.center());
             float scale = std::max(mesh.box.size()[0], mesh.box.size()[1]);
             float zoom = 1.5 * scale;
 

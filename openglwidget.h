@@ -236,9 +236,13 @@ public:
         writer.write(std::move(image).mirrored().rgbSwapped());
     }
 
-    void saveMesh(const QString& file, const void* handle) {
+    void saveAsMesh(const QString& file, const std::vector<const void*>& handles) {
         std::ofstream ofs(file.toStdString());
-        savePly(ofs, meshes_.at(handle).mesh);
+        std::vector<const TexturedMesh*> meshes;
+        for (auto handle : handles) {
+            meshes.push_back(&meshes_[handle].mesh);
+        }
+        savePly(ofs, meshes);
     }
 
     virtual void wheelEvent(QWheelEvent* event) override {

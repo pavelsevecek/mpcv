@@ -70,6 +70,8 @@ struct TexturedMesh {
 
 void savePly(std::ostream& out, const TexturedMesh& mesh);
 
+void savePly(std::ostream& out, const std::vector<const TexturedMesh*>& meshes);
+
 using Progress = std::function<bool(float)>;
 TexturedMesh loadPly(std::istream& in, const Progress& prog);
 

@@ -48,7 +48,7 @@ void ambientOcclusion(std::vector<TexturedMesh>& meshes, std::function<bool(floa
 
     // ad hoc
     progress(2);
-    const float eps = 1.e-4 * scale;
+    const float eps = 5.e-4 * scale;
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
     tbb::tbb_thread::id mainThreadId = tbb::this_tbb_thread::get_id();

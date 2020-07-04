@@ -357,15 +357,22 @@ void MainWindow::on_actionQuit_triggered() {
 }
 
 void MainWindow::on_actionSave_triggered() {
-    QListWidgetItem* item = list_->currentItem();
-    if (!item) {
-        QMessageBox box(QMessageBox::Warning, "No selection", "Select a mesh to save");
-        box.exec();
-        return;
-    }
-    QString file = QFileDialog::getSaveFileName(this, tr("Save mesh"), ".", tr(".ply object (*.ply)"));
+    static QDir initialDir(".");
+    QString file =
+        QFileDialog::getSaveFileName(this, tr("Save mesh"), initialDir.path(), tr(".ply object (*.ply)"));
     if (!file.isEmpty()) {
-        viewport_->saveMesh(file, item);
+        QFileInfo info(file);
+        if (info.suffix().isEmpty()) {
+            file += ".ply";
+        }
+        initialDir = info.dir();
+        std::vector<const void*> handles;
+        for (int i = 0; i < list_->count(); ++i) {
+            if (list_->item(i)->checkState() == Qt::Checked) {
+                handles.push_back(list_->item(i));
+            }
+        }
+        viewport_->saveAsMesh(file, handles);
     }
 }
 

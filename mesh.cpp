@@ -14,7 +14,12 @@ void savePly(std::ostream& out, const TexturedMesh& mesh) {
     out << "property float x\n";
     out << "property float y\n";
     out << "property float z\n";
-    if (!mesh.colors.empty()) {
+    if (!mesh.normals.empty()) {
+        out << "property float nx\n";
+        out << "property float ny\n";
+        out << "property float nz\n";
+    }
+    if (!mesh.colors.empty() || !mesh.ao.empty()) {
         out << "property uchar red\n";
         out << "property uchar green\n";
         out << "property uchar blue\n";
@@ -25,7 +30,14 @@ void savePly(std::ostream& out, const TexturedMesh& mesh) {
     for (std::size_t vi = 0; vi < mesh.vertices.size(); ++vi) {
         const Pvl::Vec3f& p = mesh.vertices[vi];
         out << p[0] << " " << p[1] << " " << p[2];
-        if (!mesh.colors.empty()) {
+        if (!mesh.normals.empty()) {
+            const Pvl::Vec3f& n = mesh.normals[vi];
+            out << " " << n[0] << " " << n[1] << " " << n[2];
+        }
+        if (!mesh.ao.empty()) {
+            const uint8_t ao = mesh.ao[vi];
+            out << " " << ao << " " << ao << " " << ao;
+        } else if (!mesh.colors.empty()) {
             const Color& c = mesh.colors[vi];
             out << " " << c[0] << " " << c[1] << " " << c[2];
         }
@@ -35,6 +47,78 @@ void savePly(std::ostream& out, const TexturedMesh& mesh) {
         out << "3 " << f[0] << " " << f[1] << " " << f[2] << "\n";
     }
 }
+
+void savePly(std::ostream& out, const std::vector<const TexturedMesh*>& meshes) {
+    std::size_t totalVertices = 0;
+    std::size_t totalFaces = 0;
+    bool hasColors = false;
+    bool hasNormals = false;
+    for (const TexturedMesh* mesh : meshes) {
+        totalVertices += mesh->vertices.size();
+        totalFaces += mesh->faces.size();
+        hasColors |= !mesh->colors.empty();
+        hasColors |= !mesh->ao.empty();
+        hasNormals |= !mesh->normals.empty();
+    }
+
+    out << "ply\n";
+    out << "format ascii 1.0\n";
+    out << "comment Created by MPCV\n";
+    out << "element vertex " << totalVertices << "\n";
+    out << "property float x\n";
+    out << "property float y\n";
+    out << "property float z\n";
+    if (hasNormals) {
+        out << "property float nx\n";
+        out << "property float ny\n";
+        out << "property float nz\n";
+    }
+    if (hasColors) {
+        out << "property uchar red\n";
+        out << "property uchar green\n";
+        out << "property uchar blue\n";
+    }
+    out << "element face " << totalFaces << "\n";
+    out << "property list uchar int vertex_index\n";
+    out << "end_header\n";
+
+    for (const TexturedMesh* mesh : meshes) {
+        SrsConv conv(meshes[0]->srs, mesh->srs); // translate to the SRS of the first mesh
+        for (std::size_t vi = 0; vi < mesh->vertices.size(); ++vi) {
+            const Pvl::Vec3f p = conv(mesh->vertices[vi]);
+            out << p[0] << " " << p[1] << " " << p[2];
+            if (hasNormals) {
+                if (!mesh->normals.empty()) {
+                    const Pvl::Vec3f& n = mesh->normals[vi];
+                    out << " " << n[0] << " " << n[1] << " " << n[2];
+                } else {
+                    out << " 0 0 0"; /// \todo or z-up?
+                }
+            }
+            if (hasColors) {
+                if (!mesh->colors.empty()) {
+                    const Color& c = mesh->colors[vi];
+                    out << " " << c[0] << " " << c[1] << " " << c[2];
+                } else if (!mesh->ao.empty()) {
+                    const uint8_t& ao = mesh->ao[vi];
+                    out << " " << ao << " " << ao << " " << ao;
+                } else {
+                    out << " 255 255 255";
+                }
+            }
+            out << "\n";
+        }
+    }
+
+    std::size_t offset = 0;
+    for (const TexturedMesh* mesh : meshes) {
+        for (const TexturedMesh::Face& f : mesh->faces) {
+            out << "3 " << offset + f[0] << " " << offset + f[1] << " " << offset + f[2] << "\n";
+        }
+        offset += mesh->vertices.size();
+    }
+}
+
 
 TexturedMesh loadPly(std::istream& in, const Progress& prog) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();

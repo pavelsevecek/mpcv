@@ -47,7 +47,9 @@ bool ambientOcclusion(std::vector<TexturedMesh>& meshes, std::function<bool(floa
                 box.extend(mesh.vertices[f[0]]);
             }
         }
-        scale = std::max(box.size()[0], box.size()[1]);
+        if (scale == 0.f) {
+            scale = std::max(box.size()[0], box.size()[1]);
+        }
     }
     bvh.build(std::move(triangles));
     triangles = {};

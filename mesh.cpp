@@ -35,11 +35,11 @@ void savePly(std::ostream& out, const TexturedMesh& mesh) {
             out << " " << n[0] << " " << n[1] << " " << n[2];
         }
         if (!mesh.ao.empty()) {
-            const uint8_t ao = mesh.ao[vi];
+            const int ao = mesh.ao[vi];
             out << " " << ao << " " << ao << " " << ao;
         } else if (!mesh.colors.empty()) {
             const Color& c = mesh.colors[vi];
-            out << " " << c[0] << " " << c[1] << " " << c[2];
+            out << " " << int(c[0]) << " " << int(c[1]) << " " << int(c[2]);
         }
         out << "\n";
     }
@@ -98,9 +98,9 @@ void savePly(std::ostream& out, const std::vector<const TexturedMesh*>& meshes) 
             if (hasColors) {
                 if (!mesh->colors.empty()) {
                     const Color& c = mesh->colors[vi];
-                    out << " " << c[0] << " " << c[1] << " " << c[2];
+                    out << " " << int(c[0]) << " " << int(c[1]) << " " << int(c[2]);
                 } else if (!mesh->ao.empty()) {
-                    const uint8_t& ao = mesh->ao[vi];
+                    const int ao = mesh->ao[vi];
                     out << " " << ao << " " << ao << " " << ao;
                 } else {
                     out << " 255 255 255";

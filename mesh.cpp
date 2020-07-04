@@ -11,10 +11,12 @@ inline std::vector<int> faceAoToVertexAo(const TexturedMesh& mesh) {
     std::vector<int> counts(mesh.vertices.size(), 0);
     for (std::size_t fi = 0; fi < mesh.faces.size(); ++fi) {
         for (int i = 0; i < 3; ++i) {
-            ao[mesh.faces[fi][i]] += mesh.ao[3 * fi + i];
+            const int vi = mesh.faces[fi][i];
+            ao[vi] += mesh.ao[3 * fi + i];
+            counts[vi]++;
         }
     }
-    for (std::size_t vi = 0; vi < mesh.faces.size(); ++vi) {
+    for (std::size_t vi = 0; vi < mesh.vertices.size(); ++vi) {
         if (counts[vi] > 0) {
             ao[vi] /= counts[vi];
         }

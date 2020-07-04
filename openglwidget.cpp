@@ -762,10 +762,6 @@ void OpenGLWidget::estimateNormals(std::function<bool(float)> progress) {
 }
 
 void OpenGLWidget::computeAmbientOcclusion(std::function<bool(float)> progress) {
-    // also backup camera
-    auto cameraState = camera_;
-
-    /// \todo no need to delete mesh, only updates
     std::vector<TexturedMesh> meshes;
     std::map<const void*, int> handleIndexMap;
     for (auto& p : meshes_) {
@@ -774,21 +770,14 @@ void OpenGLWidget::computeAmbientOcclusion(std::function<bool(float)> progress) 
             // pc or already computed
             continue;
         }
-        /*Mesh mesh = std::move(p.second.mesh);
-        //  deleteMesh(handle);
-        ::computeAmbientOcclusion(mesh, progress);
-        p.second.flat = false;
-        view(handle, std::move(mesh));*/
         handleIndexMap[handle] = meshes.size();
         meshes.emplace_back(std::move(p.second.mesh));
     }
-    if (!meshes.empty()) {
-        ambientOcclusion(meshes, progress);
+    if (!meshes.empty() && ambientOcclusion(meshes, progress)) {
         for (auto& p : meshes_) {
             const void* handle = p.first;
             view(handle, std::move(meshes[handleIndexMap[handle]]));
         }
     }
-    camera_ = cameraState;
     enableAo(true);
 }

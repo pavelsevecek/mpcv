@@ -2,6 +2,7 @@
 #include "bvh.h"
 #include "coordinates.h"
 #include "pvl/Matrix.hpp"
+#include "pvl/Utils.hpp"
 #include <chrono>
 #include <iostream>
 #include <map>
@@ -22,7 +23,7 @@ inline Pvl::Vec3f sampleUnitHemiSphere(float x, float y) {
     return Pvl::Vec3f(u * std::cos(phi), u * std::sin(phi), z);
 }
 
-void ambientOcclusion(std::vector<TexturedMesh>& meshes, std::function<bool(float)> progress, int sampleCnt) {
+bool ambientOcclusion(std::vector<TexturedMesh>& meshes, std::function<bool(float)> progress, int sampleCnt) {
     Pvl::Bvh<Pvl::BvhTriangle> bvh(10);
     Srs referenceSrs = meshes.front().srs;
 
@@ -30,9 +31,11 @@ void ambientOcclusion(std::vector<TexturedMesh>& meshes, std::function<bool(floa
     Pvl::Box3f box;
     progress(0);
     std::vector<Pvl::BvhTriangle> triangles;
+    std::size_t totalFaces = 0;
     for (const TexturedMesh& mesh : meshes) {
-        SrsConv meshToRef(mesh.srs, referenceSrs);
+        totalFaces += mesh.faces.size();
 
+        SrsConv meshToRef(mesh.srs, referenceSrs);
         for (const TexturedMesh::Face& f : mesh.faces) {
             Pvl::Vec3f v1 = meshToRef(mesh.vertices[f[0]]);
             Pvl::Vec3f v2 = meshToRef(mesh.vertices[f[1]]);
@@ -47,21 +50,17 @@ void ambientOcclusion(std::vector<TexturedMesh>& meshes, std::function<bool(floa
     scale = std::max(box.size()[0], box.size()[1]);
 
     // ad hoc
-    progress(2);
+    progress(1);
     const float eps = 5.e-4 * scale;
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-    tbb::tbb_thread::id mainThreadId = tbb::this_tbb_thread::get_id();
+    auto meter = Pvl::makeProgressMeter(totalFaces, std::move(progress));
+    tbb::atomic<bool> cancelled = false;
     for (TexturedMesh& mesh : meshes) {
         SrsConv meshToRef(mesh.srs, referenceSrs);
 
         mesh.ao.resize(3 * mesh.faces.size());
 
-        int progressStep = std::max<std::size_t>(mesh.faces.size() / 100, 10);
-        tbb::atomic<int> computedCnt = 0;
-        tbb::atomic<int> nextProgress = progressStep;
-        tbb::mutex mutex;
-        tbb::atomic<bool> cancelled = false;
         tbb::parallel_for(std::size_t(0), mesh.faces.size(), [&](std::size_t fi) {
             if (cancelled) {
                 return;
@@ -89,22 +88,21 @@ void ambientOcclusion(std::vector<TexturedMesh>& meshes, std::function<bool(floa
                 mesh.ao[3 * fi + i] = value;
             }
 
-            computedCnt++;
-            tbb::tbb_thread::id threadId = tbb::this_tbb_thread::get_id();
-            if (threadId == mainThreadId && computedCnt > nextProgress) {
-                float value = 4 + 96 * float(computedCnt) / mesh.faces.size();
-                nextProgress += progressStep;
-                tbb::mutex::scoped_lock lock(mutex);
-                if (progress(value)) {
-                    cancelled = true;
-                    mesh.colors = {};
-                    return;
-                }
+            if (meter.inc()) {
+                cancelled = true;
+                mesh.colors = {};
+                return;
             }
         });
+
+        if (cancelled) {
+            return false;
+        }
     }
+
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout << "AO calculated in "
               << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms"
               << std::endl;
+    return true;
 }

@@ -5,6 +5,6 @@
 #include <functional>
 
 
-void ambientOcclusion(std::vector<TexturedMesh>& meshes,
+bool ambientOcclusion(std::vector<TexturedMesh>& meshes,
     std::function<bool(float)> progress,
     int sampleCnt = 20);

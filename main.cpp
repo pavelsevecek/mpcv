@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
     w.showMaximized();
     QStringList files = a.arguments();
     for (int i = 1; i < files.size(); ++i) {
-        w.open(files.at(i));
+        w.open(files.at(i), i, files.size());
     }
     return a.exec();
 }

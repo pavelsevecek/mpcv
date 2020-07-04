@@ -207,7 +207,7 @@ MainWindow::~MainWindow() {
 }
 
 
-void MainWindow::open(const QString& file) {
+void MainWindow::open(const QString& file, int index, int total) {
     QCoreApplication::processEvents();
     try {
         QString ext = QFileInfo(file).suffix();
@@ -217,7 +217,11 @@ void MainWindow::open(const QString& file) {
             return;
         }
 
-        QProgressDialog dialog("Loading '" + file + "'", "Cancel", 0, 100);
+        QString message = "Loading '" + file + "'";
+        if (total > 1) {
+            message += " (" + QString::number(index) + " of " + QString::number(total) + ")";
+        }
+        QProgressDialog dialog(message, "Cancel", 0, 100, viewport_);
         dialog.setWindowModality(Qt::WindowModal);
         auto callback = [&dialog](float prog) {
             dialog.setValue(prog);
@@ -279,8 +283,9 @@ void MainWindow::on_actionOpenFile_triggered() {
     if (!names.empty()) {
         QFileInfo info(names.first());
         initialDir = info.dir();
+        int index = 1;
         for (QString name : names) {
-            open(name);
+            open(name, index, names.size());
         }
     }
 }
@@ -371,7 +376,7 @@ void MainWindow::buttonPushed(QAction* pushed) {
 }
 
 void MainWindow::on_actionAo_triggered() {
-    QProgressDialog dialog("Computing A0", "Cancel", 0, 100);
+    QProgressDialog dialog("Computing A0", "Cancel", 0, 100, viewport_);
     dialog.setWindowModality(Qt::WindowModal);
     QCoreApplication::processEvents();
     auto callback = [&dialog](float prog) {
@@ -390,7 +395,7 @@ void MainWindow::on_actionTexture_triggered() {
 
 void MainWindow::on_actionFlat_triggered() {
     viewport_->enableTextures(false);
-    viewport_->enableMeshColors(false);
+    viewport_->enableAo(false);
     buttonPushed(findChild<QAction*>("actionFlat"));
 }
 
@@ -405,7 +410,7 @@ void MainWindow::on_actionResetCamera_triggered() {
 }
 
 void MainWindow::on_actionEstimate_normals_triggered() {
-    QProgressDialog dialog("Computing normals", "Cancel", 0, 100);
+    QProgressDialog dialog("Computing normals", "Cancel", 0, 100, viewport_);
     dialog.setWindowModality(Qt::WindowModal);
     QCoreApplication::processEvents();
     auto callback = [&dialog](float prog) {

@@ -87,6 +87,9 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
         bool hasColors() const {
             return !mesh.colors.empty();
         }
+        bool hasAo() const {
+            return !mesh.ao.empty();
+        }
         bool hasTexture() const {
             // point cloud cannot have texture
             return !pointCloud() && !mesh.uv.empty();
@@ -101,7 +104,7 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
     float grid_ = 1.f;
     bool showGrid_ = false;
 
-    bool enableMeshColors_ = false; // currently only used for AO, needs to be computed first
+    bool enableAo_ = false;
     bool enableTextures_ = true;
 
     std::map<const void*, MeshData> meshes_;
@@ -168,8 +171,8 @@ public:
 
     void computeAmbientOcclusion(std::function<bool(float)> progress);
 
-    void enableMeshColors(bool on) {
-        enableMeshColors_ = on;
+    void enableAo(bool on) {
+        enableAo_ = on;
         if (on) {
             enableTextures_ = false;
         }
@@ -179,7 +182,7 @@ public:
     void enableTextures(bool on) {
         enableTextures_ = on;
         if (on) {
-            enableMeshColors_ = false;
+            enableAo_ = false;
         }
         update();
     }

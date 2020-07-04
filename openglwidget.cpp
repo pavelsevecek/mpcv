@@ -158,7 +158,7 @@ void OpenGLWidget::paintGL() {
             // for point clouds, point colors are considered a texture here
             useColors = mesh.hasColors() && enableTextures_;
         } else {
-            useColors = mesh.hasColors() && enableMeshColors_;
+            useColors = mesh.hasColors() || (enableAo_ && mesh.hasAo());
         }
         bool useTexture = enableTextures_ && mesh.hasTexture();
 
@@ -339,8 +339,7 @@ void OpenGLWidget::view(const void* handle, TexturedMesh&& mesh) {
     }
 
     SrsConv conv(data.mesh.srs, srs_);
-    if (data.mesh.faces.empty()) {
-        // point cloud
+    if (data.pointCloud()) {
         bool hasNormals = !data.mesh.normals.empty();
         bool hasColors = !data.mesh.colors.empty();
         data.vis.vertices.reserve(data.mesh.vertices.size() * 3);
@@ -373,9 +372,11 @@ void OpenGLWidget::view(const void* handle, TexturedMesh&& mesh) {
         // mesh
         bool hasColors = !data.mesh.colors.empty();
         bool hasTexture = !data.mesh.uv.empty();
+        bool hasAo = !data.mesh.ao.empty();
+
         data.vis.vertices.reserve(data.mesh.faces.size() * 9);
         data.vis.normals.reserve(data.mesh.faces.size() * 9);
-        if (hasColors) {
+        if (hasAo || hasColors) {
             data.vis.colors.reserve(data.mesh.faces.size() * 9);
         }
         if (hasTexture) {
@@ -393,7 +394,12 @@ void OpenGLWidget::view(const void* handle, TexturedMesh&& mesh) {
                 data.vis.normals.push_back(normal[1]);
                 data.vis.normals.push_back(normal[2]);
 
-                if (hasColors) {
+                if (hasAo) {
+                    uint8_t ao = data.mesh.ao[3 * fi + i];
+                    data.vis.colors.push_back(ao);
+                    data.vis.colors.push_back(ao);
+                    data.vis.colors.push_back(ao);
+                } else if (hasColors) {
                     Color c = data.mesh.colors[data.mesh.faces[fi][i]];
                     data.vis.colors.push_back(c[0]);
                     data.vis.colors.push_back(c[1]);
@@ -776,5 +782,5 @@ void OpenGLWidget::computeAmbientOcclusion(std::function<bool(float)> progress) 
         }
     }
     camera_ = cameraState;
-    enableMeshColors(true);
+    enableAo(true);
 }

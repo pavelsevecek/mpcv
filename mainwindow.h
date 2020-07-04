@@ -20,12 +20,7 @@ public:
     MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
-    /*virtual void resizeEvent(QResizeEvent* evt) override {
-        QWidget* viewport = this->findChild<QWidget*>("Viewport");
-        viewport->resize(evt->size() - QSize(10, 10));
-    }*/
-
-    void open(const QString& file);
+    void open(const QString& file, int index = 1, int total = 1);
 
 private slots:
     void on_MeshList_itemChanged(QListWidgetItem* item);

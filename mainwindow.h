@@ -58,6 +58,8 @@ private slots:
 
     void on_actionResetCamera_triggered();
 
+    void on_actionEstimate_normals_triggered();
+
 private:
     Ui::MainWindow* ui_;
     OpenGLWidget* viewport_;

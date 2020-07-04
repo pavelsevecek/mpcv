@@ -92,8 +92,15 @@
     <addaction name="actionSimplify"/>
     <addaction name="actionRepair"/>
    </widget>
+   <widget class="QMenu" name="menuPoint_cloud">
+    <property name="title">
+     <string>Point cloud</string>
+    </property>
+    <addaction name="actionEstimate_normals"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuMesh"/>
+   <addaction name="menuPoint_cloud"/>
   </widget>
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
@@ -270,6 +277,11 @@
    </property>
    <property name="text">
     <string>ResetCamera</string>
+   </property>
+  </action>
+  <action name="actionEstimate_normals">
+   <property name="text">
+    <string>Estimate normals</string>
    </property>
   </action>
  </widget>

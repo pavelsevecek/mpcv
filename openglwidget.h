@@ -164,6 +164,8 @@ public:
 
     void repair();
 
+    void estimateNormals(std::function<bool(float)> progress);
+
     void computeAmbientOcclusion(std::function<bool(float)> progress);
 
     void enableMeshColors(bool on) {

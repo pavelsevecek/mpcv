@@ -403,3 +403,15 @@ void MainWindow::on_actionGrid_triggered() {
 void MainWindow::on_actionResetCamera_triggered() {
     viewport_->resetCamera();
 }
+
+void MainWindow::on_actionEstimate_normals_triggered() {
+    QProgressDialog dialog("Computing normals", "Cancel", 0, 100);
+    dialog.setWindowModality(Qt::WindowModal);
+    QCoreApplication::processEvents();
+    auto callback = [&dialog](float prog) {
+        dialog.setValue(prog);
+        QCoreApplication::processEvents();
+        return dialog.wasCanceled();
+    };
+    viewport_->estimateNormals(callback);
+}

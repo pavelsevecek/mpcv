@@ -1,5 +1,6 @@
 #include "openglwidget.h"
 #include "ambient.h"
+#include "pvl/CloudUtils.hpp"
 #include "pvl/QuadricDecimator.hpp"
 #include "pvl/Refinement.hpp"
 #include "pvl/Simplification.hpp"
@@ -152,7 +153,13 @@ void OpenGLWidget::paintGL() {
         }
 
         bool useNormals = mesh.hasNormals();
-        bool useColors = mesh.hasColors() && (mesh.pointCloud() || enableMeshColors_);
+        bool useColors;
+        if (mesh.pointCloud()) {
+            // for point clouds, point colors are considered a texture here
+            useColors = mesh.hasColors() && enableTextures_;
+        } else {
+            useColors = mesh.hasColors() && enableMeshColors_;
+        }
         bool useTexture = enableTextures_ && mesh.hasTexture();
 
         if (useColors || useTexture) {
@@ -708,6 +715,31 @@ void OpenGLWidget::repair() {
         TexturedMesh mesh = std::move(p.second->mesh);
         deleteMesh(handle);
         repairMesh(mesh);
+        view(handle, std::move(mesh));
+    }
+
+    camera_ = cameraState;
+    update();
+}
+
+void OpenGLWidget::estimateNormals(std::function<bool(float)> progress) {
+    std::vector<std::pair<const void*, MeshData*>> meshData;
+    // cannot erase from meshes_ while iterating, so add it to a vector
+    for (auto& p : meshes_) {
+        if (p.second.pointCloud()) {
+            meshData.emplace_back(p.first, &p.second);
+        }
+    }
+    // also backup camera
+    auto cameraState = camera_;
+
+    for (const auto& p : meshData) {
+        /// \todo only update? (add normals)
+        const void* handle = p.first;
+        p.second->mesh.normals = Pvl::estimateNormals<Pvl::ParallelTag>(p.second->mesh.vertices, progress);
+
+        TexturedMesh mesh = std::move(p.second->mesh);
+        deleteMesh(handle);
         view(handle, std::move(mesh));
     }
 

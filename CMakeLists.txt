@@ -46,6 +46,7 @@ find_package(Qt5 COMPONENTS Widgets REQUIRED)
     bvh.cpp
     ambient.h
     ambient.cpp
+    resources.qrc
   )
 
 target_link_libraries(mpcv PRIVATE Qt5::Widgets Qt5::Gui GL GLU tbb "/usr/lib/liblaslib.a" "openvdb" "Half")

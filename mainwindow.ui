@@ -129,8 +129,8 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
-        <normaloff>/home/pavel/projects/resources/wire.png</normaloff>/home/pavel/projects/resources/wire.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/wire.png</normaloff>:/images/wire.png</iconset>
    </property>
    <property name="text">
     <string>ShowWireframe</string>
@@ -144,8 +144,8 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
-        <normaloff>/home/pavel/projects/resources/dots.png</normaloff>/home/pavel/projects/resources/dots.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/dots.png</normaloff>:/images/dots.png</iconset>
    </property>
    <property name="text">
     <string>ShowDots</string>
@@ -156,8 +156,8 @@
   </action>
   <action name="actionScreenshot">
    <property name="icon">
-    <iconset>
-     <normaloff>/home/pavel/projects/resources/icon.png</normaloff>/home/pavel/projects/resources/icon.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/icon.png</normaloff>:/images/icon.png</iconset>
    </property>
    <property name="text">
     <string>Screenshot</string>
@@ -205,8 +205,8 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
-     <normaloff>/home/pavel/projects/resources/flat.png</normaloff>/home/pavel/projects/resources/flat.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/flat.png</normaloff>:/images/flat.png</iconset>
    </property>
    <property name="text">
     <string>Flat</string>
@@ -220,8 +220,8 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
-     <normaloff>/home/pavel/projects/resources/ao.png</normaloff>/home/pavel/projects/resources/ao.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/ao.png</normaloff>:/images/ao.png</iconset>
    </property>
    <property name="text">
     <string>Ao</string>
@@ -235,8 +235,8 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
-        <normaloff>/home/pavel/projects/resources/grid.png</normaloff>/home/pavel/projects/resources/grid.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/grid.png</normaloff>:/images/grid.png</iconset>
    </property>
    <property name="text">
     <string>Grid</string>
@@ -253,8 +253,8 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
-     <normaloff>/home/pavel/projects/resources/tex.png</normaloff>../../../resources/tex.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/tex.png</normaloff>:/images/tex.png</iconset>
    </property>
    <property name="text">
     <string>Texture</string>
@@ -265,8 +265,8 @@
   </action>
   <action name="actionResetCamera">
    <property name="icon">
-    <iconset>
-     <normaloff>/home/pavel/projects/resources/reset.png</normaloff>/home/pavel/projects//resources/reset.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/reset.png</normaloff>:/images/reset.png</iconset>
    </property>
    <property name="text">
     <string>ResetCamera</string>
@@ -281,6 +281,8 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

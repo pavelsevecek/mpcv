@@ -1,0 +1,12 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+    <file>images/ao.png</file>
+    <file>images/dots.png</file>
+    <file>images/flat.png</file>
+    <file>images/grid.png</file>
+    <file>images/icon.png</file>
+    <file>images/reset.png</file>
+    <file>images/tex.png</file>
+    <file>images/wire.png</file>
+    </qresource>
+</RCC>

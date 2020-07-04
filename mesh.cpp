@@ -6,6 +6,22 @@
 #include <sstream>
 #include <vector>
 
+inline std::vector<int> faceAoToVertexAo(const TexturedMesh& mesh) {
+    std::vector<int> ao(mesh.vertices.size(), 0);
+    std::vector<int> counts(mesh.vertices.size(), 0);
+    for (std::size_t fi = 0; fi < mesh.faces.size(); ++fi) {
+        for (int i = 0; i < 3; ++i) {
+            ao[mesh.faces[fi][i]] += mesh.ao[3 * fi + i];
+        }
+    }
+    for (std::size_t vi = 0; vi < mesh.faces.size(); ++vi) {
+        if (counts[vi] > 0) {
+            ao[vi] /= counts[vi];
+        }
+    }
+    return ao;
+}
+
 void savePly(std::ostream& out, const TexturedMesh& mesh) {
     out << "ply\n";
     out << "format ascii 1.0\n";
@@ -27,6 +43,12 @@ void savePly(std::ostream& out, const TexturedMesh& mesh) {
     out << "element face " << mesh.faces.size() << "\n";
     out << "property list uchar int vertex_index\n";
     out << "end_header\n";
+
+    std::vector<int> ao;
+    if (!mesh.ao.empty()) {
+        // .ply format does not support per-face colors
+        ao = faceAoToVertexAo(mesh);
+    }
     for (std::size_t vi = 0; vi < mesh.vertices.size(); ++vi) {
         const Pvl::Vec3f& p = mesh.vertices[vi];
         out << p[0] << " " << p[1] << " " << p[2];
@@ -35,8 +57,8 @@ void savePly(std::ostream& out, const TexturedMesh& mesh) {
             out << " " << n[0] << " " << n[1] << " " << n[2];
         }
         if (!mesh.ao.empty()) {
-            const int ao = mesh.ao[vi];
-            out << " " << ao << " " << ao << " " << ao;
+            const int a = ao[vi];
+            out << " " << a << " " << a << " " << a;
         } else if (!mesh.colors.empty()) {
             const Color& c = mesh.colors[vi];
             out << " " << int(c[0]) << " " << int(c[1]) << " " << int(c[2]);
@@ -84,6 +106,12 @@ void savePly(std::ostream& out, const std::vector<const TexturedMesh*>& meshes) 
 
     for (const TexturedMesh* mesh : meshes) {
         SrsConv conv(meshes[0]->srs, mesh->srs); // translate to the SRS of the first mesh
+
+        std::vector<int> ao;
+        if (!mesh->ao.empty()) {
+            // .ply format does not support per-face colors
+            ao = faceAoToVertexAo(*mesh);
+        }
         for (std::size_t vi = 0; vi < mesh->vertices.size(); ++vi) {
             const Pvl::Vec3f p = conv(mesh->vertices[vi]);
             out << p[0] << " " << p[1] << " " << p[2];
@@ -100,8 +128,8 @@ void savePly(std::ostream& out, const std::vector<const TexturedMesh*>& meshes) 
                     const Color& c = mesh->colors[vi];
                     out << " " << int(c[0]) << " " << int(c[1]) << " " << int(c[2]);
                 } else if (!mesh->ao.empty()) {
-                    const int ao = mesh->ao[vi];
-                    out << " " << ao << " " << ao << " " << ao;
+                    const int a = ao[vi];
+                    out << " " << a << " " << a << " " << a;
                 } else {
                     out << " 255 255 255";
                 }

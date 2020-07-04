@@ -27,31 +27,34 @@ bool ambientOcclusion(std::vector<TexturedMesh>& meshes, std::function<bool(floa
     Pvl::Bvh<Pvl::BvhTriangle> bvh(10);
     Srs referenceSrs = meshes.front().srs;
 
-    float scale;
-    Pvl::Box3f box;
+    float scale = 0.f;
     progress(0);
     std::vector<Pvl::BvhTriangle> triangles;
     std::size_t totalFaces = 0;
     for (const TexturedMesh& mesh : meshes) {
         totalFaces += mesh.faces.size();
 
+        Pvl::Box3f box;
         SrsConv meshToRef(mesh.srs, referenceSrs);
         for (const TexturedMesh::Face& f : mesh.faces) {
             Pvl::Vec3f v1 = meshToRef(mesh.vertices[f[0]]);
             Pvl::Vec3f v2 = meshToRef(mesh.vertices[f[1]]);
             Pvl::Vec3f v3 = meshToRef(mesh.vertices[f[2]]);
             triangles.emplace_back(v1, v2, v3);
-            box.extend(mesh.vertices[f[0]]);
+
+            if (scale == 0.f) {
+                // compute box from the first mesh only
+                box.extend(mesh.vertices[f[0]]);
+            }
         }
+        scale = std::max(box.size()[0], box.size()[1]);
     }
     bvh.build(std::move(triangles));
     triangles = {};
 
-    scale = std::max(box.size()[0], box.size()[1]);
-
     // ad hoc
     progress(1);
-    const float eps = 5.e-4 * scale;
+    const float eps = 1.e-3f * scale;
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
     auto meter = Pvl::makeProgressMeter(totalFaces, std::move(progress));
@@ -76,7 +79,8 @@ bool ambientOcclusion(std::vector<TexturedMesh>& meshes, std::function<bool(floa
                     for (int y = 0; y < sampleCnt; ++y) {
                         Pvl::Vec3f dir = sampleUnitHemiSphere((x + 0.5f) / sampleCnt, (y + 0.5f) / sampleCnt);
                         dir = Pvl::prod(rotator, dir);
-                        Pvl::Ray ray(meshToRef(0.99 * mesh.vertices[vi] + 0.01 * centroid) + eps * n, dir);
+                        Pvl::Vec3f origin = meshToRef(0.99 * mesh.vertices[vi] + 0.01 * centroid);
+                        Pvl::Ray ray(origin + eps * n, dir);
                         if (!bvh.isOccluded(ray)) {
                             nonOccludedCnt++;
                         }
@@ -90,7 +94,7 @@ bool ambientOcclusion(std::vector<TexturedMesh>& meshes, std::function<bool(floa
 
             if (meter.inc()) {
                 cancelled = true;
-                mesh.colors = {};
+                mesh.ao = {};
                 return;
             }
         });

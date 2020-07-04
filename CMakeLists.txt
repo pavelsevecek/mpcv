@@ -25,6 +25,7 @@ if (OpenVDB_FOUND)
 endif()
 
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
+add_definitions(-DQT_NO_DEBUG_OUTPUT)
 
 add_executable(mpcv
     main.cpp

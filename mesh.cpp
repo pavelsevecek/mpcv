@@ -107,7 +107,7 @@ void savePly(std::ostream& out, const std::vector<const TexturedMesh*>& meshes) 
     out << "end_header\n";
 
     for (const TexturedMesh* mesh : meshes) {
-        SrsConv conv(meshes[0]->srs, mesh->srs); // translate to the SRS of the first mesh
+        SrsConv conv(mesh->srs, meshes[0]->srs); // translate to the SRS of the first mesh
 
         std::vector<int> ao;
         if (!mesh->ao.empty()) {

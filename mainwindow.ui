@@ -114,6 +114,7 @@
    <addaction name="actionTexture"/>
    <addaction name="separator"/>
    <addaction name="actionScreenshot"/>
+   <addaction name="actionResetCamera"/>
   </widget>
   <action name="actionOpenFile">
    <property name="text">
@@ -260,6 +261,15 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+T</string>
+   </property>
+  </action>
+  <action name="actionResetCamera">
+   <property name="icon">
+    <iconset>
+     <normaloff>/home/pavel/projects/resources/reset.png</normaloff>/home/pavel/projects//resources/reset.png</iconset>
+   </property>
+   <property name="text">
+    <string>ResetCamera</string>
    </property>
   </action>
  </widget>

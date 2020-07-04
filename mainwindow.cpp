@@ -88,16 +88,17 @@ MainWindow::MainWindow(QWidget* parent)
     , ui_(new Ui::MainWindow) {
     ui_->setupUi(this);
 
-    viewport_ = this->findChild<OpenGLWidget*>("Viewport");
+    viewport_ = findChild<OpenGLWidget*>("Viewport");
     viewport_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    list_ = findChild<QListWidget*>("MeshList");
 
     QShortcut* showAll = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_A), this);
     QObject::connect(showAll, &QShortcut::activated, this, [this] {
         std::cout << "Showing all" << std::endl;
-        QListWidget* list = this->findChild<QListWidget*>("MeshList");
         checkMod = false;
-        for (int i = 0; i < list->count(); ++i) {
-            list->item(i)->setCheckState(Qt::Checked);
+        for (int i = 0; i < list_->count(); ++i) {
+            list_->item(i)->setCheckState(Qt::Checked);
         }
         checkMod = true;
     });
@@ -107,12 +108,11 @@ MainWindow::MainWindow(QWidget* parent)
         QObject::connect(showOnly, &QShortcut::activated, this, [this, key] {
             std::cout << "Showing only " << key << std::endl;
             checkMod = false;
-            QListWidget* list = this->findChild<QListWidget*>("MeshList");
-            if (list->count() <= key) {
+            if (list_->count() <= key) {
                 return;
             }
-            for (int i = 0; i < list->count(); ++i) {
-                list->item(i)->setCheckState(i == key ? Qt::Checked : Qt::Unchecked);
+            for (int i = 0; i < list_->count(); ++i) {
+                list_->item(i)->setCheckState(i == key ? Qt::Checked : Qt::Unchecked);
             }
             checkMod = true;
         });
@@ -121,32 +121,67 @@ MainWindow::MainWindow(QWidget* parent)
         QObject::connect(showToggle, &QShortcut::activated, this, [this, key] {
             std::cout << "Showing toggle " << key << std::endl;
             checkMod = false;
-            QListWidget* list = this->findChild<QListWidget*>("MeshList");
-            if (list->count() <= key) {
+            if (list_->count() <= key) {
                 return;
             }
-            Qt::CheckState state = list->item(key)->checkState();
-            list->item(key)->setCheckState(state == Qt::Unchecked ? Qt::Checked : Qt::Unchecked);
+            Qt::CheckState state = list_->item(key)->checkState();
+            list_->item(key)->setCheckState(state == Qt::Unchecked ? Qt::Checked : Qt::Unchecked);
             checkMod = true;
         });
     }
-
+    auto firstChecked = [this]() -> QListWidgetItem* {
+        for (int i = 0; i < list_->count(); ++i) {
+            if (list_->item(i)->checkState() == Qt::Checked) {
+                return list_->item(i);
+            }
+        }
+        return nullptr;
+    };
+    QShortcut* showRight = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Right), this);
+    QObject::connect(showRight, &QShortcut::activated, this, [this, firstChecked] {
+        checkMod = false;
+        // first checked item
+        QListWidgetItem* item = firstChecked();
+        if (item == nullptr) {
+            return;
+        }
+        int currentId = list_->row(item);
+        if (currentId < list_->count() - 1) {
+            list_->item(currentId)->setCheckState(Qt::Unchecked);
+            list_->item(currentId + 1)->setCheckState(Qt::Checked);
+        }
+        checkMod = true;
+    });
+    QShortcut* showLeft = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Left), this);
+    QObject::connect(showLeft, &QShortcut::activated, this, [this, firstChecked] {
+        checkMod = false;
+        QListWidgetItem* item = firstChecked();
+        if (item == nullptr) {
+            return;
+        }
+        int currentId = list_->row(item);
+        if (currentId > 0) {
+            list_->item(currentId)->setCheckState(Qt::Unchecked);
+            list_->item(currentId - 1)->setCheckState(Qt::Checked);
+        }
+        checkMod = true;
+    });
     QListWidget* list = this->findChild<QListWidget*>("MeshList");
-    list->setContextMenuPolicy(Qt::CustomContextMenu);
+    list_->setContextMenuPolicy(Qt::CustomContextMenu);
     QObject::connect(list, &QListWidget::customContextMenuRequested, this, [this, list](const QPoint& pos) {
         QMenu submenu;
         QAction* actReload = submenu.addAction("Reload");
         QAction* actClose = submenu.addAction("Close");
 
-        QPoint item = list->mapToGlobal(pos);
+        QPoint item = list_->mapToGlobal(pos);
         QAction* clicked = submenu.exec(item);
         if (clicked == actClose) {
-            viewport_->deleteMesh(list->currentItem());
-            list->takeItem(list->currentIndex().row());
+            viewport_->deleteMesh(list_->currentItem());
+            list_->takeItem(list_->currentIndex().row());
         } else if (clicked == actReload) {
-            QString file = list->currentItem()->data(Qt::UserRole).toString();
-            viewport_->deleteMesh(list->currentItem());
-            list->takeItem(list->currentIndex().row());
+            QString file = list_->currentItem()->data(Qt::UserRole).toString();
+            viewport_->deleteMesh(list_->currentItem());
+            list_->takeItem(list_->currentIndex().row());
             open(file);
         }
     });
@@ -154,12 +189,11 @@ MainWindow::MainWindow(QWidget* parent)
     QShortcut* reloadAll = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_R), this);
     QObject::connect(reloadAll, &QShortcut::activated, this, [this] {
         std::cout << "Reloading all" << std::endl;
-        QListWidget* list = this->findChild<QListWidget*>("MeshList");
         checkMod = false;
-        for (QListWidgetItem* item : list->selectedItems()) {
+        for (QListWidgetItem* item : list_->selectedItems()) {
             QString file = item->data(Qt::UserRole).toString();
             viewport_->deleteMesh(item);
-            list->takeItem(list->row(item));
+            list_->takeItem(list_->row(item));
             open(file);
         }
         checkMod = true;
@@ -215,11 +249,10 @@ void MainWindow::open(const QString& file) {
             return;
         }
 
-        QListWidget* list = this->findChild<QListWidget*>("MeshList");
         QFileInfo info(file);
         QString identifier = info.absoluteDir().dirName() + "/" + info.baseName();
-        QListWidgetItem* item = new QListWidgetItem(identifier, list);
-        list->addItem(item);
+        QListWidgetItem* item = new QListWidgetItem(identifier, list_);
+        list_->addItem(item);
 
         viewport_->view(item, std::move(mesh));
         item->setData(Qt::UserRole, file);
@@ -258,9 +291,8 @@ void MainWindow::on_MeshList_itemChanged(QListWidgetItem* item) {
     }
     reentrant++;
     if (checkMod && QApplication::queryKeyboardModifiers() & Qt::CTRL) {
-        QListWidget* list = item->listWidget();
-        for (int i = 0; i < list->count(); ++i) {
-            QListWidgetItem* it = list->item(i);
+        for (int i = 0; i < list_->count(); ++i) {
+            QListWidgetItem* it = list_->item(i);
             it->setCheckState(it == item ? Qt::Checked : Qt::Unchecked);
             viewport_->toggle(it, it == item);
         }
@@ -314,8 +346,7 @@ void MainWindow::on_actionQuit_triggered() {
 }
 
 void MainWindow::on_actionSave_triggered() {
-    QListWidget* list = this->findChild<QListWidget*>("MeshList");
-    QListWidgetItem* item = list->currentItem();
+    QListWidgetItem* item = list_->currentItem();
     if (!item) {
         QMessageBox box(QMessageBox::Warning, "No selection", "Select a mesh to save");
         box.exec();
@@ -367,4 +398,8 @@ void MainWindow::on_actionFlat_triggered() {
 void MainWindow::on_actionGrid_triggered() {
     QAction* act = this->findChild<QAction*>("actionGrid");
     viewport_->grid(act->isChecked());
+}
+
+void MainWindow::on_actionResetCamera_triggered() {
+    viewport_->resetCamera();
 }

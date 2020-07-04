@@ -187,6 +187,39 @@ public:
         update();
     }
 
+    void resetCamera() {
+        // find first enabled
+        for (const auto& p : meshes_) {
+            const MeshData& mesh = p.second;
+            if (!mesh.enabled) {
+                continue;
+            }
+
+            Pvl::Vec3f center = mesh.box.center();
+            float scale = std::max(mesh.box.size()[0], mesh.box.size()[1]);
+            float zoom = 1.5 * scale;
+
+            camera_ = Camera(center + Pvl::Vec3f(0, 0, zoom),
+                center,
+                Pvl::Vec3f(0, 1, 0),
+                fov_,
+                Pvl::Vec2i(width(), height()));
+
+            double gridBase = 0.2 * scale;
+            grid_ = std::pow(10., std::floor(std::log10(gridBase)));
+            if (5.f * grid_ < gridBase) {
+                grid_ *= 5.f; // allow 5e10^n grids
+            } else if (2.f * grid_ < gridBase) {
+                grid_ *= 2.f; // allow 2e10^n grids
+            }
+            std::cout << "Grid = " << grid_ << std::endl;
+
+            update();
+
+            return;
+        }
+    }
+
     void screenshot(const QString& file) {
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
         glReadBuffer(GL_FRONT);

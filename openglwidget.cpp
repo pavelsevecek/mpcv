@@ -474,28 +474,10 @@ void OpenGLWidget::view(const void* handle, TexturedMesh&& mesh) {
     std::cout << "Mesh has extents " << data.box.lower()[0] << "," << data.box.lower()[1] << ":"
               << data.box.upper()[0] << "," << data.box.upper()[1] << std::endl;
 
-    // std::cout << "First mesh = " << firstMesh << std::endl;
+
     if (firstMesh) {
-        Pvl::Vec3f center = data.box.center();
-        float scale = std::max(data.box.size()[0], data.box.size()[1]);
-        float zoom = 1.5 * scale;
-
-        camera_ = Camera(center + Pvl::Vec3f(0, 0, zoom),
-            center,
-            Pvl::Vec3f(0, 1, 0),
-            fov_,
-            Pvl::Vec2i(width(), height()));
-
-        double gridBase = 0.2 * scale;
-        grid_ = std::pow(10., std::floor(std::log10(gridBase)));
-        if (5.f * grid_ < gridBase) {
-            grid_ *= 5.f; // allow 5e10^n grids
-        } else if (2.f * grid_ < gridBase) {
-            grid_ *= 2.f; // allow 2e10^n grids
-        }
-        std::cout << "Grid = " << grid_ << std::endl;
+        resetCamera();
     }
-    update();
 }
 
 void OpenGLWidget::updateCamera() {

@@ -7,6 +7,7 @@ QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
 }
+class QListWidget;
 class QListWidgetItem;
 QT_END_NAMESPACE
 
@@ -55,9 +56,12 @@ private slots:
 
     void on_actionFlat_triggered();
 
+    void on_actionResetCamera_triggered();
+
 private:
     Ui::MainWindow* ui_;
     OpenGLWidget* viewport_;
+    QListWidget* list_;
     std::vector<QListWidgetItem*> itemsA, itemsB;
 
     void buttonPushed(QAction* pushed);

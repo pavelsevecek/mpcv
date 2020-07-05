@@ -1,5 +1,6 @@
 #include "framebuffer.h"
 #include "./ui_framebuffer.h"
+#include "mesh.h"
 #include <QProgressBar>
 #include <QTimer>
 #include <tbb/tbb.h>
@@ -9,17 +10,27 @@ struct TaskGroup {
     tbb::mutex mutex;
 };
 
+inline Color colormap(const Pvl::Vec3f& color, float exposure) {
+    Color result;
+    for (int c = 0; c < 3; ++c) {
+        float value = exposure * color[c];
+        float clamped = std::max(std::min(value, 1.f), 0.f);
+        result[c] = uint8_t(std::pow(clamped, 1.f / 2.2f) * 255.f);
+    }
+    return result;
+}
+
 void View::paintEvent(QPaintEvent*) {
     QImage image;
     {
         tbb::mutex::scoped_lock lock(tg_->mutex);
-        Pvl::Vec2i dims = fb_.dimension();
+        Pvl::Vec2i dims = image_.dimension();
         image = QImage(dims[0], dims[1], QImage::Format_RGB888);
         image.fill(QColor(0, 0, 0));
         for (int y = 0; y < dims[1]; ++y) {
             for (int x = 0; x < dims[0]; ++x) {
                 Pvl::Vec2i pix(x, y);
-                Color color = fb_(pix).get(exposure_);
+                Color color = colormap(image_(pix), exposure_);
                 image.setPixelColor(x, y, QColor(color[0], color[1], color[2]));
             }
         }
@@ -50,10 +61,10 @@ void View::setTaskGroup(std::shared_ptr<TaskGroup> tg) {
     tg_ = tg;
 }
 
-void View::setImage(FrameBuffer&& image) {
+void View::setImage(Image&& image) {
     {
         tbb::mutex::scoped_lock lock(tg_->mutex);
-        fb_ = std::move(image);
+        image_ = std::move(image);
     }
     update();
 }
@@ -79,13 +90,13 @@ void View::save() {
         QImage image;
         {
             tbb::mutex::scoped_lock lock(tg_->mutex);
-            Pvl::Vec2i dims = fb_.dimension();
+            Pvl::Vec2i dims = image_.dimension();
             image = QImage(dims[0], dims[1], QImage::Format_RGB888);
             image.fill(QColor(0, 0, 0));
             for (int y = 0; y < dims[1]; ++y) {
                 for (int x = 0; x < dims[0]; ++x) {
                     Pvl::Vec2i pix(x, y);
-                    Color color = fb_(pix).get(exposure_);
+                    Color color = colormap(image_(pix), exposure_);
                     image.setPixelColor(x, y, QColor(color[0], color[1], color[2]));
                 }
             }

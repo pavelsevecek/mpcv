@@ -1,6 +1,6 @@
 #pragma once
 
-#include "renderer.h"
+#include "pvl/UniformGrid.hpp"
 #include <QFileDialog>
 #include <QMainWindow>
 #include <QPainter>
@@ -16,6 +16,7 @@ QT_END_NAMESPACE
 
 struct TaskGroup;
 
+using Image = Pvl::UniformGrid<Pvl::Vec3f, 2>;
 
 class View : public QWidget {
 public:
@@ -26,14 +27,14 @@ public:
 
     void setTaskGroup(std::shared_ptr<TaskGroup> tg);
 
-    void setImage(FrameBuffer&& image);
+    void setImage(Image&& image);
 
     void setExposure(int exposure);
 
     void save();
 
 private:
-    FrameBuffer fb_;
+    Image image_;
     std::shared_ptr<TaskGroup> tg_;
     float exposure_ = 1.f;
 };
@@ -46,7 +47,7 @@ public:
     FrameBufferWidget(QWidget* parent = nullptr);
     ~FrameBufferWidget();
 
-    void setImage(FrameBuffer&& image) {
+    void setImage(Image&& image) {
         view_->setImage(std::move(image));
     }
 

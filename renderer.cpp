@@ -189,9 +189,9 @@ void renderMeshes(FrameBufferWidget* frame,
     std::random_device rd;
     tbb::enumerable_thread_specific<Rng> threadRng([&rd] { return rd(); });
 
+    FrameBuffer framebuffer(dims);
     int numPasses = 10;
     for (int pass = 0; pass < numPasses; ++pass) {
-        FrameBuffer framebuffer(dims);
         /*QProgressDialog dialog("Rendering - iteration " + QString::number(pass + 1), "Cancel", 0, 100,
         frame); dialog.setWindowModality(Qt::WindowModal); dialog.show();*/
         auto meter = Pvl::makeProgressMeter(dims[0] * dims[1], [&frame](float prog) {
@@ -218,6 +218,13 @@ void renderMeshes(FrameBufferWidget* frame,
         if (pass == numPasses - 1) {
             denoise(framebuffer);
         }
-        frame->setImage(std::move(framebuffer));
+        Image image(dims);
+        Pvl::ParallelFor<Pvl::ParallelTag>()(0, dims[1], [&](int y) {
+            for (int x = 0; x < dims[0]; ++x) {
+                Pvl::Vec2i pix(x, y);
+                image(pix) = framebuffer(pix).color;
+            }
+        });
+        frame->setImage(std::move(image));
     }
 }

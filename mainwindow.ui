@@ -103,6 +103,7 @@
      <string>Render</string>
     </property>
     <addaction name="actionRender_view"/>
+    <addaction name="actionSun_setup"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuMesh"/>
@@ -294,6 +295,11 @@
   <action name="actionRender_view">
    <property name="text">
     <string>Render view</string>
+   </property>
+  </action>
+  <action name="actionSun_setup">
+   <property name="text">
+    <string>Sun setup</string>
    </property>
   </action>
  </widget>

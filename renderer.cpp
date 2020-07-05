@@ -80,8 +80,8 @@ struct Scene {
 
     std::vector<Light> lights;
 
-    Scene() {
-
+    Scene(const Pvl::Vec3f& dirToSun) {
+        sunDir = dirToSun;
         sunSky.update(sunDir);
 #if 0
         lights.emplace_back(206.162094116, 178.98638916, 11.0727357864);
@@ -259,10 +259,11 @@ void denoise(FrameBuffer& framebuffer) {
 
 void renderMeshes(FrameBufferWidget* frame,
     const std::vector<TexturedMesh*>& meshes,
+    const Pvl::Vec3f& dirToSun,
     const Camera camera,
     const Srs& srs) {
     std::cout << "Starting the renderer" << std::endl;
-    Scene scene;
+    Scene scene(dirToSun);
 
     /// \todo deduplicate
 

@@ -43,6 +43,7 @@ add_executable(mpcv
     renderer.h renderer.cpp
     sun-sky/SunSky.h sun-sky/SunSky.cpp
     framebuffer.h framebuffer.cpp framebuffer.ui
+    sunwidget.h sunwidget.cpp sunwidget.ui
     resources.qrc
   )
 

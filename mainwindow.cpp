@@ -4,6 +4,7 @@
 #include "openglwidget.h"
 //#include "pvl/PlyReader.hpp"
 #include "las.h"
+#include "sunwidget.h"
 #include <QFileDialog>
 #include <QListWidget>
 #include <QListWidgetItem>
@@ -436,4 +437,10 @@ void MainWindow::on_actionEstimate_normals_triggered() {
 
 void MainWindow::on_actionRender_view_triggered() {
     viewport_->renderView();
+}
+
+void MainWindow::on_actionSun_setup_triggered() {
+    static SunWidget* sun = new SunWidget(this);
+    sun->setFunc([this](Pvl::Vec3f dir) { viewport_->setSunDir(dir); });
+    sun->show();
 }

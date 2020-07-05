@@ -21,5 +21,6 @@ using FrameBuffer = Pvl::UniformGrid<Pixel, 2>;
 
 void renderMeshes(FrameBufferWidget* widget,
     const std::vector<TexturedMesh*>& meshes,
+    const Pvl::Vec3f& dirToSun,
     const Camera camera,
     const Srs& srs);

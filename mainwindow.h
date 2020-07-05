@@ -57,6 +57,8 @@ private slots:
 
     void on_actionRender_view_triggered();
 
+    void on_actionSun_setup_triggered();
+
 private:
     Ui::MainWindow* ui_;
     OpenGLWidget* viewport_;

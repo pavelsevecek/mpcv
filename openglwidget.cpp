@@ -794,5 +794,6 @@ void OpenGLWidget::renderView() {
     }
     FrameBufferWidget* frame = new FrameBufferWidget(this);
     frame->show();
-    frame->run([this, frame, meshesToRender] { renderMeshes(frame, meshesToRender, camera_, srs_); });
+    frame->run(
+        [this, frame, meshesToRender] { renderMeshes(frame, meshesToRender, sunDir_, camera_, srs_); });
 }

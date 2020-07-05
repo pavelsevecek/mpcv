@@ -118,6 +118,8 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
         Camera state;
     } mouse_;
 
+    Pvl::Vec3f sunDir_ = Pvl::normalize(Pvl::Vec3f(1.f, 1.f, 4.f));
+
 public:
     OpenGLWidget(QWidget* parent)
         : QOpenGLWidget(parent) {}
@@ -230,8 +232,10 @@ public:
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
         glReadBuffer(GL_FRONT);
         std::vector<uint8_t> pixels(width() * height() * 3);
-        glReadPixels(0, 0, width(), height(), GL_BGR_EXT, GL_UNSIGNED_BYTE, pixels.data());
-        QImage image(pixels.data(), width(), height(), width() * 3, QImage::Format_RGB888);
+        QRect rect = geometry();
+        glReadPixels(
+            rect.x(), rect.y(), rect.width(), rect.height(), GL_BGR_EXT, GL_UNSIGNED_BYTE, pixels.data());
+        QImage image(pixels.data(), rect.width(), rect.height(), rect.width() * 3, QImage::Format_RGB888);
         QImageWriter writer(file);
         writer.write(std::move(image).mirrored().rgbSwapped());
     }
@@ -243,6 +247,10 @@ public:
             meshes.push_back(&meshes_[handle].mesh);
         }
         savePly(ofs, meshes);
+    }
+
+    void setSunDir(const Pvl::Vec3f& dir) {
+        sunDir_ = dir;
     }
 
     void renderView();

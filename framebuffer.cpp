@@ -24,7 +24,7 @@ inline Color colormap(const Pvl::Vec3f& color, float exposure) {
     Color result;
     for (int c = 0; c < 3; ++c) {
         float value = exposure * color[c];
-  //      float compressed = 5.f * value / (5.f + value);
+        //      float compressed = 5.f * value / (5.f + value);
         float compressed = aces(value);
         float clamped = std::max(std::min(compressed, 1.f), 0.f);
         result[c] = uint8_t(std::pow(clamped, 1.f / 2.2f) * 255.f);
@@ -160,4 +160,10 @@ void FrameBufferWidget::on_actionSave_render_triggered() {
 
 void FrameBufferWidget::on_horizontalSlider_valueChanged(int value) {
     view_->setExposure(value);
+}
+
+void FrameBufferWidget::on_actionClose_triggered() {
+    cancelled_ = true;
+    tg_->group.wait();
+    close();
 }

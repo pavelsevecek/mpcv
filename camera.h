@@ -90,7 +90,7 @@ public:
         const Pvl::Vec3f dir = dir_ - left_ * rx - up_ * ry;
         Ray ray;
         ray.origin = eye_;
-        ray.dir = dir;
+        ray.dir = Pvl::normalize(dir);
         return ray;
     }
 

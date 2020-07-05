@@ -11,16 +11,60 @@
 #include <QProgressDialog>
 #include <random>
 
+#include "sun-sky/SunSky.h"
+
+
+struct MonoSunSky {
+    Pvl::Vec3f skyIntensity = Pvl::Vec3f(1.f, 1.f, 1.2f);
+    Pvl::Vec3f sunIntensity = Pvl::Vec3f(1.f, 1.f, 0.8f);
+
+    void update(const Pvl::Vec3f&) {}
+
+    Pvl::Vec3f evalSky(const Pvl::Vec3f&) const {
+        return skyIntensity;
+    }
+
+    Pvl::Vec3f evalSun(const Pvl::Vec3f&) const {
+        return skyIntensity;
+    }
+};
+
+struct HosekWilkieSunSky {
+    SSLib::cSunSkyHosek hosek;
+    float units = 5.e-4f;
+
+    void update(const Pvl::Vec3f& sunDir) {
+        Vec3f dirToSun(sunDir[0], sunDir[1], sunDir[2]);
+        hosek.Update(dirToSun, 2.5f);
+    }
+
+    Pvl::Vec3f evalSky(const Pvl::Vec3f& dir) const {
+        Vec3f sky = hosek.SkyRGB(Vec3f(dir[0], dir[1], dir[2]));
+        return units * Pvl::Vec3f(toGamut(sky[0]), toGamut(sky[1]), toGamut(sky[2]));
+    }
+
+    Pvl::Vec3f evalSun(const Pvl::Vec3f& dirToSun) const {
+        Vec3f sun = SSLib::SunRGB(dirToSun[2]);
+        return units * Pvl::Vec3f(toGamut(sun[0]), toGamut(sun[1]), toGamut(sun[2]));
+    }
+
+private:
+    inline float toGamut(const float x) const {
+        return std::max(x, 0.f);
+    }
+};
+
+
 struct Scene {
     float albedo = 0.2f;
 
-    Pvl::Vec3f skyIntensity = 0.4f * Pvl::Vec3f(1.f, 1.f, 1.2f);
-
-    Pvl::Vec3f sunIntensity = 1.f * Pvl::Vec3f(1.f, 1.f, 0.8f);
-    Pvl::Vec3f sunDir = Pvl::normalize(Pvl::Vec3f(2, 8, 5));
+    float skyMult = 0.5f;
+    float sunMult = 0.5f;
+    Pvl::Vec3f sunDir = Pvl::normalize(Pvl::Vec3f(2, 5, 6));
 
     float sunRadius = 0.25f * M_PI / 180.f;
 
+    HosekWilkieSunSky sunSky;
 
     struct Light {
         Pvl::Vec3f pos;
@@ -28,14 +72,17 @@ struct Scene {
         float cosAngle = std::cos(0.3);
 
         Light() = default;
-        Light(const Pvl::Vec3f& pos) : pos(pos){}
-        Light(float x, float y, float z) : pos(x, y, z){}
-
+        Light(const Pvl::Vec3f& pos)
+            : pos(pos) {}
+        Light(float x, float y, float z)
+            : pos(x, y, z) {}
     };
 
     std::vector<Light> lights;
 
     Scene() {
+
+        sunSky.update(sunDir);
 #if 0
         lights.emplace_back(206.162094116, 178.98638916, 11.0727357864);
         lights.emplace_back(200.246337891, 164.296463013, 11.0424947739);
@@ -57,37 +104,36 @@ struct Scene {
         lights.emplace_back( 234.100036621, 173.430480957, 10.0278778076);
       lights.emplace_back(   247.690917969, 175.376083374, 9.91175270081);
 #endif
-
     }
 
-//    std::vector<Pvl::Vec3f> vertexNormals;
+    //    std::vector<Pvl::Vec3f> vertexNormals;
     // Pvl::Vec3f lightPos = Pvl::Vec3f(-50, 25, 100);
 
-  /*  Scene(const std::vector<TexturedMesh*>& meshes) {
-        std::size_t totalVertices = 0;
-        for (const TexturedMesh* mesh : meshes) {
-            totalVertices += mesh->vertices.size();
-        }
-        vertexNormals.resize(totalVertices, Pvl::Vec3f(0));
-        std::size_t offset = 0;
-        for (const TexturedMesh* mesh : meshes) {
-            for (std::size_t fi = 0; fi < mesh->faces.size(); ++fi) {
-                Pvl::Vec3f n = mesh->normal(fi) * mesh->area(fi);
-                vertexNormals[offset + mesh->faces[fi][0]] += n;
-                vertexNormals[offset + mesh->faces[fi][1]] += n;
-                vertexNormals[offset + mesh->faces[fi][2]] += n;
-            }
-            offset += mesh->vertices.size();
-        }
-        for (Pvl::Vec3f& n : vertexNormals) {
-            float length = Pvl::norm(n);
-            if (length > 1.e-20) {
-                n /= length;
-            } else {
-                n = Pvl::Vec3f(0, 0, 1);
-            }
-        }
-    }*/
+    /*  Scene(const std::vector<TexturedMesh*>& meshes) {
+          std::size_t totalVertices = 0;
+          for (const TexturedMesh* mesh : meshes) {
+              totalVertices += mesh->vertices.size();
+          }
+          vertexNormals.resize(totalVertices, Pvl::Vec3f(0));
+          std::size_t offset = 0;
+          for (const TexturedMesh* mesh : meshes) {
+              for (std::size_t fi = 0; fi < mesh->faces.size(); ++fi) {
+                  Pvl::Vec3f n = mesh->normal(fi) * mesh->area(fi);
+                  vertexNormals[offset + mesh->faces[fi][0]] += n;
+                  vertexNormals[offset + mesh->faces[fi][1]] += n;
+                  vertexNormals[offset + mesh->faces[fi][2]] += n;
+              }
+              offset += mesh->vertices.size();
+          }
+          for (Pvl::Vec3f& n : vertexNormals) {
+              float length = Pvl::norm(n);
+              if (length > 1.e-20) {
+                  n /= length;
+              } else {
+                  n = Pvl::Vec3f(0, 0, 1);
+              }
+          }
+      }*/
 };
 
 struct Rng {
@@ -167,7 +213,8 @@ Pvl::Vec3f radiance(const Scene& scene,
         Pvl::Vec2f xy = scene.sunRadius * sampleUnitDisc(rng(), rng());
         Pvl::Vec3f dirToSun = Pvl::prod(rotator, Pvl::normalize(Pvl::Vec3f(xy[0], xy[1], 1.f)));
         if (!bvh.isOccluded(Pvl::Ray(pos + eps * dirToSun, dirToSun))) {
-            result += scene.albedo * scene.sunIntensity * Pvl::dotProd(normal, dirToSun);
+            result += scene.albedo * scene.sunMult * scene.sunSky.evalSun(dirToSun) *
+                      std::max(Pvl::dotProd(normal, dirToSun), 0.f);
         }
 
         for (const Scene::Light& light : scene.lights) {
@@ -177,19 +224,17 @@ Pvl::Vec3f radiance(const Scene& scene,
             }
             const Pvl::Vec3f dirToLight = (light.pos - pos) / distToLight;
             /// \todo range-limited occlusion instead
-            bool hit = bvh.getFirstIntersection(Pvl::Ray(pos + eps * dirToLight,
-                                                         dirToLight),
-                                                is);
+            bool hit = bvh.getFirstIntersection(Pvl::Ray(pos + eps * dirToLight, dirToLight), is);
             bool visible = !hit || is.t > distToLight - 1.f;
-            bool illuminates = dirToLight[2] > 0;//light.cosAngle;
+            bool illuminates = dirToLight[2] > 0; // light.cosAngle;
             if (visible && illuminates) {
                 Pvl::Vec3f intensity = light.intensity * std::pow(dirToLight[2], 20.f);
-                result += scene.albedo * intensity * Pvl::dotProd(normal, dirToLight);
+                result += scene.albedo * intensity * std::max(Pvl::dotProd(normal, dirToLight), 0.f);
             }
         }
         return result;
     } else {
-        return scene.skyIntensity;
+        return scene.skyMult * scene.sunSky.evalSky(ray.direction());
     }
 }
 
@@ -265,13 +310,18 @@ void renderMeshes(FrameBufferWidget* frame,
             // QCoreApplication::processEvents();
             // return dialog.wasCanceled();
             frame->setProgress(pass, prog);
-            return false;
+            return frame->cancelled();
         });
 
         Pvl::ParallelFor<Pvl::ParallelTag>()(0, dims[1], [&](int y) {
+            if (frame->cancelled()) {
+                return;
+            }
             Rng& rng = threadRng.local();
             for (int x = 0; x < dims[0]; ++x) {
-                meter.inc();
+                if (meter.inc()) {
+                    return;
+                }
                 Pvl::Vec2i pix(x, y);
                 float dx = rng();
                 float dy = rng();
@@ -281,6 +331,9 @@ void renderMeshes(FrameBufferWidget* frame,
                 framebuffer(pix).add(color);
             }
         });
+        if (frame->cancelled()) {
+            return;
+        }
         if (pass == numPasses - 1) {
             denoise(framebuffer);
         }

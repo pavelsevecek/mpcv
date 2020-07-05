@@ -51,6 +51,10 @@ public:
         view_->setImage(std::move(image));
     }
 
+    bool cancelled() const {
+        return cancelled_;
+    }
+
     void setProgress(int pass, int prog);
 
     void run(const std::function<void()>& func);
@@ -59,6 +63,8 @@ private slots:
     void on_actionSave_render_triggered();
 
     void on_horizontalSlider_valueChanged(int value);
+
+    void on_actionClose_triggered();
 
 private:
     Ui::FrameBuffer* ui_;
@@ -69,4 +75,5 @@ private:
     int passValue_ = 0;
     int progressValue_ = 0;
     std::shared_ptr<TaskGroup> tg_;
+    bool cancelled_ = false;
 };

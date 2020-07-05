@@ -5,3 +5,6 @@
 [submodule "oidn"]
 	path = oidn
 	url = https://github.com/OpenImageDenoise/oidn.git
+[submodule "sun-sky"]
+	path = sun-sky
+	url = https://github.com/andrewwillmott/sun-sky.git

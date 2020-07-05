@@ -29,7 +29,7 @@
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
         <horstretch>1</horstretch>
-        <verstretch>1</verstretch>
+        <verstretch>0</verstretch>
        </sizepolicy>
       </property>
       <property name="minimumSize">
@@ -98,9 +98,16 @@
     </property>
     <addaction name="actionEstimate_normals"/>
    </widget>
+   <widget class="QMenu" name="menuRender">
+    <property name="title">
+     <string>Render</string>
+    </property>
+    <addaction name="actionRender_view"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuMesh"/>
    <addaction name="menuPoint_cloud"/>
+   <addaction name="menuRender"/>
   </widget>
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
@@ -282,6 +289,11 @@
   <action name="actionEstimate_normals">
    <property name="text">
     <string>Estimate normals</string>
+   </property>
+  </action>
+  <action name="actionRender_view">
+   <property name="text">
+    <string>Render view</string>
    </property>
   </action>
  </widget>

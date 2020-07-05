@@ -2,3 +2,6 @@
 	path = pvl
 	url = https://github.com/pavelsevecek/pvl.git
 	branch = master
+[submodule "oidn"]
+	path = oidn
+	url = https://github.com/OpenImageDenoise/oidn.git

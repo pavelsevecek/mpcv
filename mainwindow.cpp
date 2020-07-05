@@ -433,3 +433,7 @@ void MainWindow::on_actionEstimate_normals_triggered() {
     };
     viewport_->estimateNormals(callback);
 }
+
+void MainWindow::on_actionRender_view_triggered() {
+    viewport_->renderView();
+}

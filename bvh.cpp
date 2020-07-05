@@ -110,6 +110,19 @@ void Bvh<TBvhObject>::getIntersections(const Ray& ray, const TAddIntersection& a
     }
 }
 
+template <typename TBvhObject>
+bool Bvh<TBvhObject>::getFirstIntersection(const Ray& ray, IntersectionInfo& intersection) const {
+    intersection.t = std::numeric_limits<float>::max();
+    intersection.object = nullptr;
+
+    this->getIntersections(ray, [&intersection](IntersectionInfo& current) {
+        if (current.t > 0 && current.t < intersection.t) {
+            intersection = current;
+        }
+        return true;
+    });
+    return intersection.object != nullptr;
+}
 
 template <typename TBvhObject>
 bool Bvh<TBvhObject>::isOccluded(const Ray& ray) const {

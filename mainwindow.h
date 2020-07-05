@@ -55,6 +55,8 @@ private slots:
 
     void on_actionEstimate_normals_triggered();
 
+    void on_actionRender_view_triggered();
+
 private:
     Ui::MainWindow* ui_;
     OpenGLWidget* viewport_;

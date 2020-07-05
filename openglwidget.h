@@ -245,6 +245,8 @@ public:
         savePly(ofs, meshes);
     }
 
+    void renderView();
+
     virtual void wheelEvent(QWheelEvent* event) override {
         if (event->modifiers() & Qt::CTRL) {
             float y0 = std::atan(0.5 * fov_);

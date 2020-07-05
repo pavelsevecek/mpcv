@@ -70,10 +70,11 @@ private:
     Vec3f dir1, dir2;
 
 public:
-    BvhTriangle(const Vec3f& v0, const Vec3f& v1, const Vec3f& v2)
+    BvhTriangle(const Vec3f& v0, const Vec3f& v1, const Vec3f& v2, int data = -1)
         : v0(v0) {
         dir1 = v1 - v0;
         dir2 = v2 - v0;
+        userData = data;
     }
 
     bool getIntersection(const Ray& ray, IntersectionInfo& intersection) const {
@@ -116,6 +117,20 @@ public:
     Vec3f getCenter() const {
         return v0 + (dir1 + dir2) / 3.f;
     }
+
+    std::array<Pvl::Vec3f, 3> getTriangle() const {
+        return { v0, v0 + dir1, v0 + dir2 };
+    }
+
+    Vec3f normal() const {
+        Vec3f n = crossProd(dir1, dir2);
+        float length = norm(n);
+        if (length > 1.e-20f) {
+            return n / length;
+        } else {
+            return Vec3f(0, 0, 1);
+        }
+    }
 };
 
 struct BvhNode {
@@ -150,6 +165,8 @@ public:
     ///
     /// This erased previously stored objects.
     void build(std::vector<TBvhObject>&& objects);
+
+    bool getFirstIntersection(const Ray& ray, IntersectionInfo& intersection) const;
 
     /// \brief Returns true if the ray is occluded by some geometry
     bool isOccluded(const Ray& ray) const;

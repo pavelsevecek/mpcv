@@ -112,4 +112,8 @@ public:
         const float y = 0.5f * (1.f - upRel) * size_[1];
         return Pvl::Vec2f(x, y);
     }
+
+    Pvl::Vec2i dimensions() const {
+        return size_;
+    }
 };

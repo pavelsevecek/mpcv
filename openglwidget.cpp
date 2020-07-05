@@ -5,6 +5,7 @@
 #include "pvl/Refinement.hpp"
 #include "pvl/Simplification.hpp"
 #include "pvl/TriangleMesh.hpp"
+#include "renderer.h"
 #include <QPainter>
 #include <tbb/tbb.h>
 
@@ -780,4 +781,15 @@ void OpenGLWidget::computeAmbientOcclusion(std::function<bool(float)> progress) 
         }
         enableAo(true);
     }
+}
+
+void OpenGLWidget::renderView() {
+    std::vector<TexturedMesh*> meshesToRender;
+    for (auto& p : meshes_) {
+        if (p.second.pointCloud() || !p.second.enabled) {
+            continue;
+        }
+        meshesToRender.push_back(&p.second.mesh);
+    }
+    renderMeshes(meshesToRender, camera_);
 }

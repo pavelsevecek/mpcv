@@ -27,6 +27,8 @@ endif()
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 add_definitions(-DQT_NO_DEBUG_OUTPUT)
 
+find_package(OpenImageDenoise REQUIRED)
+
 add_executable(mpcv
     main.cpp
     mainwindow.cpp mainwindow.h mainwindow.ui
@@ -38,6 +40,8 @@ add_executable(mpcv
     coordinates.h
     bvh.h bvh.cpp
     ambient.h ambient.cpp
+    renderer.h renderer.cpp
+    framebuffer.h framebuffer.cpp framebuffer.ui
     resources.qrc
   )
 
@@ -47,4 +51,5 @@ target_link_libraries(mpcv PRIVATE
     ${Tbb_LIBRARIES}
     ${OpenVDB_LIBRARIES}
     laslib
+    "/usr/local/lib/libOpenImageDenoise.so"
     )

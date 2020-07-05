@@ -108,7 +108,7 @@ Pvl::Vec3f radiance(const Scene& scene,
         // GI
         if (depth == 0) {
             Pvl::Mat33f rotator = Pvl::getRotatorTo(normal);
-            for (int i = 0; i < 5; ++i) {
+            for (int i = 0; i < 10; ++i) {
                 Pvl::Vec3f outDir = Pvl::prod(rotator, sampleUnitHemiSphere(rng(), rng()));
                 Pvl::Vec3f gi = radiance(scene, Pvl::Ray(pos + eps * outDir, outDir), bvh, rng, depth + 1);
                 float bsdfCos = scene.albedo * std::max(Pvl::dotProd(outDir, normal), 0.f);
@@ -194,11 +194,11 @@ void renderMeshes(FrameBufferWidget* frame,
     for (int pass = 0; pass < numPasses; ++pass) {
         /*QProgressDialog dialog("Rendering - iteration " + QString::number(pass + 1), "Cancel", 0, 100,
         frame); dialog.setWindowModality(Qt::WindowModal); dialog.show();*/
-        auto meter = Pvl::makeProgressMeter(dims[0] * dims[1], [&frame](float prog) {
+        auto meter = Pvl::makeProgressMeter(dims[0] * dims[1], [&frame, pass](float prog) {
             // dialog.setValue(prog);
             // QCoreApplication::processEvents();
             // return dialog.wasCanceled();
-            frame->setProgress(prog);
+            frame->setProgress(pass, prog);
             return false;
         });
 
@@ -227,4 +227,6 @@ void renderMeshes(FrameBufferWidget* frame,
         });
         frame->setImage(std::move(image));
     }
+    // set complete
+    frame->setProgress(10, 100);
 }

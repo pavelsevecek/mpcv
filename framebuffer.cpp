@@ -112,6 +112,7 @@ FrameBufferWidget::FrameBufferWidget(QWidget* parent)
 
     view_ = findChild<View*>("view");
     progressBar_ = findChild<QProgressBar*>("progress");
+    iterationBar_ = findChild<QProgressBar*>("iterations");
     /*QWidget* layout = findChild<QWidget*>("horizontalLayoutWidget");
     view_ = new View(layout);
     view_->setGeometry(10, 10, width() - 20, height() - 20);
@@ -123,14 +124,18 @@ FrameBufferWidget::FrameBufferWidget(QWidget* parent)
 
     QTimer* timer = new QTimer(this);
     timer->start(200);
-    timer->callOnTimeout([this] { progressBar_->setValue(progressValue_); });
+    timer->callOnTimeout([this] {
+        iterationBar_->setValue(passValue_);
+        progressBar_->setValue(progressValue_);
+    });
 }
 
 FrameBufferWidget::~FrameBufferWidget() {
     delete ui_;
 }
 
-void FrameBufferWidget::setProgress(const float prog) {
+void FrameBufferWidget::setProgress(const int pass, const int prog) {
+    passValue_ = pass;
     progressValue_ = prog;
 }
 void FrameBufferWidget::run(const std::function<void()>& func) {

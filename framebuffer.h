@@ -51,7 +51,7 @@ public:
         view_->setImage(std::move(image));
     }
 
-    void setProgress(const float prog);
+    void setProgress(int pass, int prog);
 
     void run(const std::function<void()>& func);
 
@@ -64,6 +64,9 @@ private:
     Ui::FrameBuffer* ui_;
     View* view_;
     QProgressBar* progressBar_;
-    float progressValue_ = 0.f;
+    QProgressBar* iterationBar_;
+
+    int passValue_ = 0;
+    int progressValue_ = 0;
     std::shared_ptr<TaskGroup> tg_;
 };

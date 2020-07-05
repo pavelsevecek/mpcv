@@ -113,9 +113,25 @@
         </spacer>
        </item>
        <item>
+        <widget class="QProgressBar" name="iterations">
+         <property name="maximum">
+          <number>10</number>
+         </property>
+         <property name="value">
+          <number>0</number>
+         </property>
+         <property name="format">
+          <string>Iterations %v</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QProgressBar" name="progress">
          <property name="value">
           <number>0</number>
+         </property>
+         <property name="format">
+          <string>Progress %p%</string>
          </property>
         </widget>
        </item>

@@ -23,9 +23,14 @@ void SunWidget::on_pushButton_clicked() {
     QTime time = timeEdit->time();
     QDate date = timeEdit->date();
     float localTime = time.hour() + time.minute() / 60.f;
+    if (timeEdit->dateTime().isDaylightTime()) {
+        localTime += 1.f;
+    }
     float timezone = longitude / 15.f; /// \todo
-    int julian = date.toJulianDay();
-    Vec3f dir = SSLib::SunDirection(localTime, timezone, julian, latitude, longitude);
+    int day = date.daysInYear();
+    std::cout << "localTime = " << localTime << std::endl;
+    std::cout << "julianDay = " << day << std::endl;
+    Vec3f dir = SSLib::SunDirection(localTime, timezone, day, latitude, longitude);
     hide();
     sunDirFunc_(Pvl::normalize(Pvl::Vec3f(dir[0], dir[1], dir[2])));
 }

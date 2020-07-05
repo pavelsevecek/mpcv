@@ -11,32 +11,6 @@
 #include <QProgressDialog>
 #include <random>
 
-struct Pixel {
-    Pvl::Vec3f color;
-    int weight;
-
-    void add(const Pvl::Vec3f& c) {
-        color = (weight * color + c) / (weight + 1);
-        ++weight;
-    }
-
-    Color get(float exposure) const {
-        if (weight > 0) {
-            Color result;
-            for (int c = 0; c < 3; ++c) {
-                float value = exposure * color[c];
-                float clamped = std::max(std::min(value, 1.f), 0.f);
-                result[c] = uint8_t(std::pow(clamped, 1.f / 2.2f) * 255.f);
-            }
-            return result;
-        } else {
-            return Color(0);
-        }
-    }
-};
-
-using FrameBuffer = Pvl::UniformGrid<Pixel, 2>;
-
 struct Scene {
     float albedo = 0.75;
 
@@ -161,8 +135,6 @@ void denoise(FrameBuffer& framebuffer) {
     int width = framebuffer.dimension()[0];
     int height = framebuffer.dimension()[1];
     filter.setImage("color", framebuffer.data(), oidn::Format::Float3, width, height, 0, sizeof(Pixel));
-    // filter.setImage("albedo", albedoPtr, oidn::Format::Float3, width, height); // optional
-    // filter.setImage("normal", normalPtr, oidn::Format::Float3, width, height); // optional
     filter.setImage("output", framebuffer.data(), oidn::Format::Float3, width, height, 0, sizeof(Pixel));
     filter.set("hdr", true);
     filter.commit();
@@ -174,16 +146,16 @@ void denoise(FrameBuffer& framebuffer) {
     }
 }
 
-void renderMeshes(const std::vector<TexturedMesh*>& meshes, const Camera& camera) {
-    FrameBufferWidget* frame = new FrameBufferWidget();
-    frame->show();
-
+void renderMeshes(FrameBufferWidget* frame,
+    const std::vector<TexturedMesh*>& meshes,
+    const Camera& camera,
+    const Srs& srs) {
+    std::cout << "Starting the renderer" << std::endl;
     Scene scene(meshes);
 
     /// \todo deduplicate
 
     Pvl::Bvh<Pvl::BvhTriangle> bvh(10);
-    Srs referenceSrs = meshes.front()->srs;
 
     float scale = 0.f;
     // progress(0);
@@ -194,7 +166,7 @@ void renderMeshes(const std::vector<TexturedMesh*>& meshes, const Camera& camera
         totalFaces += mesh->faces.size();
 
         Pvl::Box3f box;
-        SrsConv meshToRef(mesh->srs, referenceSrs);
+        SrsConv meshToRef(mesh->srs, srs);
         for (const TexturedMesh::Face& f : mesh->faces) {
             Pvl::Vec3f v1 = meshToRef(mesh->vertices[f[0]]);
             Pvl::Vec3f v2 = meshToRef(mesh->vertices[f[1]]);
@@ -214,19 +186,20 @@ void renderMeshes(const std::vector<TexturedMesh*>& meshes, const Camera& camera
     triangles = {};
 
     Pvl::Vec2i dims = camera.dimensions();
-    FrameBuffer framebuffer(dims);
     std::random_device rd;
     tbb::enumerable_thread_specific<Rng> threadRng([&rd] { return rd(); });
 
     int numPasses = 10;
     for (int pass = 0; pass < numPasses; ++pass) {
-        QProgressDialog dialog("Rendering - iteration " + QString::number(pass + 1), "Cancel", 0, 100, frame);
-        dialog.setWindowModality(Qt::WindowModal);
-        dialog.show();
-        auto meter = Pvl::makeProgressMeter(dims[0] * dims[1], [&dialog](float prog) {
-            dialog.setValue(prog);
-            QCoreApplication::processEvents();
-            return dialog.wasCanceled();
+        FrameBuffer framebuffer(dims);
+        /*QProgressDialog dialog("Rendering - iteration " + QString::number(pass + 1), "Cancel", 0, 100,
+        frame); dialog.setWindowModality(Qt::WindowModal); dialog.show();*/
+        auto meter = Pvl::makeProgressMeter(dims[0] * dims[1], [&frame](float prog) {
+            // dialog.setValue(prog);
+            // QCoreApplication::processEvents();
+            // return dialog.wasCanceled();
+            frame->setProgress(prog);
+            return false;
         });
 
         Pvl::ParallelFor<Pvl::ParallelTag>()(0, dims[1], [&](int y) {
@@ -245,15 +218,6 @@ void renderMeshes(const std::vector<TexturedMesh*>& meshes, const Camera& camera
         if (pass == numPasses - 1) {
             denoise(framebuffer);
         }
-        QImage image(dims[0], dims[1], QImage::Format_RGB888);
-        for (int y = 0; y < dims[1]; ++y) {
-            for (int x = 0; x < dims[0]; ++x) {
-                Pvl::Vec2i pix(x, y);
-                Color color = framebuffer(pix).get(1.2f);
-                image.setPixelColor(x, y, QColor(color[0], color[1], color[2]));
-            }
-        }
-        // image.save("render-" + QString::number(pass) + ".png");
-        frame->setImage(std::move(image));
+        frame->setImage(std::move(framebuffer));
     }
 }

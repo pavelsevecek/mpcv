@@ -1,5 +1,6 @@
 #include "openglwidget.h"
 #include "ambient.h"
+#include "framebuffer.h"
 #include "pvl/CloudUtils.hpp"
 #include "pvl/QuadricDecimator.hpp"
 #include "pvl/Refinement.hpp"
@@ -791,5 +792,7 @@ void OpenGLWidget::renderView() {
         }
         meshesToRender.push_back(&p.second.mesh);
     }
-    renderMeshes(meshesToRender, camera_);
+    FrameBufferWidget* frame = new FrameBufferWidget(this);
+    frame->show();
+    frame->run([this, frame, meshesToRender] { renderMeshes(frame, meshesToRender, camera_, srs_); });
 }

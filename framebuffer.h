@@ -1,5 +1,6 @@
 #pragma once
 
+#include "renderer.h"
 #include <QFileDialog>
 #include <QMainWindow>
 #include <QPainter>
@@ -10,62 +11,33 @@ QT_BEGIN_NAMESPACE
 namespace Ui {
 class FrameBuffer;
 }
+class QProgressBar;
 QT_END_NAMESPACE
+
+struct TaskGroup;
+
 
 class View : public QWidget {
 public:
     View(QWidget* parent)
-        : QWidget(parent) {
-        image_ = QImage(width() - 20, height() - 20, QImage::Format_RGB888);
-        image_.fill(QColor(0, 0, 0));
-    }
+        : QWidget(parent) {}
 
-    virtual void paintEvent(QPaintEvent*) override {
-        std::cout << "Rendering image to the view" << std::endl;
-        QRect targetRect = geometry();
-        QRect sourceRect = image_.rect();
-        float targetAspect = float(targetRect.width()) / targetRect.height();
-        float sourceAspect = float(sourceRect.width()) / sourceRect.height();
-        if (targetAspect > sourceAspect) {
-            int newWidth = sourceRect.width() * float(targetRect.height()) / sourceRect.height();
-            int newX = (targetRect.width() - newWidth) / 2;
-            targetRect.setX(newX);
-            targetRect.setWidth(newWidth);
-        } else {
-            int newHeight = sourceRect.height() * float(targetRect.width()) / sourceRect.width();
-            int newY = (targetRect.height() - newHeight) / 2;
-            targetRect.setY(newY);
-            targetRect.setHeight(newHeight);
-        }
-        QPainter painter(this);
-        painter.drawImage(targetRect, image_, sourceRect);
-        painter.end();
-    }
+    virtual void paintEvent(QPaintEvent*) override;
 
-    void setImage(QImage&& image) {
-        image_ = std::move(image);
-        update();
-    }
+    void setTaskGroup(std::shared_ptr<TaskGroup> tg);
 
-    void save() {
-        static QDir initialDir(".");
-        QString file = QFileDialog::getSaveFileName(this,
-            tr("Save render"),
-            initialDir.path(),
-            tr("PNG image (*.png);;JPEG image (*.jpg);;Targa image (*.tga)"));
-        if (!file.isEmpty()) {
-            QFileInfo info(file);
-            initialDir = info.dir();
-            if (info.suffix().isEmpty()) {
-                file += ".png";
-            }
-            image_.save(file);
-        }
-    }
+    void setImage(FrameBuffer&& image);
+
+    void setExposure(int exposure);
+
+    void save();
 
 private:
-    QImage image_;
+    FrameBuffer fb_;
+    std::shared_ptr<TaskGroup> tg_;
+    float exposure_ = 1.f;
 };
+
 
 class FrameBufferWidget : public QMainWindow {
     Q_OBJECT
@@ -74,16 +46,23 @@ public:
     FrameBufferWidget(QWidget* parent = nullptr);
     ~FrameBufferWidget();
 
-    void setImage(QImage&& image) {
+    void setImage(FrameBuffer&& image) {
         view_->setImage(std::move(image));
     }
 
+    void setProgress(const float prog);
+
+    void run(const std::function<void()>& func);
+
 private slots:
-
-
     void on_actionSave_render_triggered();
+
+    void on_horizontalSlider_valueChanged(int value);
 
 private:
     Ui::FrameBuffer* ui_;
     View* view_;
+    QProgressBar* progressBar_;
+    float progressValue_ = 0.f;
+    std::shared_ptr<TaskGroup> tg_;
 };

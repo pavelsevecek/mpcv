@@ -12,19 +12,58 @@
 #include <random>
 
 struct Scene {
-    float albedo = 0.75;
+    float albedo = 0.2f;
 
-    Pvl::Vec3f skyIntensity = Pvl::Vec3f(0.25f, 0.25f, 0.3f);
+    Pvl::Vec3f skyIntensity = 0.4f * Pvl::Vec3f(1.f, 1.f, 1.2f);
 
-    Pvl::Vec3f sunIntensity = Pvl::Vec3f(0.2, 0.2f, 0.15f);
-    Pvl::Vec3f sunDir = Pvl::normalize(Pvl::Vec3f(1, 1, 5));
+    Pvl::Vec3f sunIntensity = 1.f * Pvl::Vec3f(1.f, 1.f, 0.8f);
+    Pvl::Vec3f sunDir = Pvl::normalize(Pvl::Vec3f(2, 8, 5));
 
-    float sunRadius = 0.05; // rads
+    float sunRadius = 0.25f * M_PI / 180.f;
 
-    std::vector<Pvl::Vec3f> vertexNormals;
+
+    struct Light {
+        Pvl::Vec3f pos;
+        Pvl::Vec3f intensity = 10 * Pvl::Vec3f(1.f, 1.f, 0.1f);
+        float cosAngle = std::cos(0.3);
+
+        Light() = default;
+        Light(const Pvl::Vec3f& pos) : pos(pos){}
+        Light(float x, float y, float z) : pos(x, y, z){}
+
+    };
+
+    std::vector<Light> lights;
+
+    Scene() {
+#if 0
+        lights.emplace_back(206.162094116, 178.98638916, 11.0727357864);
+        lights.emplace_back(200.246337891, 164.296463013, 11.0424947739);
+        lights.emplace_back(220.783050537, 156.128082275, 10.9192733765);
+        lights.emplace_back(237.933807373, 153.780349731, 10.9892902374);
+        lights.emplace_back(255.509719849, 158.282302856, 10.9857540131);
+        lights.emplace_back(276.554138184, 169.323303223, 7.82737731934);
+        lights.emplace_back(298.892150879, 185.251159668, 7.8238067627);
+        lights.emplace_back(298.794189453, 185.307998657, 7.85432815552);
+        lights.emplace_back(314.957183838, 196.964797974, 7.8002948761);
+        lights.emplace_back(282.777008057, 146.740844727, 5.80917549133);
+        lights.emplace_back(282.148498535, 133.335128784, 5.87916660309);
+        lights.emplace_back(281.093078613, 131.42829895, 4.428399086);
+        lights.emplace_back(300.863861084, 137.872619629, 5.97756099701);
+        lights.emplace_back(356.055999756, 72.9139251709, 5.78705978394);
+
+      lights.emplace_back(   222.284057617, 174.936965942, 10.1498947144);
+         lights.emplace_back(224.596817017, 183.816253662, 0.127750396729);
+        lights.emplace_back( 234.100036621, 173.430480957, 10.0278778076);
+      lights.emplace_back(   247.690917969, 175.376083374, 9.91175270081);
+#endif
+
+    }
+
+//    std::vector<Pvl::Vec3f> vertexNormals;
     // Pvl::Vec3f lightPos = Pvl::Vec3f(-50, 25, 100);
 
-    Scene(const std::vector<TexturedMesh*>& meshes) {
+  /*  Scene(const std::vector<TexturedMesh*>& meshes) {
         std::size_t totalVertices = 0;
         for (const TexturedMesh* mesh : meshes) {
             totalVertices += mesh->vertices.size();
@@ -48,7 +87,7 @@ struct Scene {
                 n = Pvl::Vec3f(0, 0, 1);
             }
         }
-    }
+    }*/
 };
 
 struct Rng {
@@ -69,6 +108,12 @@ inline Pvl::Vec3f sampleUnitHemiSphere(float x, float y) {
     const float z = y;
     const float u = std::sqrt(1.f - z * z);
     return Pvl::Vec3f(u * std::cos(phi), u * std::sin(phi), z);
+}
+
+inline Pvl::Vec2f sampleUnitDisc(float x, float y) {
+    float r = std::sqrt(x);
+    float phi = 2.f * M_PI * y;
+    return Pvl::Vec2f(r * cos(phi), r * cos(phi));
 }
 
 inline Pvl::Vec3f barycentric(const Pvl::Vec3f& p, const std::array<Pvl::Vec3f, 3>& tri) {
@@ -108,18 +153,39 @@ Pvl::Vec3f radiance(const Scene& scene,
         // GI
         if (depth == 0) {
             Pvl::Mat33f rotator = Pvl::getRotatorTo(normal);
-            for (int i = 0; i < 10; ++i) {
+            int numGiSamples = 10;
+            for (int i = 0; i < numGiSamples; ++i) {
                 Pvl::Vec3f outDir = Pvl::prod(rotator, sampleUnitHemiSphere(rng(), rng()));
                 Pvl::Vec3f gi = radiance(scene, Pvl::Ray(pos + eps * outDir, outDir), bvh, rng, depth + 1);
                 float bsdfCos = scene.albedo * std::max(Pvl::dotProd(outDir, normal), 0.f);
-                result += gi * bsdfCos;
+                result += gi * bsdfCos / numGiSamples;
             }
         }
 
         // direct lighting
-        Pvl::Vec3f dirToLight = scene.sunDir;
-        if (!bvh.isOccluded(Pvl::Ray(pos + eps * dirToLight, dirToLight))) {
-            result += scene.sunIntensity * Pvl::dotProd(normal, dirToLight);
+        Pvl::Mat33f rotator = Pvl::getRotatorTo(scene.sunDir);
+        Pvl::Vec2f xy = scene.sunRadius * sampleUnitDisc(rng(), rng());
+        Pvl::Vec3f dirToSun = Pvl::prod(rotator, Pvl::normalize(Pvl::Vec3f(xy[0], xy[1], 1.f)));
+        if (!bvh.isOccluded(Pvl::Ray(pos + eps * dirToSun, dirToSun))) {
+            result += scene.albedo * scene.sunIntensity * Pvl::dotProd(normal, dirToSun);
+        }
+
+        for (const Scene::Light& light : scene.lights) {
+            const float distToLight = Pvl::norm(light.pos - pos);
+            if (distToLight > 50) {
+                continue;
+            }
+            const Pvl::Vec3f dirToLight = (light.pos - pos) / distToLight;
+            /// \todo range-limited occlusion instead
+            bool hit = bvh.getFirstIntersection(Pvl::Ray(pos + eps * dirToLight,
+                                                         dirToLight),
+                                                is);
+            bool visible = !hit || is.t > distToLight - 1.f;
+            bool illuminates = dirToLight[2] > 0;//light.cosAngle;
+            if (visible && illuminates) {
+                Pvl::Vec3f intensity = light.intensity * std::pow(dirToLight[2], 20.f);
+                result += scene.albedo * intensity * Pvl::dotProd(normal, dirToLight);
+            }
         }
         return result;
     } else {
@@ -148,10 +214,10 @@ void denoise(FrameBuffer& framebuffer) {
 
 void renderMeshes(FrameBufferWidget* frame,
     const std::vector<TexturedMesh*>& meshes,
-    const Camera& camera,
+    const Camera camera,
     const Srs& srs) {
     std::cout << "Starting the renderer" << std::endl;
-    Scene scene(meshes);
+    Scene scene;
 
     /// \todo deduplicate
 

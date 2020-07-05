@@ -10,11 +10,23 @@ struct TaskGroup {
     tbb::mutex mutex;
 };
 
+float aces(const float v0) {
+    float v = 0.6f * v0;
+    float a = 2.51f;
+    float b = 0.03f;
+    float c = 2.43f;
+    float d = 0.59f;
+    float e = 0.14f;
+    return (v * (a * v + b)) / (v * (c * v + d) + e);
+}
+
 inline Color colormap(const Pvl::Vec3f& color, float exposure) {
     Color result;
     for (int c = 0; c < 3; ++c) {
         float value = exposure * color[c];
-        float clamped = std::max(std::min(value, 1.f), 0.f);
+  //      float compressed = 5.f * value / (5.f + value);
+        float compressed = aces(value);
+        float clamped = std::max(std::min(compressed, 1.f), 0.f);
         result[c] = uint8_t(std::pow(clamped, 1.f / 2.2f) * 255.f);
     }
     return result;

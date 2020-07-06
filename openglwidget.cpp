@@ -522,7 +522,7 @@ void OpenGLWidget::wheelEvent(QWheelEvent* event) {
     } else if (event->modifiers() & Qt::SHIFT) {
         int prevStride = int(pointStride_);
         pointStride_ =
-            std::max(std::min(pointStride_ * (1.f + 0.001f * event->angleDelta().y()), 100.f), 1.f);
+            std::max(std::min(pointStride_ * (1.f + 0.003f * event->angleDelta().y()), 100.f), 1.f);
         std::cout << "Point stride = " << pointStride_ << std::endl;
         if (int(pointStride_) != prevStride) {
             update();

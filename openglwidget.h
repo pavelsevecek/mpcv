@@ -101,6 +101,7 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
     Srs srs_;
     float fov_ = M_PI / 4.f;
     float pointSize_ = 2.f;
+    float pointStride_ = 1.f;
     float grid_ = 1.f;
     bool showGrid_ = false;
 
@@ -255,26 +256,7 @@ public:
 
     void renderView();
 
-    virtual void wheelEvent(QWheelEvent* event) override {
-        if (event->modifiers() & Qt::CTRL) {
-            float y0 = std::atan(0.5 * fov_);
-            fov_ += 0.0004 * event->angleDelta().y();
-            fov_ = std::max(0.01f, std::min(fov_, float(M_PI) / 2.f - 0.01f));
-            std::cout << "Setting fov = " << fov_ * 180.f / M_PI << std::endl;
-            float y1 = std::atan(0.5 * fov_);
-            camera_.zoom(y0 / y1);
-            updateCamera();
-        } else if (event->modifiers() & Qt::ALT) {
-            // pointSize_ += 0.01 * event->angleDelta().x();
-            pointSize_ = std::max(std::min(pointSize_ + 0.005f * event->angleDelta().x(), 16.f), 1.f);
-
-            glPointSize(int(pointSize_));
-            std::cout << "Point size = " << pointSize_ << std::endl;
-        } else {
-            camera_.zoom(1 + 0.0004 * event->angleDelta().y());
-        }
-        update();
-    }
+    virtual void wheelEvent(QWheelEvent* event) override;
 
     virtual void mousePressEvent(QMouseEvent* event) override;
 

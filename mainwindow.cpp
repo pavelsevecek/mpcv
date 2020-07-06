@@ -104,6 +104,16 @@ MainWindow::MainWindow(QWidget* parent)
         }
         checkMod = true;
     });
+    QShortcut* invert = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_I), this);
+    QObject::connect(invert, &QShortcut::activated, this, [this] {
+        std::cout << "Inverting selection" << std::endl;
+        checkMod = false;
+        for (int i = 0; i < list_->count(); ++i) {
+            list_->item(i)->setCheckState(
+                list_->item(i)->checkState() == Qt::Checked ? Qt::Unchecked : Qt::Checked);
+        }
+        checkMod = true;
+    });
     for (int key = 0; key < 10; key++) {
         Qt::Key k = Qt::Key((key == 9) ? Qt::Key_0 : (Qt::Key_1 + key));
         QShortcut* showOnly = new QShortcut(QKeySequence(Qt::CTRL + k), this);

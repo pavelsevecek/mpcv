@@ -5,7 +5,7 @@
 #include <QMainWindow>
 #include <QPainter>
 #include <QResizeEvent>
-#include <iostream>
+#include <memory>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {

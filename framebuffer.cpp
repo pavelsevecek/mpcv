@@ -135,11 +135,11 @@ FrameBufferWidget::FrameBufferWidget(QWidget* parent)
     view_->setTaskGroup(tg_);
 
     QTimer* timer = new QTimer(this);
-    timer->start(200);
-    timer->callOnTimeout([this] {
+    QObject::connect(timer, &QTimer::timeout, this, [this] {
         iterationBar_->setValue(passValue_);
         progressBar_->setValue(progressValue_);
     });
+    timer->start(200);
 }
 
 FrameBufferWidget::~FrameBufferWidget() {

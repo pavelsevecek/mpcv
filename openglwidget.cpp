@@ -185,25 +185,30 @@ void OpenGLWidget::paintGL() {
         int numVert = mesh.vis.vertices.size();
         int numNorm = mesh.vis.normals.size();
         int numClr = mesh.vis.colors.size();
+        int stride = mesh.pointCloud() ? int(pointStride_) : 0;
 
         if (!vbos_) {
-            glVertexPointer(3, GL_FLOAT, 0, mesh.vis.vertices.data());
+            glVertexPointer(3, GL_FLOAT, stride * 3 * sizeof(float), mesh.vis.vertices.data());
             if (useNormals) {
-                glNormalPointer(GL_FLOAT, 0, mesh.vis.normals.data());
+                glNormalPointer(GL_FLOAT, stride * 3 * sizeof(float), mesh.vis.normals.data());
             }
             if (useColors) {
-                glColorPointer(3, GL_UNSIGNED_BYTE, 0, mesh.vis.colors.data());
+                glColorPointer(3, GL_UNSIGNED_BYTE, stride * 3 * sizeof(uint8_t), mesh.vis.colors.data());
             }
             if (useTexture) {
+                // never used by pc
                 glTexCoordPointer(2, GL_FLOAT, 0, mesh.vis.uv.data());
             }
         } else {
-            glVertexPointer(3, GL_FLOAT, 0, (void*)0);
+            glVertexPointer(3, GL_FLOAT, stride * 3 * sizeof(float), (void*)0);
             if (useNormals) {
-                glNormalPointer(GL_FLOAT, 0, (void*)(numVert * sizeof(float)));
+                glNormalPointer(GL_FLOAT, stride * 3 * sizeof(float), (void*)(numVert * sizeof(float)));
             }
             if (useColors) {
-                glColorPointer(3, GL_UNSIGNED_BYTE, 0, (void*)((numVert + numNorm) * sizeof(float)));
+                glColorPointer(3,
+                    GL_UNSIGNED_BYTE,
+                    stride * 3 * sizeof(uint8_t),
+                    (void*)((numVert + numNorm) * sizeof(float)));
             }
             if (useTexture) {
                 glTexCoordPointer(
@@ -212,7 +217,7 @@ void OpenGLWidget::paintGL() {
         }
 
         if (mesh.pointCloud()) {
-            glDrawArrays(GL_POINTS, 0, mesh.vis.vertices.size() / 3);
+            glDrawArrays(GL_POINTS, 0, mesh.vis.vertices.size() / 3 / stride);
         } else {
             glDrawArrays(GL_TRIANGLES, 0, mesh.vis.vertices.size() / 3);
         }
@@ -249,17 +254,10 @@ void OpenGLWidget::paintGL() {
             }
 
             glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
-
-            // glEnableClientState(GL_NORMAL_ARRAY);
             glEnableClientState(GL_VERTEX_ARRAY);
-
             glVertexPointer(3, GL_FLOAT, 0, (void*)0);
-            //            glNormalPointer(GL_FLOAT, 0, (void*)(p.second.vis.vertices.size() * sizeof(float)));
             glDrawArrays(GL_TRIANGLES, 0, mesh.vis.vertices.size() / 3);
-
             glDisableClientState(GL_VERTEX_ARRAY);
-            // glDisableClientState(GL_NORMAL_ARRAY);
-
             glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -504,6 +502,36 @@ void OpenGLWidget::updateCamera() {
     camera_ = Camera(eye, target, up, fov_, Pvl::Vec2i(width(), height()));
 }
 
+void OpenGLWidget::wheelEvent(QWheelEvent* event) {
+    if (event->modifiers() & Qt::CTRL) {
+        float y0 = std::atan(0.5 * fov_);
+        fov_ += 0.0004 * event->angleDelta().y();
+        fov_ = std::max(0.01f, std::min(fov_, float(M_PI) / 2.f - 0.01f));
+        std::cout << "Setting fov = " << fov_ * 180.f / M_PI << std::endl;
+        float y1 = std::atan(0.5 * fov_);
+        camera_.zoom(y0 / y1);
+        updateCamera();
+        update();
+    } else if (event->modifiers() & Qt::ALT) {
+        // pointSize_ += 0.01 * event->angleDelta().x();
+        pointSize_ = std::max(std::min(pointSize_ + 0.005f * event->angleDelta().x(), 16.f), 1.f);
+
+        glPointSize(int(pointSize_));
+        std::cout << "Point size = " << pointSize_ << std::endl;
+        update();
+    } else if (event->modifiers() & Qt::SHIFT) {
+        int prevStride = int(pointStride_);
+        pointStride_ =
+            std::max(std::min(pointStride_ * (1.f + 0.001f * event->angleDelta().y()), 100.f), 1.f);
+        std::cout << "Point stride = " << pointStride_ << std::endl;
+        if (int(pointStride_) != prevStride) {
+            update();
+        }
+    } else {
+        camera_.zoom(1 + 0.0004 * event->angleDelta().y());
+        update();
+    }
+}
 
 void OpenGLWidget::mousePressEvent(QMouseEvent* event) {
     if (meshes_.empty()) {

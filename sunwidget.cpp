@@ -27,7 +27,7 @@ void SunWidget::on_pushButton_clicked() {
         localTime += 1.f;
     }
     float timezone = longitude / 15.f; /// \todo
-    int day = date.daysInYear();
+    int day = date.dayOfYear();
     std::cout << "localTime = " << localTime << std::endl;
     std::cout << "julianDay = " << day << std::endl;
     Vec3f dir = SSLib::SunDirection(localTime, timezone, day, latitude, longitude);

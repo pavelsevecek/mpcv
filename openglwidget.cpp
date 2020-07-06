@@ -529,8 +529,16 @@ void OpenGLWidget::mouseDoubleClickEvent(QMouseEvent* event) {
     for (const auto& p : meshes_) {
         const TexturedMesh& mesh = p.second.mesh;
         if (p.second.pointCloud()) {
-            if (ray.dir[2] < 0) {
-                pc_min = -ray.origin[2] / ray.dir[2];
+            std::vector<float> zs(mesh.vertices.size());
+            for (std::size_t i = 0; i < zs.size(); ++i) {
+                zs[i] = mesh.vertices[i][2];
+            }
+            int q10 = zs.size() / 10;
+            std::nth_element(zs.begin(), zs.begin() + q10, zs.end());
+            float t = (zs[q10] - ray.origin[2]) / ray.dir[2];
+            if (t > 0 && t < pc_min) {
+                tbb::mutex::scoped_lock lock(mutex);
+                pc_min = t;
             }
         } else {
             SrsConv conv(srs_, mesh.srs);
@@ -542,9 +550,8 @@ void OpenGLWidget::mouseDoubleClickEvent(QMouseEvent* event) {
                 }
                 float t;
                 if (intersection(localRay, tri, t) && t > 0 && t < mesh_min) {
-                    mutex.lock();
+                    tbb::mutex::scoped_lock lock(mutex);
                     mesh_min = t;
-                    mutex.unlock();
                 }
             });
         }

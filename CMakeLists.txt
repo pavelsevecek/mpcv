@@ -27,7 +27,10 @@ endif()
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 add_definitions(-DQT_NO_DEBUG_OUTPUT)
 
-find_package(OpenImageDenoise REQUIRED)
+find_package(OpenImageDenoise)
+if (OpenImageDenoise_FOUND)
+    add_definitions(-DENABLE_DENOISING)
+endif()
 
 add_executable(mpcv
     main.cpp

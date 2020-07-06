@@ -6,10 +6,12 @@
 #include "pvl/Box.hpp"
 #include "pvl/UniformGrid.hpp"
 #include "pvl/Utils.hpp"
-#include <OpenImageDenoise/oidn.hpp>
 #include <QImage>
 #include <QProgressDialog>
 #include <random>
+#ifdef ENABLE_DENOISING
+#include <OpenImageDenoise/oidn.hpp>
+#endif
 
 #include "sun-sky/SunSky.h"
 
@@ -238,6 +240,7 @@ Pvl::Vec3f radiance(const Scene& scene,
     }
 }
 
+#ifdef ENABLE_DENOISING
 void denoise(FrameBuffer& framebuffer) {
     oidn::DeviceRef device = oidn::newDevice();
     device.commit();
@@ -256,6 +259,9 @@ void denoise(FrameBuffer& framebuffer) {
         std::cout << "Error: " << errorMessage << std::endl;
     }
 }
+#else
+void denoise(FrameBuffer&) {}
+#endif
 
 void renderMeshes(FrameBufferWidget* frame,
     const std::vector<TexturedMesh*>& meshes,

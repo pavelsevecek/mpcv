@@ -22,6 +22,10 @@ public:
     Coords localToWorld(const Coords& coords) const {
         return coords + center_;
     }
+
+    bool operator==(const Srs& other) const {
+        return center_ == other.center_;
+    }
 };
 
 
@@ -44,7 +48,11 @@ public:
         , to_(to) {}
 
     Pvl::Vec3f operator()(const Pvl::Vec3f& p) const {
-        Coords world = from_.localToWorld(coords(p));
-        return vec3f(to_.worldToLocal(world));
+        if (from_ == Srs() || to_ == Srs()) {
+            return p;
+        } else {
+            Coords world = from_.localToWorld(coords(p));
+            return vec3f(to_.worldToLocal(world));
+        }
     }
 };

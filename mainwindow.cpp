@@ -1,9 +1,8 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+#include "las.h"
 #include "mesh.h"
 #include "openglwidget.h"
-//#include "pvl/PlyReader.hpp"
-#include "las.h"
 #include "sunwidget.h"
 #include <QFileDialog>
 #include <QListWidget>
@@ -18,9 +17,8 @@
 
 static bool checkMod = true;
 
-
 std::string findBasename(const QString& file) {
-    std::cout << "Running for " << file.toStdString() << std::endl;
+    std::cout << "Finding basename in file '" << file.toStdString() << "'" << std::endl;
     if (file.isEmpty() || file == ".") {
         return {};
     }
@@ -33,22 +31,22 @@ std::string findBasename(const QString& file) {
         return name;
     }
     if (!info.isRoot()) {
-        return findBasename(info.dir().dirName());
+        return findBasename(info.dir().absolutePath());
     } else {
         return "";
     }
 }
 
 std::map<std::string, Coords> parseConfig() {
-    QFileInfo info("/home/pavel/.config/mpcv/extents.csv");
+    QFileInfo info(QDir::homePath() + "/.config/mpcv/extents.csv");
     if (!info.exists()) {
+        std::cout << "No extents config at '" << info.filePath().toStdString() << "' found" << std::endl;
         return {};
     }
     std::map<std::string, Coords> extents;
     std::ifstream in(info.filePath().toStdString());
     std::string line;
     while (std::getline(in, line)) {
-        std::cout << "Read line " << line << std::endl;
         std::stringstream ss(line);
         std::string basename;
         std::getline(ss, basename, ',');
@@ -63,9 +61,6 @@ std::map<std::string, Coords> parseConfig() {
         double ury;
         ss >> ury;
 
-        // sscanf(line.c_str(), "%s, %lf, %lf, %lf, %lf", basename, &llx, &lly, &urx, &ury);
-        std::cout << std::setprecision(12) << "Parsed line: '" << basename << "' " << llx << " " << lly << " "
-                  << urx << " " << ury << std::endl;
         extents[basename] = Coords((llx + urx) / 2, (lly + ury) / 2);
     }
 
@@ -75,7 +70,7 @@ std::map<std::string, Coords> parseConfig() {
 static std::map<std::string, Coords> config;
 
 void geolocalize(TexturedMesh& mesh, const QString& file) {
-    std::string basename = findBasename(QFileInfo(file).absoluteFilePath());
+    std::string basename = findBasename(QFileInfo(file).absolutePath());
     if (!basename.empty() && config.find(basename) != config.end()) {
         std::cout << "Setting srs to " << config[basename][0] << "," << config[basename][1] << std::endl;
         mesh.srs = Srs(config[basename]);

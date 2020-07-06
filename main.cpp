@@ -28,6 +28,12 @@ void setPalette(QApplication& a) {
 }
 
 int main(int argc, char* argv[]) {
+    if (argc == 2 && (argv[1] == std::string("-h") || argv[1] == std::string("--help"))) {
+        std::cout << "Mesh and Point Cloud Viewer" << std::endl;
+        std::cout << "Usage: mpcv [FILE]..." << std::endl;
+        return 0;
+    }
+
     QApplication a(argc, argv);
     setlocale(LC_NUMERIC, "C"); // needed for sscanf
     setPalette(a);
@@ -39,6 +45,7 @@ int main(int argc, char* argv[]) {
     w.setWindowTitle(QString("MPCV DEBUG BUILD ") + __DATE__ + " " + __TIME__);
 #endif
     w.showMaximized();
+
     QStringList args = a.arguments();
     for (int i = 1; i < args.size(); ++i) {
         w.open(args.at(i), i, args.size() - 1);

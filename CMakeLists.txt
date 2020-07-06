@@ -50,11 +50,15 @@ add_executable(mpcv
     resources.qrc
   )
 
-target_link_libraries(mpcv PRIVATE
+set(LIBRARIES
     Qt5::Widgets Qt5::Gui
     GL GLU
     ${Tbb_LIBRARIES}
     ${OpenVDB_LIBRARIES}
-    laslib
-    "/usr/local/lib/libOpenImageDenoise.so"
-    )
+    laslib)
+
+if(OpenImageDenoise_FOUND)
+    list(APPEND LIBRARIES /usr/local/lib/libOpenImageDenoise.so)
+endif()
+
+target_link_libraries(mpcv PRIVATE ${LIBRARIES})

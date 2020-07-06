@@ -520,51 +520,40 @@ void OpenGLWidget::mousePressEvent(QMouseEvent* event) {
 void OpenGLWidget::mouseDoubleClickEvent(QMouseEvent* event) {
     mouse_.pos0 = event->pos();
 
-    std::cout << "Clicked at " << mouse_.pos0.x() << "," << mouse_.pos0.y() << std::endl;
     Ray ray = camera_.project(Pvl::Vec2f(mouse_.pos0.x(), mouse_.pos0.y()));
 
-    float t_min = std::numeric_limits<float>::max();
-    // selected = Pvl::NONE;
+    const float t_inf = std::numeric_limits<float>::max();
+    float mesh_min = t_inf;
+    float pc_min = t_inf;
     tbb::mutex mutex;
     for (const auto& p : meshes_) {
+        const TexturedMesh& mesh = p.second.mesh;
         if (p.second.pointCloud()) {
-            /*float dist = Pvl::norm(camera_.eye() - camera_.target());
-            float radius = 1.f; // * pointSize_ * dist / std::tan(fov_ / 2.f) / height();
-            tbb::parallel_for<std::size_t>(0, p.second.mesh.vertices.size(), [&](std::size_t vi) {
-                const Pvl::Vec3f& point = p.second.mesh.vertices[vi];
-                float t;
-                if (intersection(ray, point, radius, t) && t > 0 && t < t_min) {
-                    mutex.lock();
-                    t_min = t;
-                    mutex.unlock();
-                }
-            });*/
             if (ray.dir[2] < 0) {
-                t_min = -ray.origin[2] / ray.dir[2];
+                pc_min = -ray.origin[2] / ray.dir[2];
             }
         } else {
-            SrsConv conv(srs_, p.second.mesh.srs);
+            SrsConv conv(srs_, mesh.srs);
             Ray localRay{ conv(ray.origin), ray.dir };
-            tbb::parallel_for<std::size_t>(0, p.second.mesh.faces.size(), [&](std::size_t fi) {
+            tbb::parallel_for<std::size_t>(0, mesh.faces.size(), [&](std::size_t fi) {
                 Triangle tri;
                 for (int i = 0; i < 3; ++i) {
-                    tri[i] = p.second.mesh.vertices[p.second.mesh.faces[fi][i]];
+                    tri[i] = mesh.vertices[mesh.faces[fi][i]];
                 }
                 float t;
-                if (intersection(localRay, tri, t) && t > 0 && t < t_min) {
+                if (intersection(localRay, tri, t) && t > 0 && t < mesh_min) {
                     mutex.lock();
-                    t_min = t;
+                    mesh_min = t;
                     mutex.unlock();
                 }
             });
         }
     }
-
-    if (t_min != std::numeric_limits<float>::max()) {
+    float t_min = (mesh_min < t_inf) ? mesh_min : pc_min;
+    if (t_min != t_inf) {
         Pvl::Vec3f target = ray.origin + ray.dir * t_min;
         camera_.lookAt(target);
     }
-    // selected = Pvl::NONE;
     update();
 }
 

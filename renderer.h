@@ -25,11 +25,11 @@ using FrameBuffer = Pvl::UniformGrid<Pixel, 2>;
 void renderMeshes(FrameBufferWidget* widget,
     const std::vector<TexturedMesh*>& meshes,
     const Pvl::Vec3f& dirToSun,
-    const Camera camera,
-    const Srs& srs);
+    const Camera camera);
 
 bool ambientOcclusion(std::vector<TexturedMesh>& meshes,
     std::function<bool(float)> progress,
-    int sampleCnt = 20);
+    int sampleCntX = 20,
+    int sampleCntY = 10);
 
 } // namespace Mpcv

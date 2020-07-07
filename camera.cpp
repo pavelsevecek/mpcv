@@ -2,11 +2,12 @@
 
 namespace Mpcv {
 
-Camera::Camera(Pvl::Vec3f eye, Pvl::Vec3f target, Pvl::Vec3f up, float fov_y, Pvl::Vec2i size)
+Camera::Camera(Pvl::Vec3f eye, Pvl::Vec3f target, Pvl::Vec3f up, float fov_y, const Srs& srs, Pvl::Vec2i size)
     : eye_(eye)
     , target_(target)
     , up_(up)
-    , size_(size) {
+    , size_(size)
+    , srs_(srs) {
     dir_ = Pvl::normalize(target - eye);
     up_ = up;
     up_ = Pvl::normalize(up_ - Pvl::dotProd(up_, dir_) * dir_);

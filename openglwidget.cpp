@@ -269,7 +269,7 @@ void OpenGLWidget::paintGL() {
     for (const auto& p : meshes_) {
         const MeshData& mesh = p.second;
         if (mesh.enabled) {
-            SrsConv conv(mesh.mesh.srs, srs_);
+            SrsConv conv(mesh.mesh.srs, camera_.srs());
             bbox.extend(conv(mesh.box.lower()));
             bbox.extend(conv(mesh.box.upper()));
         }
@@ -337,11 +337,14 @@ void OpenGLWidget::view(const void* handle, TexturedMesh&& mesh) {
     data.mesh = std::move(mesh);
     data.vis = {};
 
+    Srs refSrs;
     if (firstMesh) {
-        srs_ = data.mesh.srs;
+        refSrs = data.mesh.srs;
+    } else {
+        refSrs = camera_.srs();
     }
 
-    SrsConv conv(data.mesh.srs, srs_);
+    SrsConv conv(data.mesh.srs, camera_.srs());
     if (data.pointCloud()) {
         bool hasNormals = !data.mesh.normals.empty();
         bool hasColors = !data.mesh.colors.empty();
@@ -516,10 +519,15 @@ void OpenGLWidget::updateCamera() {
     Pvl::Vec3f eye = camera_.eye();
     Pvl::Vec3f target = camera_.target();
     Pvl::Vec3f up = camera_.up();
-    camera_ = Camera(eye, target, up, fov_, Pvl::Vec2i(width(), height()));
+    Srs srs = camera_.srs();
+    camera_ = Camera(eye, target, up, fov_, srs, Pvl::Vec2i(width(), height()));
 }
 
 void OpenGLWidget::resetCamera() {
+    resetCamera(camera_.srs());
+}
+
+void OpenGLWidget::resetCamera(const Srs& srs) {
     // find first enabled
     for (const auto& p : meshes_) {
         const MeshData& mesh = p.second;
@@ -527,7 +535,7 @@ void OpenGLWidget::resetCamera() {
             continue;
         }
 
-        SrsConv conv(mesh.mesh.srs, srs_);
+        SrsConv conv(mesh.mesh.srs, srs);
         Pvl::Vec3f center = conv(mesh.box.center());
         float scale = std::max(mesh.box.size()[0], mesh.box.size()[1]);
         float zoom = 1.5 * scale;
@@ -536,6 +544,7 @@ void OpenGLWidget::resetCamera() {
             center,
             Pvl::Vec3f(0, 1, 0),
             fov_,
+            srs,
             Pvl::Vec2i(width(), height()));
 
         double gridBase = 0.2 * scale;
@@ -641,7 +650,7 @@ void OpenGLWidget::mouseDoubleClickEvent(QMouseEvent* event) {
                 pc_min = t;
             }
         } else {
-            SrsConv conv(srs_, mesh.srs);
+            SrsConv conv(camera_.srs(), mesh.srs);
             CameraRay localRay{ conv(ray.origin), ray.dir };
             tbb::parallel_for<std::size_t>(0, mesh.faces.size(), [&](std::size_t fi) {
                 Triangle tri;
@@ -890,6 +899,5 @@ void OpenGLWidget::renderView() {
     }
     FrameBufferWidget* frame = new FrameBufferWidget(this);
     frame->show();
-    frame->run(
-        [this, frame, meshesToRender] { renderMeshes(frame, meshesToRender, sunDir_, camera_, srs_); });
+    frame->run([this, frame, meshesToRender] { renderMeshes(frame, meshesToRender, sunDir_, camera_); });
 }

@@ -268,8 +268,7 @@ void denoise(FrameBuffer&) {}
 void renderMeshes(FrameBufferWidget* frame,
     const std::vector<TexturedMesh*>& meshes,
     const Pvl::Vec3f& dirToSun,
-    const Camera camera,
-    const Srs& srs) {
+    const Camera camera) {
     std::cout << "Starting the renderer" << std::endl;
     Scene scene(dirToSun);
 
@@ -286,7 +285,7 @@ void renderMeshes(FrameBufferWidget* frame,
         totalFaces += mesh->faces.size();
 
         Pvl::Box3f box;
-        SrsConv meshToRef(mesh->srs, srs);
+        SrsConv meshToRef(mesh->srs, camera.srs());
         for (const TexturedMesh::Face& f : mesh->faces) {
             Pvl::Vec3f v1 = meshToRef(mesh->vertices[f[0]]);
             Pvl::Vec3f v2 = meshToRef(mesh->vertices[f[1]]);
@@ -374,7 +373,10 @@ void renderMeshes(FrameBufferWidget* frame,
     return Pvl::Vec3f(u * std::cos(phi), u * std::sin(phi), z);
 }*/
 
-bool ambientOcclusion(std::vector<TexturedMesh>& meshes, std::function<bool(float)> progress, int sampleCnt) {
+bool ambientOcclusion(std::vector<TexturedMesh>& meshes,
+    std::function<bool(float)> progress,
+    int sampleCntX,
+    int sampleCntY) {
     Mpcv::Bvh<Mpcv::BvhTriangle> bvh(10);
     Srs referenceSrs = meshes.front().srs;
 
@@ -428,9 +430,10 @@ bool ambientOcclusion(std::vector<TexturedMesh>& meshes, std::function<bool(floa
                 int nonOccludedCnt = 0;
 
                 int vi = mesh.faces[fi][i];
-                for (int x = 0; x < sampleCnt; ++x) {
-                    for (int y = 0; y < sampleCnt; ++y) {
-                        Pvl::Vec3f dir = sampleUnitHemiSphere((x + 0.5f) / sampleCnt, (y + 0.5f) / sampleCnt);
+                for (int x = 0; x < sampleCntX; ++x) {
+                    for (int y = 0; y < sampleCntY; ++y) {
+                        Pvl::Vec3f dir =
+                            sampleUnitHemiSphere((x + 0.5f) / sampleCntX, (y + 0.5f) / sampleCntY);
                         dir = Pvl::prod(rotator, dir);
                         Pvl::Vec3f origin = meshToRef(0.99 * mesh.vertices[vi] + 0.01 * centroid);
                         Mpcv::Ray ray(origin + eps * n, dir);
@@ -440,7 +443,7 @@ bool ambientOcclusion(std::vector<TexturedMesh>& meshes, std::function<bool(floa
                     }
                 }
 
-                float rati = float(nonOccludedCnt) / Pvl::sqr(sampleCnt);
+                float rati = float(nonOccludedCnt) / (sampleCntX * sampleCntY);
                 uint8_t value = uint8_t(rati * 255);
                 mesh.ao[3 * fi + i] = value;
             }

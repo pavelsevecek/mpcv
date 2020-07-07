@@ -1,5 +1,6 @@
 #pragma once
 
+#include "coordinates.h"
 #include "pvl/Matrix.hpp"
 #include "pvl/Optional.hpp"
 #include <iostream>
@@ -18,11 +19,12 @@ class Camera {
     Pvl::Vec3f up_;
     Pvl::Vec3f left_;
     Pvl::Vec2i size_;
+    Srs srs_;
 
 public:
     Camera() = default;
 
-    Camera(Pvl::Vec3f eye, Pvl::Vec3f target, Pvl::Vec3f up, float fov_y, Pvl::Vec2i size);
+    Camera(Pvl::Vec3f eye, Pvl::Vec3f target, Pvl::Vec3f up, float fov_y, const Srs& srs, Pvl::Vec2i size);
 
     Pvl::Vec3f eye() const {
         return eye_;
@@ -44,6 +46,14 @@ public:
         return Pvl::Mat33f(Pvl::normalize(left_), Pvl::normalize(up_), dir_);
     }
 
+    Srs srs() const {
+        return srs_;
+    }
+
+    Pvl::Vec2i dimensions() const {
+        return size_;
+    }
+
     void zoom(float factor);
 
     void pan(const Pvl::Vec2i& dp);
@@ -56,9 +66,6 @@ public:
 
     Pvl::Optional<Pvl::Vec2f> unproject(const Pvl::Vec3f& r) const;
 
-    Pvl::Vec2i dimensions() const {
-        return size_;
-    }
 }; // namespace Mpcv
 
 using Triangle = std::array<Pvl::Vec3f, 3>;

@@ -53,7 +53,6 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
     // Pvl::Optional<Triangle> selected;
 
     Mpcv::Camera camera_;
-    Mpcv::Srs srs_;
     float fov_ = M_PI / 4.f;
     float pointSize_ = 2.f;
     float pointStride_ = 1.f;
@@ -137,6 +136,8 @@ public:
     }
 
     void resetCamera();
+
+    void resetCamera(const Mpcv::Srs& srs);
 
     void screenshot(const QString& file);
 

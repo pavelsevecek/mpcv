@@ -344,7 +344,7 @@ void OpenGLWidget::view(const void* handle, TexturedMesh&& mesh) {
         refSrs = camera_.srs();
     }
 
-    SrsConv conv(data.mesh.srs, camera_.srs());
+    SrsConv conv(data.mesh.srs, refSrs);
     if (data.pointCloud()) {
         bool hasNormals = !data.mesh.normals.empty();
         bool hasColors = !data.mesh.colors.empty();
@@ -495,7 +495,7 @@ void OpenGLWidget::view(const void* handle, TexturedMesh&& mesh) {
 
 
     if (firstMesh) {
-        resetCamera();
+        resetCamera(refSrs);
     }
 }
 

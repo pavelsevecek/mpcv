@@ -9,7 +9,7 @@
 #include <QPainter>
 #include <tbb/tbb.h>
 
-#ifdef ENABLE_MESH_REPAIR
+#ifdef HAS_OPENVDB
 #ifdef foreach
 #undef foreach // every time a programmer defines a macro, god kills a kitten
 #endif
@@ -744,7 +744,7 @@ void OpenGLWidget::simplify() {
     });
 }
 
-#ifdef ENABLE_MESH_REPAIR
+#ifdef HAS_OPENVDB
 
 namespace {
 class MeshAdapter {

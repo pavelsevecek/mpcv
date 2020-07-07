@@ -49,6 +49,8 @@ public:
     }
 };
 
+#ifdef HAS_JPEG
+
 class JpegTexture : public ITexture {
     uint8_t* data_;
     std::size_t width_, height_;
@@ -66,6 +68,10 @@ public:
     virtual uint8_t* data() override;
 };
 
+#endif
+
+#ifdef HAS_PNG
+
 class PngTexture : public ITexture {
     uint8_t* data_;
     std::size_t width_, height_;
@@ -82,6 +88,8 @@ public:
 
     virtual uint8_t* data() override;
 };
+
+#endif
 
 std::unique_ptr<ITexture> makeTexture(const QString& filename);
 

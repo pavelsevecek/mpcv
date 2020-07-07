@@ -92,7 +92,7 @@ MainWindow::MainWindow(QWidget* parent)
 
     list_ = findChild<QListWidget*>("MeshList");
 
-#ifndef ENABLE_MESH_REPAIR
+#ifndef HAS_OPENVDB
     QMenu* menu = findChild<QMenu*>("menuMesh");
     QAction* repair = findChild<QAction*>("actionRepair");
     menu->removeAction(repair);

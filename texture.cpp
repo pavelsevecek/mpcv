@@ -2,12 +2,19 @@
 #include <QFileInfo>
 #include <QImageReader>
 #include <iostream>
+
+#ifdef HAS_JPEG
 #include <jerror.h>
 #include <jpeglib.h>
+#endif
+
+#ifdef HAS_PNG
 #include <png.h>
+#endif
 
 namespace Mpcv {
 
+#ifdef HAS_JPEG
 JpegTexture::JpegTexture(const std::string& filename) {
     FILE* file = fopen(filename.c_str(), "rb");
 
@@ -63,6 +70,10 @@ uint8_t* JpegTexture::data() {
     return data_;
 }
 
+#endif
+
+#ifdef HAS_PNG
+
 PngTexture::PngTexture(const std::string& filename) {
     png_image image;
     memset(&image, 0, sizeof(image));
@@ -99,6 +110,8 @@ uint8_t* PngTexture::data() {
     return data_;
 }
 
+#endif
+
 std::unique_ptr<ITexture> makeTexture(const QString& filename) {
     QString ext = QFileInfo(filename).suffix();
     QImageReader reader(filename);
@@ -107,13 +120,20 @@ std::unique_ptr<ITexture> makeTexture(const QString& filename) {
     if (size.width() <= maxQtSize && size.height() <= maxQtSize) {
         std::cout << "Loading image '" + filename.toStdString() + "' using Qt reader" << std::endl;
         return std::make_unique<QtTexture>(reader.read());
-    } else if (ext == "jpg" || ext == "jpeg") {
+    } else
+#ifdef HAS_JPEG
+        if (ext == "jpg" || ext == "jpeg") {
         std::cout << "Loading image '" + filename.toStdString() + "' using libjpeg reader" << std::endl;
         return std::make_unique<JpegTexture>(filename.toStdString());
-    } else if (ext == "png") {
+    } else
+#endif
+#ifdef HAS_PNG
+        if (ext == "png") {
         std::cout << "Loading image '" + filename.toStdString() + "' using libpng reader" << std::endl;
         return std::make_unique<PngTexture>(filename.toStdString());
-    } else {
+    } else
+#endif
+    {
         throw std::runtime_error("Cannot read texture '" + filename.toStdString() + "', image too large");
     }
 }

@@ -4,6 +4,7 @@
 #include "mesh.h"
 #include "openglwidget.h"
 #include "sunwidget.h"
+#include "utils.h"
 #include <QFileDialog>
 #include <QListWidget>
 #include <QListWidgetItem>
@@ -14,6 +15,8 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+
+using namespace Mpcv;
 
 static bool checkMod = true;
 
@@ -287,7 +290,7 @@ void MainWindow::open(const QString& file, int index, int total) {
 }
 
 void MainWindow::on_actionOpenFile_triggered() {
-    static QDir initialDir(".");
+    QDir& initialDir = openFileDialogInitialDir();
     QStringList names = QFileDialog::getOpenFileNames(this,
         tr("Open mesh"),
         initialDir.path(),
@@ -331,7 +334,7 @@ void MainWindow::on_actionShowDots_changed() {
 }
 
 void MainWindow::on_actionScreenshot_triggered() {
-    static QDir initialDir(".");
+    QDir& initialDir = openFileDialogInitialDir();
     QString file = QFileDialog::getSaveFileName(this,
         tr("Save screenshot"),
         initialDir.path(),
@@ -363,7 +366,7 @@ void MainWindow::on_actionQuit_triggered() {
 }
 
 void MainWindow::on_actionSave_triggered() {
-    static QDir initialDir(".");
+    QDir& initialDir = saveFileDialogInitialDir();
     QString file =
         QFileDialog::getSaveFileName(this, tr("Save mesh"), initialDir.path(), tr(".ply object (*.ply)"));
     if (!file.isEmpty()) {

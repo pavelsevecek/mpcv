@@ -6,6 +6,8 @@
 #include <sstream>
 #include <vector>
 
+namespace Mpcv {
+
 inline std::vector<int> faceAoToVertexAo(const TexturedMesh& mesh) {
     std::vector<int> ao(mesh.vertices.size(), 0);
     std::vector<int> counts(mesh.vertices.size(), 0);
@@ -325,3 +327,5 @@ TexturedMesh loadObj(const QString& file, const Progress& prog) {
               << " tex coords and " << mesh.faces.size() << " faces" << std::endl;
     return mesh;
 }
+
+} // namespace Mpcv

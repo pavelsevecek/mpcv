@@ -2,6 +2,8 @@
 #include "laslib/lasreader.hpp"
 #include <iostream>
 
+namespace Mpcv {
+
 TexturedMesh loadLas(std::string file, const Progress& prog) {
     LASreadOpener lasreadopener;
     lasreadopener.set_file_name(file.c_str());
@@ -49,3 +51,5 @@ TexturedMesh loadLas(std::string file, const Progress& prog) {
     delete lasreader;
     return mesh;
 }
+
+} // namespace Mpcv

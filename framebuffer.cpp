@@ -1,16 +1,19 @@
 #include "framebuffer.h"
 #include "./ui_framebuffer.h"
 #include "mesh.h"
+#include "utils.h"
 #include <QProgressBar>
 #include <QTimer>
 #include <tbb/tbb.h>
+
+using namespace Mpcv;
 
 struct TaskGroup {
     tbb::task_group group;
     tbb::mutex mutex;
 };
 
-float aces(const float v0) {
+inline float aces(const float v0) {
     float v = 0.6f * v0;
     float a = 2.51f;
     float b = 0.03f;
@@ -87,7 +90,7 @@ void View::setExposure(int exposure) {
 }
 
 void View::save() {
-    static QDir initialDir(".");
+    QDir& initialDir = saveFileDialogInitialDir();
     QString file = QFileDialog::getSaveFileName(this,
         tr("Save render"),
         initialDir.path(),

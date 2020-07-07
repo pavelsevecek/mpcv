@@ -2,6 +2,8 @@
 
 #include "pvl/Vector.hpp"
 
+namespace Mpcv {
+
 using Coords = Pvl::Vector<double, 3>;
 
 class Srs {
@@ -37,7 +39,6 @@ inline Pvl::Vec3f vec3f(const Coords& c) {
     return Pvl::vectorCast<float>(c);
 }
 
-
 class SrsConv {
     Srs from_;
     Srs to_;
@@ -56,3 +57,5 @@ public:
         }
     }
 };
+
+} // namespace Mpcv

@@ -16,6 +16,8 @@
 #include "sun-sky/SunSky.h"
 
 
+namespace Mpcv {
+
 struct MonoSunSky {
     Pvl::Vec3f skyIntensity = Pvl::Vec3f(1.f, 1.f, 1.2f);
     Pvl::Vec3f sunIntensity = Pvl::Vec3f(1.f, 1.f, 0.8f);
@@ -185,14 +187,14 @@ inline Pvl::Vec3f barycentric(const Pvl::Vec3f& p, const std::array<Pvl::Vec3f, 
 }
 
 Pvl::Vec3f radiance(const Scene& scene,
-    const Pvl::Ray& ray,
-    const Pvl::Bvh<Pvl::BvhTriangle>& bvh,
+    const Mpcv::Ray& ray,
+    const Mpcv::Bvh<Mpcv::BvhTriangle>& bvh,
     Rng& rng,
     const int depth = 0) {
     float eps = 0.01f;
-    Pvl::IntersectionInfo is;
+    Mpcv::IntersectionInfo is;
     if (bvh.getFirstIntersection(ray, is)) {
-        const Pvl::BvhTriangle* tri = static_cast<const Pvl::BvhTriangle*>(is.object);
+        const Mpcv::BvhTriangle* tri = static_cast<const Mpcv::BvhTriangle*>(is.object);
         const Pvl::Vec3f pos = ray.origin() + is.t * ray.direction();
 
         const Pvl::Vec3f normal = tri->normal();
@@ -204,7 +206,7 @@ Pvl::Vec3f radiance(const Scene& scene,
             int numGiSamples = 10;
             for (int i = 0; i < numGiSamples; ++i) {
                 Pvl::Vec3f outDir = Pvl::prod(rotator, sampleUnitHemiSphere(rng(), rng()));
-                Pvl::Vec3f gi = radiance(scene, Pvl::Ray(pos + eps * outDir, outDir), bvh, rng, depth + 1);
+                Pvl::Vec3f gi = radiance(scene, Mpcv::Ray(pos + eps * outDir, outDir), bvh, rng, depth + 1);
                 float bsdfCos = scene.albedo * std::max(Pvl::dotProd(outDir, normal), 0.f);
                 result += gi * bsdfCos / numGiSamples;
             }
@@ -214,7 +216,7 @@ Pvl::Vec3f radiance(const Scene& scene,
         Pvl::Mat33f rotator = Pvl::getRotatorTo(scene.sunDir);
         Pvl::Vec2f xy = scene.sunRadius * sampleUnitDisc(rng(), rng());
         Pvl::Vec3f dirToSun = Pvl::prod(rotator, Pvl::normalize(Pvl::Vec3f(xy[0], xy[1], 1.f)));
-        if (!bvh.isOccluded(Pvl::Ray(pos + eps * dirToSun, dirToSun))) {
+        if (!bvh.isOccluded(Mpcv::Ray(pos + eps * dirToSun, dirToSun))) {
             result += scene.albedo * scene.sunMult * scene.sunSky.evalSun(dirToSun) *
                       std::max(Pvl::dotProd(normal, dirToSun), 0.f);
         }
@@ -226,7 +228,7 @@ Pvl::Vec3f radiance(const Scene& scene,
             }
             const Pvl::Vec3f dirToLight = (light.pos - pos) / distToLight;
             /// \todo range-limited occlusion instead
-            bool hit = bvh.getFirstIntersection(Pvl::Ray(pos + eps * dirToLight, dirToLight), is);
+            bool hit = bvh.getFirstIntersection(Mpcv::Ray(pos + eps * dirToLight, dirToLight), is);
             bool visible = !hit || is.t > distToLight - 1.f;
             bool illuminates = dirToLight[2] > 0; // light.cosAngle;
             if (visible && illuminates) {
@@ -273,11 +275,11 @@ void renderMeshes(FrameBufferWidget* frame,
 
     /// \todo deduplicate
 
-    Pvl::Bvh<Pvl::BvhTriangle> bvh(10);
+    Mpcv::Bvh<Mpcv::BvhTriangle> bvh(10);
 
     float scale = 0.f;
     // progress(0);
-    std::vector<Pvl::BvhTriangle> triangles;
+    std::vector<Mpcv::BvhTriangle> triangles;
     std::size_t totalFaces = 0;
     int index = 0;
     for (const TexturedMesh* mesh : meshes) {
@@ -332,8 +334,8 @@ void renderMeshes(FrameBufferWidget* frame,
                 Pvl::Vec2i pix(x, y);
                 float dx = rng();
                 float dy = rng();
-                Ray cameraRay = camera.project(Pvl::Vec2f(x + dx, y + dy));
-                Pvl::Ray ray(cameraRay.origin, cameraRay.dir);
+                CameraRay cameraRay = camera.project(Pvl::Vec2f(x + dx, y + dy));
+                Mpcv::Ray ray(cameraRay.origin, cameraRay.dir);
                 Pvl::Vec3f color = radiance(scene, ray, bvh, rng);
                 framebuffer(pix).add(color);
             }
@@ -356,3 +358,110 @@ void renderMeshes(FrameBufferWidget* frame,
     // set complete
     frame->setProgress(10, 100);
 }
+
+
+/*inline Pvl::Vec3f sampleUnitSphere(float x, float y) {
+    const float phi = x * 2.f * M_PI;
+    const float z = y * 2.f - 1.f;
+    const float u = std::sqrt(1.f - z * z);
+    return Pvl::Vec3f(u * std::cos(phi), u * std::sin(phi), z);
+}*/
+
+/*inline Pvl::Vec3f sampleUnitHemiSphere(float x, float y) {
+    const float phi = x * 2.f * M_PI;
+    const float z = y;
+    const float u = std::sqrt(1.f - z * z);
+    return Pvl::Vec3f(u * std::cos(phi), u * std::sin(phi), z);
+}*/
+
+bool ambientOcclusion(std::vector<TexturedMesh>& meshes, std::function<bool(float)> progress, int sampleCnt) {
+    Mpcv::Bvh<Mpcv::BvhTriangle> bvh(10);
+    Srs referenceSrs = meshes.front().srs;
+
+    float scale = 0.f;
+    progress(0);
+    std::vector<Mpcv::BvhTriangle> triangles;
+    std::size_t totalFaces = 0;
+    for (const TexturedMesh& mesh : meshes) {
+        totalFaces += mesh.faces.size();
+
+        Pvl::Box3f box;
+        SrsConv meshToRef(mesh.srs, referenceSrs);
+        for (const TexturedMesh::Face& f : mesh.faces) {
+            Pvl::Vec3f v1 = meshToRef(mesh.vertices[f[0]]);
+            Pvl::Vec3f v2 = meshToRef(mesh.vertices[f[1]]);
+            Pvl::Vec3f v3 = meshToRef(mesh.vertices[f[2]]);
+            triangles.emplace_back(v1, v2, v3);
+
+            if (scale == 0.f) {
+                // compute box from the first mesh only
+                box.extend(mesh.vertices[f[0]]);
+            }
+        }
+        if (scale == 0.f) {
+            scale = std::max(box.size()[0], box.size()[1]);
+        }
+    }
+    bvh.build(std::move(triangles));
+    triangles = {};
+
+    // ad hoc
+    progress(1);
+    const float eps = 1.e-3f * scale;
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+    auto meter = Pvl::makeProgressMeter(totalFaces, std::move(progress));
+    tbb::atomic<bool> cancelled = false;
+    for (TexturedMesh& mesh : meshes) {
+        SrsConv meshToRef(mesh.srs, referenceSrs);
+
+        mesh.ao.resize(3 * mesh.faces.size());
+
+        tbb::parallel_for(std::size_t(0), mesh.faces.size(), [&](std::size_t fi) {
+            if (cancelled) {
+                return;
+            }
+            Pvl::Vec3f n = mesh.normal(fi);
+            Pvl::Vec3f centroid = mesh.centroid(fi);
+            Pvl::Mat33f rotator = Pvl::getRotatorTo(n);
+            for (int i = 0; i < 3; ++i) {
+                int nonOccludedCnt = 0;
+
+                int vi = mesh.faces[fi][i];
+                for (int x = 0; x < sampleCnt; ++x) {
+                    for (int y = 0; y < sampleCnt; ++y) {
+                        Pvl::Vec3f dir = sampleUnitHemiSphere((x + 0.5f) / sampleCnt, (y + 0.5f) / sampleCnt);
+                        dir = Pvl::prod(rotator, dir);
+                        Pvl::Vec3f origin = meshToRef(0.99 * mesh.vertices[vi] + 0.01 * centroid);
+                        Mpcv::Ray ray(origin + eps * n, dir);
+                        if (!bvh.isOccluded(ray)) {
+                            nonOccludedCnt++;
+                        }
+                    }
+                }
+
+                float rati = float(nonOccludedCnt) / Pvl::sqr(sampleCnt);
+                uint8_t value = uint8_t(rati * 255);
+                mesh.ao[3 * fi + i] = value;
+            }
+
+            if (meter.inc()) {
+                cancelled = true;
+                mesh.ao = {};
+                return;
+            }
+        });
+
+        if (cancelled) {
+            return false;
+        }
+    }
+
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout << "AO calculated in "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms"
+              << std::endl;
+    return true;
+}
+
+} // namespace Mpcv

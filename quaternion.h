@@ -2,6 +2,8 @@
 
 #include "pvl/Matrix.hpp"
 
+namespace Mpcv {
+
 class Quat {
     std::array<float, 4> v_;
 
@@ -114,3 +116,5 @@ private:
         }
     }
 };
+
+} // namespace Mpcv

@@ -1,5 +1,4 @@
 #include "openglwidget.h"
-#include "ambient.h"
 #include "framebuffer.h"
 #include "pvl/CloudUtils.hpp"
 #include "pvl/QuadricDecimator.hpp"
@@ -18,6 +17,8 @@
 #include <openvdb/tools/MeshToVolume.h>
 #include <openvdb/tools/VolumeToMesh.h>
 #endif
+
+using namespace Mpcv;
 
 void OpenGLWidget::resizeGL(const int width, const int height) {
     std::cout << "Resizing " << width << " " << height << std::endl;
@@ -495,11 +496,82 @@ void OpenGLWidget::view(const void* handle, TexturedMesh&& mesh) {
     }
 }
 
+void OpenGLWidget::deleteMesh(const void* handle) {
+    if (handle == nullptr) {
+        // nothing?
+        return;
+    }
+    MeshData& mesh = meshes_.at(handle);
+    if (vbos_) {
+        glDeleteBuffers(1, &mesh.vbo);
+    }
+    if (meshes_.at(handle).hasTexture()) {
+        glDeleteTextures(1, &mesh.texture);
+    }
+    meshes_.erase(handle);
+    update();
+}
+
 void OpenGLWidget::updateCamera() {
     Pvl::Vec3f eye = camera_.eye();
     Pvl::Vec3f target = camera_.target();
     Pvl::Vec3f up = camera_.up();
     camera_ = Camera(eye, target, up, fov_, Pvl::Vec2i(width(), height()));
+}
+
+void OpenGLWidget::resetCamera() {
+    // find first enabled
+    for (const auto& p : meshes_) {
+        const MeshData& mesh = p.second;
+        if (!mesh.enabled) {
+            continue;
+        }
+
+        SrsConv conv(mesh.mesh.srs, srs_);
+        Pvl::Vec3f center = conv(mesh.box.center());
+        float scale = std::max(mesh.box.size()[0], mesh.box.size()[1]);
+        float zoom = 1.5 * scale;
+
+        camera_ = Camera(center + Pvl::Vec3f(0, 0, zoom),
+            center,
+            Pvl::Vec3f(0, 1, 0),
+            fov_,
+            Pvl::Vec2i(width(), height()));
+
+        double gridBase = 0.2 * scale;
+        grid_ = std::pow(10., std::floor(std::log10(gridBase)));
+        if (5.f * grid_ < gridBase) {
+            grid_ *= 5.f; // allow 5e10^n grids
+        } else if (2.f * grid_ < gridBase) {
+            grid_ *= 2.f; // allow 2e10^n grids
+        }
+        std::cout << "Grid = " << grid_ << std::endl;
+
+        update();
+
+        return;
+    }
+}
+
+void OpenGLWidget::screenshot(const QString& file) {
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadBuffer(GL_FRONT);
+    std::vector<uint8_t> pixels(width() * height() * 3);
+    QRect rect = geometry();
+    glReadPixels(
+        rect.x(), rect.y(), rect.width(), rect.height(), GL_BGR_EXT, GL_UNSIGNED_BYTE, pixels.data());
+    QImage image(pixels.data(), rect.width(), rect.height(), rect.width() * 3, QImage::Format_RGB888);
+    QImageWriter writer(file);
+    writer.write(std::move(image).mirrored().rgbSwapped());
+}
+
+void OpenGLWidget::saveAsMesh(const QString& file, const std::vector<const void*>& handles) {
+    std::ofstream ofs(file.toStdString());
+    std::vector<const TexturedMesh*> meshes;
+    for (auto handle : handles) {
+        meshes.push_back(&meshes_[handle].mesh);
+    }
+    savePly(ofs, meshes);
 }
 
 void OpenGLWidget::wheelEvent(QWheelEvent* event) {
@@ -548,7 +620,7 @@ void OpenGLWidget::mousePressEvent(QMouseEvent* event) {
 void OpenGLWidget::mouseDoubleClickEvent(QMouseEvent* event) {
     mouse_.pos0 = event->pos();
 
-    Ray ray = camera_.project(Pvl::Vec2f(mouse_.pos0.x(), mouse_.pos0.y()));
+    CameraRay ray = camera_.project(Pvl::Vec2f(mouse_.pos0.x(), mouse_.pos0.y()));
 
     const float t_inf = std::numeric_limits<float>::max();
     float mesh_min = t_inf;
@@ -570,7 +642,7 @@ void OpenGLWidget::mouseDoubleClickEvent(QMouseEvent* event) {
             }
         } else {
             SrsConv conv(srs_, mesh.srs);
-            Ray localRay{ conv(ray.origin), ray.dir };
+            CameraRay localRay{ conv(ray.origin), ray.dir };
             tbb::parallel_for<std::size_t>(0, mesh.faces.size(), [&](std::size_t fi) {
                 Triangle tri;
                 for (int i = 0; i < 3; ++i) {

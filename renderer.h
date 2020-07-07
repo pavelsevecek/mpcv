@@ -3,8 +3,11 @@
 #include "camera.h"
 #include "mesh.h"
 #include "pvl/UniformGrid.hpp"
+#include <functional>
 
 class FrameBufferWidget;
+
+namespace Mpcv {
 
 struct Pixel {
     Pvl::Vec3f color = Pvl::Vec3f(0);
@@ -24,3 +27,9 @@ void renderMeshes(FrameBufferWidget* widget,
     const Pvl::Vec3f& dirToSun,
     const Camera camera,
     const Srs& srs);
+
+bool ambientOcclusion(std::vector<TexturedMesh>& meshes,
+    std::function<bool(float)> progress,
+    int sampleCnt = 20);
+
+} // namespace Mpcv

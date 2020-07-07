@@ -13,57 +13,12 @@
 #include <QOpenGLFunctions>
 #include <QOpenGLWidget>
 #include <QWheelEvent>
-#include <fstream>
-#include <iostream>
-
-using Triangle = std::array<Pvl::Vec3f, 3>;
-
-inline bool intersection(const Ray& ray, const Triangle& tri, float& t) {
-    // https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm#C++_Implementation
-
-    const Pvl::Vec3f dir1 = tri[1] - tri[0];
-    const Pvl::Vec3f dir2 = tri[2] - tri[0];
-    const float eps = 1.e-12f;
-    const Pvl::Vec3f h = Pvl::crossProd(ray.dir, dir2);
-    const float a = Pvl::dotProd(dir1, h);
-    if (a > -eps && a < eps) {
-        return false;
-    }
-    const float f = 1.f / a;
-    const Pvl::Vec3f s = ray.origin - tri[0];
-    const float u = f * Pvl::dotProd(s, h);
-    if (u < 0.f || u > 1.f) {
-        return false;
-    }
-    const Pvl::Vec3f q = Pvl::crossProd(s, dir1);
-    const float v = f * Pvl::dotProd(ray.dir, q);
-    if (v < 0.f || u + v > 1.f) {
-        return false;
-    }
-    t = f * Pvl::dotProd(dir2, q);
-    return true;
-}
-
-inline bool intersection(const Ray& ray, const Pvl::Vec3f& point, float radius, float& t) {
-    Pvl::Vector<double, 3> delta = Pvl::vectorCast<double>(point) - Pvl::vectorCast<double>(ray.origin);
-    double cosPhi = Pvl::dotProd(delta, Pvl::vectorCast<double>(ray.dir));
-    if (cosPhi < 0) {
-        return false;
-    }
-    Pvl::Vector<double, 3> r0 = Pvl::vectorCast<double>(ray.dir) * cosPhi;
-    if (Pvl::norm(r0 - delta) < radius) {
-        t = cosPhi;
-        return true;
-    } else {
-        return false;
-    }
-}
 
 class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
     Q_OBJECT
 
     struct MeshData {
-        TexturedMesh mesh;
+        Mpcv::TexturedMesh mesh;
         Pvl::Box3f box;
         bool enabled = true;
 
@@ -97,8 +52,8 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
     };
     // Pvl::Optional<Triangle> selected;
 
-    Camera camera_;
-    Srs srs_;
+    Mpcv::Camera camera_;
+    Mpcv::Srs srs_;
     float fov_ = M_PI / 4.f;
     float pointSize_ = 2.f;
     float pointStride_ = 1.f;
@@ -115,8 +70,8 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
 
     struct {
         QPoint pos0;
-        ArcBall ab;
-        Camera state;
+        Mpcv::ArcBall ab;
+        Mpcv::Camera state;
     } mouse_;
 
     Pvl::Vec3f sunDir_ = Pvl::normalize(Pvl::Vec3f(1.f, 1.f, 4.f));
@@ -131,7 +86,7 @@ public:
 
     virtual void paintGL() override;
 
-    void view(const void* handle, TexturedMesh&& mesh);
+    void view(const void* handle, Mpcv::TexturedMesh&& mesh);
 
     void toggle(const void* handle, bool on) {
         meshes_[handle].enabled = on;
@@ -148,21 +103,7 @@ public:
         update();
     }
 
-    void deleteMesh(const void* handle) {
-        if (handle == nullptr) {
-            // nothing?
-            return;
-        }
-        MeshData& mesh = meshes_.at(handle);
-        if (vbos_) {
-            glDeleteBuffers(1, &mesh.vbo);
-        }
-        if (meshes_.at(handle).hasTexture()) {
-            glDeleteTextures(1, &mesh.texture);
-        }
-        meshes_.erase(handle);
-        update();
-    }
+    void deleteMesh(const void* handle);
 
     void laplacianSmooth();
 
@@ -195,60 +136,11 @@ public:
         update();
     }
 
-    void resetCamera() {
-        // find first enabled
-        for (const auto& p : meshes_) {
-            const MeshData& mesh = p.second;
-            if (!mesh.enabled) {
-                continue;
-            }
+    void resetCamera();
 
-            SrsConv conv(mesh.mesh.srs, srs_);
-            Pvl::Vec3f center = conv(mesh.box.center());
-            float scale = std::max(mesh.box.size()[0], mesh.box.size()[1]);
-            float zoom = 1.5 * scale;
+    void screenshot(const QString& file);
 
-            camera_ = Camera(center + Pvl::Vec3f(0, 0, zoom),
-                center,
-                Pvl::Vec3f(0, 1, 0),
-                fov_,
-                Pvl::Vec2i(width(), height()));
-
-            double gridBase = 0.2 * scale;
-            grid_ = std::pow(10., std::floor(std::log10(gridBase)));
-            if (5.f * grid_ < gridBase) {
-                grid_ *= 5.f; // allow 5e10^n grids
-            } else if (2.f * grid_ < gridBase) {
-                grid_ *= 2.f; // allow 2e10^n grids
-            }
-            std::cout << "Grid = " << grid_ << std::endl;
-
-            update();
-
-            return;
-        }
-    }
-
-    void screenshot(const QString& file) {
-        glPixelStorei(GL_PACK_ALIGNMENT, 1);
-        glReadBuffer(GL_FRONT);
-        std::vector<uint8_t> pixels(width() * height() * 3);
-        QRect rect = geometry();
-        glReadPixels(
-            rect.x(), rect.y(), rect.width(), rect.height(), GL_BGR_EXT, GL_UNSIGNED_BYTE, pixels.data());
-        QImage image(pixels.data(), rect.width(), rect.height(), rect.width() * 3, QImage::Format_RGB888);
-        QImageWriter writer(file);
-        writer.write(std::move(image).mirrored().rgbSwapped());
-    }
-
-    void saveAsMesh(const QString& file, const std::vector<const void*>& handles) {
-        std::ofstream ofs(file.toStdString());
-        std::vector<const TexturedMesh*> meshes;
-        for (auto handle : handles) {
-            meshes.push_back(&meshes_[handle].mesh);
-        }
-        savePly(ofs, meshes);
-    }
+    void saveAsMesh(const QString& file, const std::vector<const void*>& handles);
 
     void setSunDir(const Pvl::Vec3f& dir) {
         sunDir_ = dir;

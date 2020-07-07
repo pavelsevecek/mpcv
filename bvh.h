@@ -4,23 +4,21 @@
 #include <cstdint>
 #include <vector>
 
-
-/// \todo move to pvl?
-namespace Pvl {
+namespace Mpcv {
 
 class Ray {
-    friend bool intersectBox(const Box3f& box, const Ray& ray, float& t_min, float& t_max);
+    friend bool intersectBox(const Pvl::Box3f& box, const Ray& ray, float& t_min, float& t_max);
 
 private:
-    Vec3f orig;
-    Vec3f dir;
-    Vec3f invDir;
+    Pvl::Vec3f orig;
+    Pvl::Vec3f dir;
+    Pvl::Vec3f invDir;
     std::array<int, 3> signs;
 
 public:
     Ray() = default;
 
-    Ray(const Vec3f& origin, const Vec3f& dir)
+    Ray(const Pvl::Vec3f& origin, const Pvl::Vec3f& dir)
         : orig(origin)
         , dir(dir) {
         for (int i = 0; i < 3; ++i) {
@@ -29,16 +27,16 @@ public:
         }
     }
 
-    const Vec3f& origin() const {
+    const Pvl::Vec3f& origin() const {
         return orig;
     }
 
-    const Vec3f& direction() const {
+    const Pvl::Vec3f& direction() const {
         return dir;
     }
 };
 
-bool intersectBox(const Box3f& box, const Ray& ray, float& t_min, float& t_max);
+bool intersectBox(const Pvl::Box3f& box, const Ray& ray, float& t_min, float& t_max);
 
 struct BvhPrimitive {
     /// Generic user data, can be used to store additional information to the primitives.
@@ -53,7 +51,7 @@ struct IntersectionInfo {
     /// Object hit by the ray, or nullptr if nothing has been hit.
     const BvhPrimitive* object = nullptr;
 
-    Vec3f hit(const Ray& ray) const {
+    Pvl::Vec3f hit(const Ray& ray) const {
         return ray.origin() + ray.direction() * t;
     }
 
@@ -66,11 +64,11 @@ struct IntersectionInfo {
 /// \brief Trait for finding intersections with a triangle
 class BvhTriangle : public BvhPrimitive {
 private:
-    Vec3f v0;
-    Vec3f dir1, dir2;
+    Pvl::Vec3f v0;
+    Pvl::Vec3f dir1, dir2;
 
 public:
-    BvhTriangle(const Vec3f& v0, const Vec3f& v1, const Vec3f& v2, int data = -1)
+    BvhTriangle(const Pvl::Vec3f& v0, const Pvl::Vec3f& v1, const Pvl::Vec3f& v2, int data = -1)
         : v0(v0) {
         dir1 = v1 - v0;
         dir2 = v2 - v0;
@@ -81,18 +79,18 @@ public:
         // https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm#C++_Implementation
 
         const float eps = 1.e-12f;
-        const Vec3f h = crossProd(ray.direction(), dir2);
+        const Pvl::Vec3f h = crossProd(ray.direction(), dir2);
         const float a = dotProd(dir1, h);
         if (a > -eps && a < eps) {
             return false;
         }
         const float f = 1.f / a;
-        const Vec3f s = ray.origin() - v0;
+        const Pvl::Vec3f s = ray.origin() - v0;
         const float u = f * dotProd(s, h);
         if (u < -eps || u > 1.f + eps) {
             return false;
         }
-        const Vec3f q = crossProd(s, dir1);
+        const Pvl::Vec3f q = crossProd(s, dir1);
         const float v = f * dotProd(ray.direction(), q);
         if (v < -eps || u + v > 1.f + eps) {
             return false;
@@ -106,15 +104,15 @@ public:
         return true;
     }
 
-    Box3f getBBox() const {
-        Box3f box;
+    Pvl::Box3f getBBox() const {
+        Pvl::Box3f box;
         box.extend(v0);
         box.extend(v0 + dir1);
         box.extend(v0 + dir2);
         return box;
     }
 
-    Vec3f getCenter() const {
+    Pvl::Vec3f getCenter() const {
         return v0 + (dir1 + dir2) / 3.f;
     }
 
@@ -122,19 +120,19 @@ public:
         return { v0, v0 + dir1, v0 + dir2 };
     }
 
-    Vec3f normal() const {
-        Vec3f n = crossProd(dir1, dir2);
+    Pvl::Vec3f normal() const {
+        Pvl::Vec3f n = crossProd(dir1, dir2);
         float length = norm(n);
         if (length > 1.e-20f) {
             return n / length;
         } else {
-            return Vec3f(0, 0, 1);
+            return Pvl::Vec3f(0, 0, 1);
         }
     }
 };
 
 struct BvhNode {
-    Box3f box;
+    Pvl::Box3f box;
     uint32_t start;
     uint32_t primCnt;
     uint32_t rightOffset;
@@ -172,11 +170,11 @@ public:
     bool isOccluded(const Ray& ray) const;
 
     /// \brief Returns the bounding box of all objects in BVH.
-    Box3f getBoundingBox() const;
+    Pvl::Box3f getBoundingBox() const;
 
 private:
     template <typename TAddIntersection>
     void getIntersections(const Ray& ray, const TAddIntersection& addIntersection) const;
 };
 
-} // namespace Pvl
+} // namespace Mpcv

@@ -1,6 +1,6 @@
 #include "bvh.h"
 
-namespace Pvl {
+namespace Mpcv {
 
 struct BvhTraversal {
     uint32_t idx;
@@ -13,8 +13,8 @@ struct BvhBuildEntry {
     uint32_t end;
 };
 
-bool intersectBox(const Box3f& box, const Ray& ray, float& t_min, float& t_max) {
-    std::array<Vec3f, 2> b = { box.lower(), box.upper() };
+bool intersectBox(const Pvl::Box3f& box, const Ray& ray, float& t_min, float& t_max) {
+    std::array<Pvl::Vec3f, 2> b = { box.lower(), box.upper() };
     float tmin = (b[ray.signs[0]][0] - ray.orig[0]) * ray.invDir[0];
     float tmax = (b[1 - ray.signs[0]][0] - ray.orig[0]) * ray.invDir[0];
     PVL_ASSERT(!std::isnan(tmin) && !std::isnan(tmax)); // they may be inf though
@@ -168,9 +168,9 @@ void Bvh<TBvhObject>::build(std::vector<TBvhObject>&& objs) {
         node.primCnt = primCnt;
         node.rightOffset = UNTOUCHED;
 
-        Box3f bbox = objects[start].getBBox();
-        const Vec3f center = objects[start].getCenter();
-        Box3f boxCenter(center, center);
+        Pvl::Box3f bbox = objects[start].getBBox();
+        const Pvl::Vec3f center = objects[start].getCenter();
+        Pvl::Box3f boxCenter(center, center);
         for (uint32_t i = start + 1; i < end; ++i) {
             bbox.extend(objects[i].getBBox());
             boxCenter.extend(objects[i].getCenter());
@@ -219,11 +219,10 @@ void Bvh<TBvhObject>::build(std::vector<TBvhObject>&& objs) {
 }
 
 template <typename TBvhObject>
-Box3f Bvh<TBvhObject>::getBoundingBox() const {
+Pvl::Box3f Bvh<TBvhObject>::getBoundingBox() const {
     return nodes[0].box;
 }
 
 template class Bvh<BvhTriangle>;
 
-
-} // namespace Pvl
+} // namespace Mpcv

@@ -36,13 +36,13 @@ add_executable(mpcv
     main.cpp
     mainwindow.cpp mainwindow.h mainwindow.ui
     openglwidget.h openglwidget.cpp
-    camera.h
+    utils.h utils.cpp
+    camera.h camera.cpp
     quaternion.h
     mesh.h mesh.cpp
     las.h las.cpp
     coordinates.h
     bvh.h bvh.cpp
-    ambient.h ambient.cpp
     renderer.h renderer.cpp
     sun-sky/SunSky.h sun-sky/SunSky.cpp
     framebuffer.h framebuffer.cpp framebuffer.ui

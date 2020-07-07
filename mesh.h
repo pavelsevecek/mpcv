@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <vector>
 
+namespace Mpcv {
+
 using Color = Pvl::Vector<uint8_t, 3>;
 
 struct TexturedMesh {
@@ -76,3 +78,5 @@ using Progress = std::function<bool(float)>;
 TexturedMesh loadPly(std::istream& in, const Progress& prog);
 
 TexturedMesh loadObj(const QString& file, const Progress& prog);
+
+} // namespace Mpcv

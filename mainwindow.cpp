@@ -452,3 +452,25 @@ void MainWindow::on_actionSun_setup_triggered() {
     sun->setFunc([this](Pvl::Vec3f dir) { viewport_->setSunDir(dir); });
     sun->show();
 }
+
+void MainWindow::on_actionControls_triggered() {
+    std::cout << "Showing help" << std::endl;
+    QString text;
+    text += "Ctrl+[1-9]   view only n-th mesh\n";
+    text += "Shift+[1-9]  toggle visibility of n-th mesh\n";
+    text += "Ctrl+I       invert visibility\n";
+    text += "Ctrl+A       show all meshes\n";
+    text += "Ctrl+Left    show the mesh above the current\n";
+    text += "Ctrl+Right   show the mesh below the current\n";
+    text += "Ctrl+Click   show only the selected mesh\n";
+    text += "\n";
+    text += "Ctrl+Mouse wheel    Change the field of view\n";
+    text += "Alt+Mouse wheel     Change the size of points\n";
+    text += "Shift+Mouse wheel   Change the point stride\n";
+    text += "Double click        Center the camera at target\n";
+    QMessageBox box(QMessageBox::Information, "Help", text, QMessageBox::Ok, this);
+    QFont font = box.font();
+    font.setFamily("Courier New");
+    box.setFont(font);
+    box.exec();
+}

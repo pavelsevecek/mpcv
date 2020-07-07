@@ -7,13 +7,20 @@
 
 namespace Mpcv {
 
+enum class ImageFormat {
+    RGB,
+    BGR,
+    RGBA,
+    BGRA,
+};
+
 class ITexture {
 public:
     virtual ~ITexture() = default;
 
     virtual Pvl::Vec2i size() const = 0;
 
-    virtual int channels() const = 0;
+    virtual ImageFormat format() const = 0;
 
     virtual uint8_t* data() = 0;
 };
@@ -33,8 +40,8 @@ public:
         return Pvl::Vec2i(image_.width(), image_.height());
     }
 
-    virtual int channels() const override {
-        return image_.depth() == 32 ? 4 : 3;
+    virtual ImageFormat format() const override {
+        return image_.depth() == 32 ? ImageFormat::BGRA : ImageFormat::BGR;
     }
 
     virtual uint8_t* data() override {
@@ -54,7 +61,7 @@ public:
 
     virtual Pvl::Vec2i size() const override;
 
-    virtual int channels() const override;
+    virtual ImageFormat format() const override;
 
     virtual uint8_t* data() override;
 };
@@ -71,7 +78,7 @@ public:
 
     virtual Pvl::Vec2i size() const override;
 
-    virtual int channels() const override;
+    virtual ImageFormat format() const override;
 
     virtual uint8_t* data() override;
 };

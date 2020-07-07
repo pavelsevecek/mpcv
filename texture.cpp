@@ -55,8 +55,8 @@ Pvl::Vec2i JpegTexture::size() const {
     return Pvl::Vec2i(width_, height_);
 }
 
-int JpegTexture::channels() const {
-    return channels_;
+ImageFormat JpegTexture::format() const {
+    return channels_ == 4 ? ImageFormat::RGBA : ImageFormat::RGB;
 }
 
 uint8_t* JpegTexture::data() {
@@ -91,8 +91,8 @@ Pvl::Vec2i PngTexture::size() const {
     return Pvl::Vec2i(width_, height_);
 }
 
-int PngTexture::channels() const {
-    return channels_;
+ImageFormat PngTexture::format() const {
+    return channels_ == 4 ? ImageFormat::RGBA : ImageFormat::RGB;
 }
 
 uint8_t* PngTexture::data() {

@@ -40,6 +40,7 @@ add_executable(mpcv
     camera.h camera.cpp
     quaternion.h
     mesh.h mesh.cpp
+    texture.h texture.cpp
     las.h las.cpp
     coordinates.h
     bvh.h bvh.cpp
@@ -55,7 +56,9 @@ set(LIBRARIES
     GL GLU
     ${Tbb_LIBRARIES}
     ${OpenVDB_LIBRARIES}
-    laslib)
+    laslib
+    jpeg
+    png)
 
 if(OpenImageDenoise_FOUND)
     list(APPEND LIBRARIES /usr/local/lib/libOpenImageDenoise.so)

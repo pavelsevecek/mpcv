@@ -427,36 +427,25 @@ void OpenGLWidget::view(const void* handle, TexturedMesh&& mesh) {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-            QImage& tex = data.mesh.texture;
+            ITexture& tex = *data.mesh.texture;
+            Pvl::Vec2i size = tex.size();
+            int maxTextureSize;
+            glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
+            std::cout << "Max texture size = " << maxTextureSize << std::endl;
 
-            if (tex.depth() == 24) {
+            if (tex.channels() == 3) {
                 std::cout << "Using 24bit texture" << std::endl;
-                glTexImage2D(GL_TEXTURE_2D,
-                    0,
-                    GL_RGB,
-                    tex.width(),
-                    tex.height(),
-                    0,
-                    GL_RGB,
-                    GL_UNSIGNED_BYTE,
-                    tex.bits());
-            } else if (tex.depth() == 32) {
+                glTexImage2D(
+                    GL_TEXTURE_2D, 0, GL_RGB, size[0], size[1], 0, GL_BGR, GL_UNSIGNED_BYTE, tex.data());
+            } else if (tex.channels() == 4) {
                 std::cout << "Using 32bit texture" << std::endl;
-                glTexImage2D(GL_TEXTURE_2D,
-                    0,
-                    GL_RGB,
-                    tex.width(),
-                    tex.height(),
-                    0,
-                    GL_BGRA,
-                    GL_UNSIGNED_BYTE,
-                    tex.bits());
+                glTexImage2D(
+                    GL_TEXTURE_2D, 0, GL_RGB, size[0], size[1], 0, GL_BGRA, GL_UNSIGNED_BYTE, tex.data());
             } else {
-                throw std::runtime_error("Bad depth " + std::to_string(tex.depth()));
+                throw std::runtime_error("Bad depth " + std::to_string(tex.channels()));
             }
             glGenerateMipmap(GL_TEXTURE_2D);
-            QImage dummy;
-            tex.swap(dummy);
+            data.mesh.texture.reset();
         }
     }
     if (vbos_) {

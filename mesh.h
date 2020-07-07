@@ -2,7 +2,9 @@
 
 #include "coordinates.h"
 #include "pvl/Optional.hpp"
+#include "pvl/UniformGrid.hpp"
 #include "pvl/Vector.hpp"
+#include "texture.h"
 #include <fstream>
 #include <functional>
 #include <qimage.h>
@@ -38,7 +40,7 @@ struct TexturedMesh {
     std::vector<uint8_t> ao;
 
     ///< Texture image (deleted once transvered to OpenGL)
-    QImage texture;
+    std::unique_ptr<ITexture> texture;
 
     ///< Specifies the coordinates of the mesh
     Srs srs;

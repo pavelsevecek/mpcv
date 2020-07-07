@@ -1,4 +1,5 @@
 #include "mesh.h"
+#include "texture.h"
 #include <QDir>
 #include <QFileInfo>
 #include <chrono>
@@ -298,7 +299,8 @@ TexturedMesh loadObj(const QString& file, const Progress& prog) {
             mesh.uv.push_back(u);
         } else if (line[0] == 'f' && line[1] == ' ') {
             uint32_t x, y, z, tx, ty, tz;
-            sscanf(line.c_str() + 2, "%d/%d/ %d/%d/ %d/%d/", &x, &tx, &y, &ty, &z, &tz);
+            char c;
+            sscanf(line.c_str() + 2, "%d/%d%c %d/%d%c %d/%d%c", &x, &tx, &c, &y, &ty, &c, &z, &tz, &c);
             mesh.faces.push_back(TexturedMesh::Face{ x - 1, y - 1, z - 1 });
             mesh.texIds.push_back(TexturedMesh::Face{ tx - 1, ty - 1, tz - 1 });
         } else {
@@ -316,8 +318,8 @@ TexturedMesh loadObj(const QString& file, const Progress& prog) {
             if (startsWith(line, "map_Kd")) {
                 std::string atlas = line.substr(7);
                 std::cout << "Referencing atlas " << atlas << std::endl;
-                mesh.texture = QImage(info.dir().path() + "/" + QString::fromStdString(atlas));
-                std::cout << "Loaded texture " << mesh.texture.width() << "x" << mesh.texture.height()
+                mesh.texture = makeTexture(info.dir().path() + "/" + QString::fromStdString(atlas));
+                std::cout << "Loaded texture " << mesh.texture->size()[0] << "x" << mesh.texture->size()[1]
                           << std::endl;
             }
         }

@@ -105,10 +105,17 @@
     <addaction name="actionRender_view"/>
     <addaction name="actionSun_setup"/>
    </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionControls"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuMesh"/>
    <addaction name="menuPoint_cloud"/>
    <addaction name="menuRender"/>
+   <addaction name="menuHelp"/>
   </widget>
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
@@ -135,6 +142,9 @@
    <property name="text">
     <string>Open</string>
    </property>
+   <property name="toolTip">
+    <string>Open file</string>
+   </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
    </property>
@@ -149,6 +159,9 @@
    </property>
    <property name="text">
     <string>ShowWireframe</string>
+   </property>
+   <property name="toolTip">
+    <string>Render mesh edges (Ctrl+W)</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+W</string>
@@ -165,6 +178,9 @@
    <property name="text">
     <string>ShowDots</string>
    </property>
+   <property name="toolTip">
+    <string>Render mesh vertices (Ctrl+P)</string>
+   </property>
    <property name="shortcut">
     <string>Ctrl+P</string>
    </property>
@@ -177,6 +193,9 @@
    <property name="text">
     <string>Screenshot</string>
    </property>
+   <property name="toolTip">
+    <string>Save the current view as image</string>
+   </property>
   </action>
   <action name="actionLaplacian_smoothing">
    <property name="text">
@@ -187,15 +206,24 @@
    <property name="text">
     <string>Simplify</string>
    </property>
+   <property name="toolTip">
+    <string>Simplify mesh</string>
+   </property>
   </action>
   <action name="actionRepair">
    <property name="text">
     <string>Repair</string>
    </property>
+   <property name="toolTip">
+    <string>Repair mesh</string>
+   </property>
   </action>
   <action name="actionSave">
    <property name="text">
     <string>Save</string>
+   </property>
+   <property name="toolTip">
+    <string>Save the mesh</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
@@ -226,6 +254,9 @@
    <property name="text">
     <string>Flat</string>
    </property>
+   <property name="toolTip">
+    <string>Flat shading (Ctrl+F)</string>
+   </property>
    <property name="shortcut">
     <string>Ctrl+F</string>
    </property>
@@ -241,6 +272,9 @@
    <property name="text">
     <string>Ao</string>
    </property>
+   <property name="toolTip">
+    <string>Compute ambient occlusion (Ctrl+G)</string>
+   </property>
    <property name="shortcut">
     <string>Ctrl+G</string>
    </property>
@@ -255,6 +289,9 @@
    </property>
    <property name="text">
     <string>Grid</string>
+   </property>
+   <property name="toolTip">
+    <string>Show cartesian grid</string>
    </property>
   </action>
   <action name="actionTexture">
@@ -274,6 +311,9 @@
    <property name="text">
     <string>Texture</string>
    </property>
+   <property name="toolTip">
+    <string>Show textured mesh (Ctrl+T)</string>
+   </property>
    <property name="shortcut">
     <string>Ctrl+T</string>
    </property>
@@ -285,6 +325,9 @@
    </property>
    <property name="text">
     <string>ResetCamera</string>
+   </property>
+   <property name="toolTip">
+    <string>Resets the camera</string>
    </property>
   </action>
   <action name="actionEstimate_normals">
@@ -300,6 +343,11 @@
   <action name="actionSun_setup">
    <property name="text">
     <string>Sun setup</string>
+   </property>
+  </action>
+  <action name="actionControls">
+   <property name="text">
+    <string>Controls</string>
    </property>
   </action>
  </widget>

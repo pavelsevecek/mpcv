@@ -9,7 +9,7 @@
 #include <QImage>
 #include <QProgressDialog>
 #include <random>
-#ifdef ENABLE_DENOISING
+#ifdef HAS_OIDN
 #include <OpenImageDenoise/oidn.hpp>
 #endif
 
@@ -242,7 +242,7 @@ Pvl::Vec3f radiance(const Scene& scene,
     }
 }
 
-#ifdef ENABLE_DENOISING
+#ifdef HAS_OIDN
 void denoise(FrameBuffer& framebuffer) {
     oidn::DeviceRef device = oidn::newDevice();
     device.commit();

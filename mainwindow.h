@@ -59,6 +59,8 @@ private slots:
 
     void on_actionSun_setup_triggered();
 
+    void on_actionControls_triggered();
+
 private:
     Ui::MainWindow* ui_;
     OpenGLWidget* viewport_;

@@ -9,7 +9,7 @@
 #include <QPainter>
 #include <tbb/tbb.h>
 
-#ifdef ENABLE_MESH_REPAIR
+#ifdef HAS_OPENVDB
 #ifdef foreach
 #undef foreach // every time a programmer defines a macro, god kills a kitten
 #endif
@@ -330,6 +330,22 @@ void OpenGLWidget::paintGL() {
     glFlush();
 }
 
+inline int toGlFormat(const ImageFormat& format) {
+    switch (format) {
+    case ImageFormat::RGB:
+        return GL_RGB;
+    case ImageFormat::BGR:
+        return GL_BGR;
+    case ImageFormat::RGBA:
+        return GL_RGBA;
+    case ImageFormat::BGRA:
+        return GL_BGRA;
+    default:
+        throw std::runtime_error("Unknown image format " + std::to_string(int(format)));
+    }
+}
+
+
 void OpenGLWidget::view(const void* handle, TexturedMesh&& mesh) {
     bool firstMesh = meshes_.empty();
     bool updateOnly = meshes_.find(handle) != meshes_.end();
@@ -427,36 +443,15 @@ void OpenGLWidget::view(const void* handle, TexturedMesh&& mesh) {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-            QImage& tex = data.mesh.texture;
-
-            if (tex.depth() == 24) {
-                std::cout << "Using 24bit texture" << std::endl;
-                glTexImage2D(GL_TEXTURE_2D,
-                    0,
-                    GL_RGB,
-                    tex.width(),
-                    tex.height(),
-                    0,
-                    GL_RGB,
-                    GL_UNSIGNED_BYTE,
-                    tex.bits());
-            } else if (tex.depth() == 32) {
-                std::cout << "Using 32bit texture" << std::endl;
-                glTexImage2D(GL_TEXTURE_2D,
-                    0,
-                    GL_RGB,
-                    tex.width(),
-                    tex.height(),
-                    0,
-                    GL_BGRA,
-                    GL_UNSIGNED_BYTE,
-                    tex.bits());
-            } else {
-                throw std::runtime_error("Bad depth " + std::to_string(tex.depth()));
-            }
+            ITexture& tex = *data.mesh.texture;
+            Pvl::Vec2i size = tex.size();
+            int maxTextureSize;
+            glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
+            std::cout << "Max texture size = " << maxTextureSize << std::endl;
+            int format = toGlFormat(tex.format());
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size[0], size[1], 0, format, GL_UNSIGNED_BYTE, tex.data());
             glGenerateMipmap(GL_TEXTURE_2D);
-            QImage dummy;
-            tex.swap(dummy);
+            data.mesh.texture.reset();
         }
     }
     if (vbos_) {
@@ -749,7 +744,7 @@ void OpenGLWidget::simplify() {
     });
 }
 
-#ifdef ENABLE_MESH_REPAIR
+#ifdef HAS_OPENVDB
 
 namespace {
 class MeshAdapter {

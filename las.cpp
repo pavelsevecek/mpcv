@@ -1,9 +1,12 @@
 #include "las.h"
-#include "laslib/lasreader.hpp"
 #include <iostream>
+#ifdef HAS_LASLIB
+#include "laslib/lasreader.hpp"
+#endif
 
 namespace Mpcv {
 
+#ifdef HAS_LASLIB
 TexturedMesh loadLas(std::string file, const Progress& prog) {
     LASreadOpener lasreadopener;
     lasreadopener.set_file_name(file.c_str());
@@ -51,5 +54,10 @@ TexturedMesh loadLas(std::string file, const Progress& prog) {
     delete lasreader;
     return mesh;
 }
+#else
+TexturedMesh loadLas(std::string, const Progress&) {
+    throw std::runtime_error("MPCV not linked with LASLib, rebuild with WITH_LASLIB=ON");
+}
+#endif
 
 } // namespace Mpcv

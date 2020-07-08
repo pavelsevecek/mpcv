@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.5)
 
 project(mpcv LANGUAGES CXX)
 
+option(WITH_LASLIB  "Link LASLib to enable opening .las files"           ON)
+option(WITH_OPENVDB "Link OpenVDB to enable mesh repair"                 OFF)
+option(WITH_OIDN    "Link OpenImageDenoise to enable render denoising"   OFF)
+option(WITH_JPEG    "Link libjpeg to enable opening large jpeg textures" OFF)
+option(WITH_PNG     "Link libpng to enable opening large png textures"   OFF)
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(CMAKE_AUTOUIC ON)
@@ -18,19 +24,8 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/;${CMAKE_MODULE_PATH}")
 find_package(TBB REQUIRED tbb)
 add_definitions(-DTBB_SUPPRESS_DEPRECATED_MESSAGES)
 
-find_package(OpenVDB)
-if (OpenVDB_FOUND)
-    add_definitions(-DENABLE_MESH_REPAIR)
-    list(APPEND OpenVDB_LIBRARIES "Half")
-endif()
-
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 add_definitions(-DQT_NO_DEBUG_OUTPUT)
-
-find_package(OpenImageDenoise)
-if (OpenImageDenoise_FOUND)
-    add_definitions(-DENABLE_DENOISING)
-endif()
 
 add_executable(mpcv
     main.cpp
@@ -40,6 +35,7 @@ add_executable(mpcv
     camera.h camera.cpp
     quaternion.h
     mesh.h mesh.cpp
+    texture.h texture.cpp
     las.h las.cpp
     coordinates.h
     bvh.h bvh.cpp
@@ -53,12 +49,33 @@ add_executable(mpcv
 set(LIBRARIES
     Qt5::Widgets Qt5::Gui
     GL GLU
-    ${Tbb_LIBRARIES}
-    ${OpenVDB_LIBRARIES}
-    laslib)
+    ${Tbb_LIBRARIES})
 
-if(OpenImageDenoise_FOUND)
-    list(APPEND LIBRARIES /usr/local/lib/libOpenImageDenoise.so)
+if (WITH_LASLIB)
+    list(APPEND LIBRARIES laslib)
+    add_definitions(-DHAS_LASLIB)
+endif()
+
+if (WITH_OPENVDB)
+    find_package(OpenVDB REQUIRED)
+    list(APPEND LIBRARIES openvdb Half)
+    add_definitions(-DHAS_OPENVDB)
+endif()
+
+if (WITH_OIDN)
+    find_package(OpenImageDenoise)
+    list(APPEND LIBRARIES OpenImageDenoise)
+    add_definitions(-DHAS_OIDN)
+endif()
+
+if (WITH_JPEG)
+    list(APPEND LIBRARIES jpeg)
+    add_definitions(-DHAS_JPEG)
+endif()
+
+if (WITH_PNG)
+    list(APPEND LIBRARIES png)
+    add_definitions(-DHAS_PNG)
 endif()
 
 target_link_libraries(mpcv PRIVATE ${LIBRARIES})

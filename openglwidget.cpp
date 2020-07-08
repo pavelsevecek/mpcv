@@ -880,13 +880,16 @@ void OpenGLWidget::computeAmbientOcclusion(std::function<bool(float)> progress) 
         handleIndexMap[handle] = meshes.size();
         meshes.emplace_back(std::move(p.second.mesh));
     }
-    if (!meshes.empty() && ambientOcclusion(meshes, progress)) {
+    if (!meshes.empty()) {
+        if (!ambientOcclusion(meshes, progress)) {
+            return;
+        }
         for (auto& p : meshes_) {
             const void* handle = p.first;
             view(handle, std::move(meshes[handleIndexMap[handle]]));
         }
-        enableAo(true);
     }
+    enableAo(true);
 }
 
 void OpenGLWidget::renderView() {

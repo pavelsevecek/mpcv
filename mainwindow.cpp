@@ -464,10 +464,10 @@ void MainWindow::on_actionControls_triggered() {
     text += "Ctrl+Right   show the mesh below the current\n";
     text += "Ctrl+Click   show only the selected mesh\n";
     text += "\n";
-    text += "Ctrl+Mouse wheel    Change the field of view\n";
-    text += "Alt+Mouse wheel     Change the size of points\n";
-    text += "Shift+Mouse wheel   Change the point stride\n";
-    text += "Double click        Center the camera at target\n";
+    text += "Ctrl+Mouse wheel    change the field of view\n";
+    text += "Alt+Mouse wheel     change the size of points\n";
+    text += "Shift+Mouse wheel   change the point stride\n";
+    text += "Double click        center the camera at target\n";
     QMessageBox box(QMessageBox::Information, "Help", text, QMessageBox::Ok, this);
     QFont font = box.font();
     font.setFamily("Courier New");

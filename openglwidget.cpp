@@ -332,6 +332,8 @@ void OpenGLWidget::paintGL() {
 
 inline int toGlFormat(const ImageFormat& format) {
     switch (format) {
+    case ImageFormat::GRAY:
+        return GL_RED;
     case ImageFormat::RGB:
         return GL_RGB;
     case ImageFormat::BGR:
@@ -449,7 +451,9 @@ void OpenGLWidget::view(const void* handle, TexturedMesh&& mesh) {
             glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
             std::cout << "Max texture size = " << maxTextureSize << std::endl;
             int format = toGlFormat(tex.format());
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size[0], size[1], 0, format, GL_UNSIGNED_BYTE, tex.data());
+            int internal = tex.format() == ImageFormat::GRAY ? GL_LUMINANCE : GL_RGB;
+            glTexImage2D(
+                GL_TEXTURE_2D, 0, internal, size[0], size[1], 0, format, GL_UNSIGNED_BYTE, tex.data());
             glGenerateMipmap(GL_TEXTURE_2D);
             data.mesh.texture.reset();
         }
@@ -533,7 +537,7 @@ void OpenGLWidget::resetCamera(const Srs& srs) {
         SrsConv conv(mesh.mesh.srs, srs);
         Pvl::Vec3f center = conv(mesh.box.center());
         float scale = std::max(mesh.box.size()[0], mesh.box.size()[1]);
-        float zoom = 1.5 * scale;
+        float zoom = std::max(1.5f * scale, 0.001f);
 
         camera_ = Camera(center + Pvl::Vec3f(0, 0, zoom),
             center,

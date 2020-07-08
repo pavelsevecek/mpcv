@@ -13,12 +13,12 @@ struct CameraRay {
 };
 
 class Camera {
-    Pvl::Vec3f eye_;
-    Pvl::Vec3f target_;
-    Pvl::Vec3f dir_;
-    Pvl::Vec3f up_;
-    Pvl::Vec3f left_;
-    Pvl::Vec2i size_;
+    Pvl::Vec3f eye_ = Pvl::Vec3f(0, 0, 0);
+    Pvl::Vec3f target_ = Pvl::Vec3f(0, 0, 1);
+    Pvl::Vec3f dir_ = Pvl::Vec3f(0, 0, 1);
+    Pvl::Vec3f up_ = Pvl::Vec3f(0, 1, 0);
+    Pvl::Vec3f left_ = Pvl::Vec3f(1, 0, 0);
+    Pvl::Vec2i size_ = Pvl::Vec2i(640, 480);
     Srs srs_;
 
 public:

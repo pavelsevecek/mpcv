@@ -255,7 +255,7 @@
     <string>Flat</string>
    </property>
    <property name="toolTip">
-    <string>Flat shading (Ctrl+F)</string>
+    <string>Enable flat shading (Ctrl+F)</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+F</string>
@@ -327,7 +327,7 @@
     <string>ResetCamera</string>
    </property>
    <property name="toolTip">
-    <string>Resets the camera</string>
+    <string>Reset the camera</string>
    </property>
   </action>
   <action name="actionEstimate_normals">

@@ -898,5 +898,13 @@ void OpenGLWidget::renderView() {
     }
     FrameBufferWidget* frame = new FrameBufferWidget(this);
     frame->show();
-    frame->run([this, frame, meshesToRender] { renderMeshes(frame, meshesToRender, sunDir_, camera_); });
+    frame->run([this, frame, meshesToRender] {
+        RenderWire wire = RenderWire::NOTHING;
+        if (wireframe_) {
+            wire = RenderWire::EDGES;
+        } else if (dots_) {
+            wire = RenderWire::DOTS;
+        }
+        renderMeshes(frame, meshesToRender, sunDir_, camera_, wire);
+    });
 }

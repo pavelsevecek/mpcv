@@ -186,10 +186,40 @@ inline Pvl::Vec3f barycentric(const Pvl::Vec3f& p, const std::array<Pvl::Vec3f, 
     }
 }
 
+inline float distanceToSegment(const Pvl::Vec3f& v, const Pvl::Vec3f& a, const Pvl::Vec3f& b) {
+    const Pvl::Vec3f& ab = b - a;
+    const Pvl::Vec3f& av = v - a;
+    return Pvl::norm(Pvl::crossProd(ab, av)) / Pvl::norm(ab);
+}
+
+
+inline float edgesShader(const Pvl::Vec3f& v, const std::array<Pvl::Vec3f, 3>& tri) {
+    const float eps = 0.01;
+    for (int i = 0; i < 3; ++i) {
+        const Pvl::Vec3f& a = tri[i];
+        const Pvl::Vec3f& b = tri[(i + 1) % 3];
+        if (distanceToSegment(v, a, b) < eps) {
+            return 0.f;
+        }
+    }
+    return 1.f;
+}
+
+inline float vertexShader(const Pvl::Vec3f& v, const std::array<Pvl::Vec3f, 3>& tri) {
+    const float eps = 0.01;
+    for (int i = 0; i < 3; ++i) {
+        if (Pvl::norm(v - tri[i]) < eps) {
+            return 0.f;
+        }
+    }
+    return 1.f;
+}
+
 Pvl::Vec3f radiance(const Scene& scene,
     const Mpcv::Ray& ray,
     const Mpcv::Bvh<Mpcv::BvhTriangle>& bvh,
     Rng& rng,
+    const RenderWire wire,
     const int depth = 0) {
     float eps = 0.01f;
     Mpcv::IntersectionInfo is;
@@ -200,14 +230,27 @@ Pvl::Vec3f radiance(const Scene& scene,
         const Pvl::Vec3f normal = tri->normal();
         Pvl::Vec3f result(0.f);
 
+        // Pvl::Vec3f uvw = barycentric(pos, tri->getTriangle());
+        float albedo = scene.albedo;
+        switch (wire) {
+        case RenderWire::DOTS:
+            albedo *= vertexShader(pos, tri->getTriangle());
+            break;
+        case RenderWire::EDGES:
+            albedo *= edgesShader(pos, tri->getTriangle());
+            break;
+        case RenderWire::NOTHING:
+            break;
+        }
         // GI
         if (depth == 0) {
             Pvl::Mat33f rotator = Pvl::getRotatorTo(normal);
             int numGiSamples = 10;
             for (int i = 0; i < numGiSamples; ++i) {
                 Pvl::Vec3f outDir = Pvl::prod(rotator, sampleUnitHemiSphere(rng(), rng()));
-                Pvl::Vec3f gi = radiance(scene, Mpcv::Ray(pos + eps * outDir, outDir), bvh, rng, depth + 1);
-                float bsdfCos = scene.albedo * std::max(Pvl::dotProd(outDir, normal), 0.f);
+                Pvl::Vec3f gi =
+                    radiance(scene, Mpcv::Ray(pos + eps * outDir, outDir), bvh, rng, wire, depth + 1);
+                float bsdfCos = albedo * std::max(Pvl::dotProd(outDir, normal), 0.f);
                 result += gi * bsdfCos / numGiSamples;
             }
         }
@@ -217,7 +260,7 @@ Pvl::Vec3f radiance(const Scene& scene,
         Pvl::Vec2f xy = scene.sunRadius * sampleUnitDisc(rng(), rng());
         Pvl::Vec3f dirToSun = Pvl::prod(rotator, Pvl::normalize(Pvl::Vec3f(xy[0], xy[1], 1.f)));
         if (!bvh.isOccluded(Mpcv::Ray(pos + eps * dirToSun, dirToSun))) {
-            result += scene.albedo * scene.sunMult * scene.sunSky.evalSun(dirToSun) *
+            result += albedo * scene.sunMult * scene.sunSky.evalSun(dirToSun) *
                       std::max(Pvl::dotProd(normal, dirToSun), 0.f);
         }
 
@@ -233,7 +276,7 @@ Pvl::Vec3f radiance(const Scene& scene,
             bool illuminates = dirToLight[2] > 0; // light.cosAngle;
             if (visible && illuminates) {
                 Pvl::Vec3f intensity = light.intensity * std::pow(dirToLight[2], 20.f);
-                result += scene.albedo * intensity * std::max(Pvl::dotProd(normal, dirToLight), 0.f);
+                result += albedo * intensity * std::max(Pvl::dotProd(normal, dirToLight), 0.f);
             }
         }
         return result;
@@ -268,7 +311,8 @@ void denoise(FrameBuffer&) {}
 void renderMeshes(FrameBufferWidget* frame,
     const std::vector<TexturedMesh*>& meshes,
     const Pvl::Vec3f& dirToSun,
-    const Camera camera) {
+    const Camera camera,
+    const RenderWire wire) {
     std::cout << "Starting the renderer" << std::endl;
     Scene scene(dirToSun);
 
@@ -335,7 +379,7 @@ void renderMeshes(FrameBufferWidget* frame,
                 float dy = rng();
                 CameraRay cameraRay = camera.project(Pvl::Vec2f(x + dx, y + dy));
                 Mpcv::Ray ray(cameraRay.origin, cameraRay.dir);
-                Pvl::Vec3f color = radiance(scene, ray, bvh, rng);
+                Pvl::Vec3f color = radiance(scene, ray, bvh, rng, wire);
                 framebuffer(pix).add(color);
             }
         });

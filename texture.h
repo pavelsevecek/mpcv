@@ -8,6 +8,7 @@
 namespace Mpcv {
 
 enum class ImageFormat {
+    GRAY,
     RGB,
     BGR,
     RGBA,
@@ -41,7 +42,16 @@ public:
     }
 
     virtual ImageFormat format() const override {
-        return image_.depth() == 32 ? ImageFormat::BGRA : ImageFormat::BGR;
+        switch (image_.depth()) {
+        case 32:
+            return ImageFormat::BGRA;
+        case 24:
+            return ImageFormat::BGR;
+        case 8:
+            return ImageFormat::GRAY;
+        default:
+            throw std::runtime_error("Unknown image depth = " + std::to_string(image_.depth()));
+        }
     }
 
     virtual uint8_t* data() override {

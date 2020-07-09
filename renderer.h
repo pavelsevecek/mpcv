@@ -22,10 +22,17 @@ struct Pixel {
 
 using FrameBuffer = Pvl::UniformGrid<Pixel, 2>;
 
+enum class RenderWire {
+    NOTHING,
+    DOTS,
+    EDGES,
+};
+
 void renderMeshes(FrameBufferWidget* widget,
     const std::vector<TexturedMesh*>& meshes,
     const Pvl::Vec3f& dirToSun,
-    const Camera camera);
+    const Camera camera,
+    const RenderWire wire = RenderWire::NOTHING);
 
 bool ambientOcclusion(std::vector<TexturedMesh>& meshes,
     std::function<bool(float)> progress,

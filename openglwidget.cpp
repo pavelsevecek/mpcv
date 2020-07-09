@@ -247,6 +247,7 @@ void OpenGLWidget::paintGL() {
         glTranslatef(delta[0], delta[1], delta[2]);
         glColor3f(0, 0, 0);
         glPolygonMode(GL_FRONT_AND_BACK, wireframe_ ? GL_LINE : GL_POINT);
+        glDisable(GL_LIGHTING);
 
         for (const auto& p : meshes_) {
             const MeshData& mesh = p.second;
@@ -262,6 +263,7 @@ void OpenGLWidget::paintGL() {
             glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glEnable(GL_LIGHTING);
     }
 
     glColor3f(0, 0, 0);

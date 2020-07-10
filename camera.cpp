@@ -33,9 +33,12 @@ void Camera::pan(const Pvl::Vec2i& dp) {
 }
 
 void Camera::transform(const Pvl::Mat33f& m) {
-    dir_ = Pvl::prod(m, dir_);
-    up_ = Pvl::prod(m, up_);
-    left_ = Pvl::prod(m, left_);
+    dir_ = Pvl::normalize(Pvl::prod(m, dir_));
+
+    float upLength = Pvl::norm(up_);
+    float leftLength = Pvl::norm(left_);
+    up_ = Pvl::normalize(Pvl::prod(m, up_)) * upLength;
+    left_ = Pvl::normalize(Pvl::prod(m, left_)) * leftLength;
 
     float dist = Pvl::norm(eye_ - target_);
     eye_ = target_ - dir_ * dist;
@@ -100,7 +103,7 @@ bool intersection(const CameraRay& ray, const Triangle& tri, float& t) {
         return false;
     }
     t = f * Pvl::dotProd(dir2, q);
-    return true;
+    return t > 0.f;
 }
 
 bool intersection(const CameraRay& ray, const Pvl::Vec3f& point, float radius, float& t) {

@@ -48,7 +48,10 @@ int main(int argc, char* argv[]) {
 
     QStringList args = a.arguments();
     for (int i = 1; i < args.size(); ++i) {
-        w.open(args.at(i), i, args.size() - 1);
+        if (!w.open(args.at(i), i, args.size() - 1)) {
+            // cancelled, skip the rest
+            break;
+        }
     }
     return a.exec();
 }

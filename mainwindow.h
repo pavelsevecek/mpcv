@@ -20,7 +20,7 @@ public:
     MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
-    void open(const QString& file, int index = 1, int total = 1);
+    bool open(const QString& file, int index = 1, int total = 1);
 
 private slots:
     void on_MeshList_itemChanged(QListWidgetItem* item);

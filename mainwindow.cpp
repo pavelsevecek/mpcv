@@ -222,14 +222,14 @@ MainWindow::~MainWindow() {
 }
 
 
-void MainWindow::open(const QString& file, int index, int total) {
+bool MainWindow::open(const QString& file, int index, int total) {
     QCoreApplication::processEvents();
     try {
         QString ext = QFileInfo(file).suffix();
         if (ext != "ply" && ext != "obj" && ext != "las" && ext != "laz") {
             QMessageBox box(QMessageBox::Warning, "Error", "Unknown file format of file '" + file + "'");
             box.exec();
-            return;
+            return true; // continue opening files
         }
 
         QString message = "Loading '" + file + "'";
@@ -263,9 +263,12 @@ void MainWindow::open(const QString& file, int index, int total) {
         } else if (ext == "las" || ext == "laz") {
             mesh = loadLas(file.toStdString(), callback);
         }
+        if (dialog.wasCanceled()) {
+            return false;
+        }
         dialog.close();
         if (mesh.vertices.empty()) {
-            return;
+            return true; // continue opening files
         }
 
         QFileInfo info(file);
@@ -281,11 +284,12 @@ void MainWindow::open(const QString& file, int index, int total) {
         /// \todo avoid firing signal
 
         item->setCheckState(Qt::CheckState::Checked);
-
+        return true;
 
     } catch (const std::exception& e) {
         QMessageBox box(QMessageBox::Warning, "Error", "Cannot open file '" + file + "'\n" + e.what());
         box.exec();
+        return true; // continue opening files
     }
 }
 
@@ -300,7 +304,10 @@ void MainWindow::on_actionOpenFile_triggered() {
         initialDir = info.dir();
         int index = 1;
         for (QString name : names) {
-            open(name, index, names.size());
+            if (!open(name, index++, names.size())) {
+                // cancelled, skip the rest
+                return;
+            }
         }
     }
 }

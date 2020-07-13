@@ -1,5 +1,5 @@
 #include "las.h"
-#include "laslib/lasreader.hpp"
+#include "lasreader.hpp"
 #include <iostream>
 
 namespace Mpcv {

@@ -8,6 +8,7 @@
 #include "pvl/Utils.hpp"
 #include <QImage>
 #include <QProgressDialog>
+#include <chrono>
 #include <random>
 #ifdef HAS_OIDN
 #include <OpenImageDenoise/oidn.hpp>

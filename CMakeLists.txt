@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.5)
 
 project(mpcv LANGUAGES CXX)
 
-option(WITH_LASLIB  "Link LASLib to enable opening .las files"           ON)
 option(WITH_OPENVDB "Link OpenVDB to enable mesh repair"                 OFF)
 option(WITH_OIDN    "Link OpenImageDenoise to enable render denoising"   OFF)
 option(WITH_JPEG    "Link libjpeg to enable opening large jpeg textures" OFF)
@@ -17,8 +16,6 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
-
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/;${CMAKE_MODULE_PATH}")
 
 find_package(TBB REQUIRED tbb)
@@ -26,6 +23,12 @@ add_definitions(-DTBB_SUPPRESS_DEPRECATED_MESSAGES)
 
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 add_definitions(-DQT_NO_DEBUG_OUTPUT)
+
+include_directories(LAStools/LASlib/inc)
+include_directories(LAStools/LASzip/src)
+add_subdirectory(LAStools)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 
 add_executable(mpcv
     main.cpp
@@ -48,13 +51,9 @@ add_executable(mpcv
 
 set(LIBRARIES
     Qt5::Widgets Qt5::Gui
+    LASlib
     GL GLU
     ${Tbb_LIBRARIES})
-
-if (WITH_LASLIB)
-    list(APPEND LIBRARIES laslib)
-    add_definitions(-DHAS_LASLIB)
-endif()
 
 if (WITH_OPENVDB)
     find_package(OpenVDB REQUIRED)

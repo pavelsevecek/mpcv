@@ -167,7 +167,7 @@ void OpenGLWidget::paintGL() {
         }
         bool useTexture = enableTextures_ && mesh.hasTexture();
 
-        if (useColors || useTexture) {
+        if (useColors || useTexture || !useNormals) {
             glDisable(GL_LIGHTING);
         }
         if (useNormals) {

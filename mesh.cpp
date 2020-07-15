@@ -204,8 +204,11 @@ TexturedMesh loadPly(std::istream& in, const Progress& prog) {
     const int progStep = std::max((numVertices + numFaces) / 100, std::size_t(100));
     std::size_t nextProg = progStep;
     float indexToProg = 100.f / (numVertices + numFaces);
-    for (std::size_t i = 0; i < numVertices; ++i) {
+    for (std::size_t i = 0; i < numVertices;) {
         std::getline(in, line);
+        if (line.empty()) {
+            continue;
+        }
         /// \todo simplify
         Pvl::Vec3f p;
         if (normalProp == 1 && colorProp == 2) {
@@ -246,6 +249,7 @@ TexturedMesh loadPly(std::istream& in, const Progress& prog) {
             }
             nextProg += progStep;
         }
+        ++i;
     }
     std::cout << "Added " << mesh.vertices.size() << " vertices " << std::endl;
     nextProg = progStep;

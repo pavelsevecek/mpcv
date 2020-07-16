@@ -19,6 +19,7 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
 
     struct MeshData {
         Mpcv::TexturedMesh mesh;
+        std::string basename;
         Pvl::Box3f box;
         bool enabled = true;
 
@@ -65,6 +66,7 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
     std::map<const void*, MeshData> meshes_;
     bool wireframe_ = false;
     bool dots_ = false;
+    bool bboxes_ = false;
     bool vbos_ = true;
 
     struct {
@@ -85,7 +87,7 @@ public:
 
     virtual void paintGL() override;
 
-    void view(const void* handle, Mpcv::TexturedMesh&& mesh);
+    void view(const void* handle, std::string basename, Mpcv::TexturedMesh&& mesh);
 
     void toggle(const void* handle, bool on) {
         meshes_[handle].enabled = on;
@@ -99,6 +101,11 @@ public:
 
     void dots(const bool on) {
         dots_ = on;
+        update();
+    }
+
+    void windows(const bool on) {
+        bboxes_ = on;
         update();
     }
 

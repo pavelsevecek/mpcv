@@ -61,6 +61,8 @@ private slots:
 
     void on_actionControls_triggered();
 
+    void on_actionWindows_triggered();
+
 private:
     Ui::MainWindow* ui_;
     OpenGLWidget* viewport_;

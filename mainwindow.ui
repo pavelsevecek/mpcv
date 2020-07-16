@@ -130,6 +130,7 @@
    <addaction name="actionShowDots"/>
    <addaction name="actionShowWireframe"/>
    <addaction name="actionGrid"/>
+   <addaction name="actionWindows"/>
    <addaction name="separator"/>
    <addaction name="actionFlat"/>
    <addaction name="actionAo"/>
@@ -348,6 +349,21 @@
   <action name="actionControls">
    <property name="text">
     <string>Controls</string>
+   </property>
+  </action>
+  <action name="actionWindows">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/window.png</normaloff>:/images/window.png</iconset>
+   </property>
+   <property name="text">
+    <string>Windows</string>
+   </property>
+   <property name="toolTip">
+    <string>Show bounding boxes</string>
    </property>
   </action>
  </widget>

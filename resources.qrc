@@ -8,5 +8,6 @@
     <file>images/reset.png</file>
     <file>images/tex.png</file>
     <file>images/wire.png</file>
+    <file>images/window.png</file>
     </qresource>
 </RCC>

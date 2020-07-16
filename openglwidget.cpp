@@ -242,12 +242,12 @@ void OpenGLWidget::paintGL() {
         }
     }
 
+    glDisable(GL_LIGHTING);
     if (wireframe_ || dots_) {
         Pvl::Vec3f delta = -camera_.direction() * 5.e-4f * dist;
         glTranslatef(delta[0], delta[1], delta[2]);
         glColor3f(0, 0, 0);
         glPolygonMode(GL_FRONT_AND_BACK, wireframe_ ? GL_LINE : GL_POINT);
-        glDisable(GL_LIGHTING);
 
         for (const auto& p : meshes_) {
             const MeshData& mesh = p.second;
@@ -263,55 +263,94 @@ void OpenGLWidget::paintGL() {
             glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        glEnable(GL_LIGHTING);
     }
 
     glColor3f(0, 0, 0);
     Pvl::Box3f bbox;
+    std::vector<std::pair<Pvl::Vec3f, QString>> textToRender;
     for (const auto& p : meshes_) {
         const MeshData& mesh = p.second;
-        if (mesh.enabled) {
-            SrsConv conv(mesh.mesh.srs, camera_.srs());
-            bbox.extend(conv(mesh.box.lower()));
-            bbox.extend(conv(mesh.box.upper()));
+        if (!mesh.enabled) {
+            continue;
+        }
+        SrsConv conv(mesh.mesh.srs, camera_.srs());
+        Pvl::Box3f meshBox(conv(mesh.box.lower()), conv(mesh.box.upper()));
+        bbox.extend(meshBox);
+
+        if (bboxes_) {
+            float x1 = meshBox.lower()[0];
+            float y1 = meshBox.lower()[1];
+            float z1 = meshBox.lower()[2];
+            float x2 = meshBox.upper()[0];
+            float y2 = meshBox.upper()[1];
+            float z2 = meshBox.upper()[2];
+            glBegin(GL_LINE_STRIP);
+            glVertex3f(x1, y1, z1);
+            glVertex3f(x2, y1, z1);
+            glVertex3f(x2, y2, z1);
+            glVertex3f(x1, y2, z1);
+            glVertex3f(x1, y1, z1);
+            glVertex3f(x1, y1, z2);
+            glVertex3f(x2, y1, z2);
+            glVertex3f(x2, y2, z2);
+            glVertex3f(x1, y2, z2);
+            glVertex3f(x1, y1, z2);
+            glEnd();
+            glBegin(GL_LINES);
+            glVertex3f(x2, y1, z1);
+            glVertex3f(x2, y1, z2);
+            glVertex3f(x2, y2, z1);
+            glVertex3f(x2, y2, z2);
+            glVertex3f(x1, y2, z1);
+            glVertex3f(x1, y2, z2);
+            glEnd();
+            textToRender.emplace_back(meshBox.center(), QString::fromStdString(mesh.basename));
         }
     }
-    float x1 = bbox.lower()[0] - 0.5f * grid_;
-    float x2 = x1 + ceil(bbox.size()[0] / grid_ + 0.5f) * grid_;
-    float y1 = bbox.lower()[1] - 0.5f * grid_;
-    float y2 = y1 + ceil(bbox.size()[1] / grid_ + 0.5f) * grid_;
-    float z0 = bbox.center()[2];
     if (showGrid_) {
+        float x1 = bbox.lower()[0] - 0.5f * grid_;
+        float x2 = x1 + ceil(bbox.size()[0] / grid_ + 0.5f) * grid_;
+        float y1 = bbox.lower()[1] - 0.5f * grid_;
+        float y2 = y1 + ceil(bbox.size()[1] / grid_ + 0.5f) * grid_;
+        float z0 = bbox.center()[2];
         glBegin(GL_LINES);
         for (float x = x1; x <= x2; x += grid_) {
             glVertex3f(x, y1, z0);
             glVertex3f(x, y2, z0);
+            textToRender.emplace_back(Pvl::Vec3f(x, y1 - 0.1 * grid_, z0), QString::number(x - x1));
         }
         for (float y = y1; y <= y2; y += grid_) {
             glVertex3f(x1, y, z0);
             glVertex3f(x2, y, z0);
+            textToRender.emplace_back(Pvl::Vec3f(x1 - 0.16 * grid_, y, z0), QString::number(y - y1));
         }
         glEnd();
     }
 
-
     QPainter painter(this);
     painter.setPen(Qt::black);
     painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
-
-    if (showGrid_) {
-        painter.setFont(QFont("Helvetica", 8));
-        for (float x = x1; x <= x2; x += grid_) {
-            if (Pvl::Optional<Pvl::Vec2f> proj = camera_.unproject(Pvl::Vec3f(x, y1 - 0.1 * grid_, z0))) {
-                painter.drawText(proj.value()[0], proj.value()[1], QString::number(x - x1));
-            }
-        }
-        for (float y = y1; y <= y2; y += grid_) {
-            if (Pvl::Optional<Pvl::Vec2f> proj = camera_.unproject(Pvl::Vec3f(x1 - 0.16 * grid_, y, z0))) {
-                painter.drawText(proj.value()[0], proj.value()[1], QString::number(y - y1));
-            }
+    // if (showGrid_) {
+    painter.setFont(QFont("Helvetica", 8));
+    for (const auto& p : textToRender) {
+        if (Pvl::Optional<Pvl::Vec2f> proj = camera_.unproject(p.first)) {
+            painter.drawText(proj.value()[0], proj.value()[1], p.second);
         }
     }
+    /*  if (Pvl::Optional<Pvl::Vec2f> proj = camera_.unproject(meshBox.center())) {
+          painter.drawText(proj.value()[0], proj.value()[1], QString::fromStdString(mesh.basename));
+      }
+      for (float x = x1; x <= x2; x += grid_) {
+          if (Pvl::Optional<Pvl::Vec2f> proj = camera_.unproject(Pvl::Vec3f(x, y1 - 0.1 * grid_, z0))) {
+              painter.drawText(proj.value()[0], proj.value()[1],);
+          }
+      }
+      for (float y = y1; y <= y2; y += grid_) {
+          if (Pvl::Optional<Pvl::Vec2f> proj = camera_.unproject(Pvl::Vec3f(x1 - 0.16 * grid_, y, z0))) {
+              painter.drawText(proj.value()[0], proj.value()[1], QString::number(y - y1));
+          }
+      }
+  }*/
 
     painter.setFont(QFont("Helvetica", 10));
 
@@ -327,7 +366,7 @@ void OpenGLWidget::paintGL() {
     painter.drawText(30, height() - 30, "Faces:");
     painter.drawText(100, height() - 30, QString("%L1").arg(numFaces));
     painter.end();
-
+    glEnable(GL_LIGHTING);
 
     glFlush();
 }
@@ -350,11 +389,12 @@ inline int toGlFormat(const ImageFormat& format) {
 }
 
 
-void OpenGLWidget::view(const void* handle, TexturedMesh&& mesh) {
+void OpenGLWidget::view(const void* handle, std::string basename, TexturedMesh&& mesh) {
     bool firstMesh = meshes_.empty();
     bool updateOnly = meshes_.find(handle) != meshes_.end();
     MeshData& data = meshes_[handle];
     data.mesh = std::move(mesh);
+    data.basename = basename;
     data.vis = {};
 
     Srs refSrs;
@@ -637,6 +677,9 @@ void OpenGLWidget::mouseDoubleClickEvent(QMouseEvent* event) {
     float pc_min = t_inf;
     tbb::mutex mutex;
     for (const auto& p : meshes_) {
+        if (!p.second.enabled) {
+            continue;
+        }
         const TexturedMesh& mesh = p.second.mesh;
         if (p.second.pointCloud()) {
             std::vector<float> zs(mesh.vertices.size());
@@ -706,6 +749,7 @@ void OpenGLWidget::meshOperation(const MeshFunc& meshFunc) {
     for (const auto& p : meshData) {
         const void* handle = p.first;
         TexturedMesh mesh = std::move(p.second->mesh);
+        std::string basename = p.second->basename;
         deleteMesh(handle);
         Pvl::TriangleMesh<Pvl::Vec3f> trimesh;
         for (const Pvl::Vec3f& p : mesh.vertices) {
@@ -731,7 +775,7 @@ void OpenGLWidget::meshOperation(const MeshFunc& meshFunc) {
             auto face = trimesh.faceVertices(fh);
             mesh.faces.push_back(TexturedMesh::Face{ face[0].index(), face[1].index(), face[2].index() });
         }
-        view(handle, std::move(mesh));
+        view(handle, basename, std::move(mesh));
     }
 
     camera_ = cameraState;
@@ -830,9 +874,10 @@ void OpenGLWidget::repair() {
     for (const auto& p : meshData) {
         const void* handle = p.first;
         TexturedMesh mesh = std::move(p.second->mesh);
+        std::string basename = p.second->basename;
         deleteMesh(handle);
         repairMesh(mesh);
-        view(handle, std::move(mesh));
+        view(handle, basename, std::move(mesh));
     }
 
     camera_ = cameraState;
@@ -861,8 +906,9 @@ void OpenGLWidget::estimateNormals(std::function<bool(float)> progress) {
         p.second->mesh.normals = Pvl::estimateNormals<Pvl::ParallelTag>(p.second->mesh.vertices, progress);
 
         TexturedMesh mesh = std::move(p.second->mesh);
+        std::string basename = p.second->basename;
         deleteMesh(handle);
-        view(handle, std::move(mesh));
+        view(handle, basename, std::move(mesh));
     }
 
     camera_ = cameraState;
@@ -887,7 +933,7 @@ void OpenGLWidget::computeAmbientOcclusion(std::function<bool(float)> progress) 
         }
         for (auto& p : meshes_) {
             const void* handle = p.first;
-            view(handle, std::move(meshes[handleIndexMap[handle]]));
+            view(handle, p.second.basename, std::move(meshes[handleIndexMap[handle]]));
         }
     }
     enableAo(true);

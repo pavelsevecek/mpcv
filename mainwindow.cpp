@@ -276,7 +276,7 @@ bool MainWindow::open(const QString& file, int index, int total) {
         QListWidgetItem* item = new QListWidgetItem(identifier, list_);
         list_->addItem(item);
 
-        viewport_->view(item, std::move(mesh));
+        viewport_->view(item, findBasename(file), std::move(mesh));
         item->setData(Qt::UserRole, file);
         item->setFlags(
             Qt::ItemIsEditable | Qt::ItemIsSelectable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
@@ -480,4 +480,9 @@ void MainWindow::on_actionControls_triggered() {
     font.setFamily("Courier New");
     box.setFont(font);
     box.exec();
+}
+
+void MainWindow::on_actionWindows_triggered() {
+    QAction* act = this->findChild<QAction*>("actionWindows");
+    viewport_->windows(act->isChecked());
 }

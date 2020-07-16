@@ -283,7 +283,7 @@ bool MainWindow::open(const QString& file, int index, int total) {
         list_->addItem(item);
 
         viewport_->view(item, findBasename(file), std::move(mesh));
-        item->setData(Qt::UserRole, file);
+        item->setData(Qt::UserRole, info.absolutePath());
         item->setFlags(
             Qt::ItemIsEditable | Qt::ItemIsSelectable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
 

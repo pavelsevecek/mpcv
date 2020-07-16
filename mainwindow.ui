@@ -363,7 +363,10 @@
     <string>Windows</string>
    </property>
    <property name="toolTip">
-    <string>Show bounding boxes</string>
+    <string>Show bounding boxes (Ctrl+B)</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+B</string>
    </property>
   </action>
  </widget>

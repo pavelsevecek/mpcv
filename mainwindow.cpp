@@ -5,6 +5,7 @@
 #include "openglwidget.h"
 #include "sunwidget.h"
 #include "utils.h"
+#include <QClipboard>
 #include <QFileDialog>
 #include <QListWidget>
 #include <QListWidgetItem>
@@ -185,12 +186,17 @@ MainWindow::MainWindow(QWidget* parent)
     list_->setContextMenuPolicy(Qt::CustomContextMenu);
     QObject::connect(list, &QListWidget::customContextMenuRequested, this, [this, list](const QPoint& pos) {
         QMenu submenu;
-        QAction* actReload = submenu.addAction("Reload");
-        QAction* actClose = submenu.addAction("Close");
+        QAction* actCopy = submenu.addAction("Copy path to clipboard");
+        QAction* actReload = submenu.addAction("Reload mesh");
+        QAction* actClose = submenu.addAction("Close mesh");
 
         QPoint item = list_->mapToGlobal(pos);
         QAction* clicked = submenu.exec(item);
-        if (clicked == actClose) {
+        if (clicked == actCopy) {
+            QString file = list_->currentItem()->data(Qt::UserRole).toString();
+            QClipboard* clipboard = QGuiApplication::clipboard();
+            clipboard->setText(file);
+        } else if (clicked == actClose) {
             viewport_->deleteMesh(list_->currentItem());
             list_->takeItem(list_->currentIndex().row());
         } else if (clicked == actReload) {

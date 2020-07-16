@@ -75,7 +75,7 @@ void savePly(std::ostream& out, const TexturedMesh& mesh) {
     }
 }
 
-void savePly(std::ostream& out, const std::vector<const TexturedMesh*>& meshes) {
+void savePly(std::ostream& out, const std::vector<const TexturedMesh*>& meshes, const Progress& progress) {
     std::size_t totalVertices = 0;
     std::size_t totalFaces = 0;
     bool hasColors = false;
@@ -109,6 +109,11 @@ void savePly(std::ostream& out, const std::vector<const TexturedMesh*>& meshes) 
     out << "property list uchar int vertex_index\n";
     out << "end_header\n";
 
+    std::size_t totalLines = totalVertices + totalFaces;
+    std::size_t progressStep = totalLines / 100;
+    std::size_t nextProgress = progressStep;
+
+    std::size_t index = 0;
     for (const TexturedMesh* mesh : meshes) {
         SrsConv conv(mesh->srs, meshes[0]->srs); // translate to the SRS of the first mesh
 
@@ -140,6 +145,11 @@ void savePly(std::ostream& out, const std::vector<const TexturedMesh*>& meshes) 
                 }
             }
             out << "\n";
+            ++index;
+            if (index >= nextProgress) {
+                float value = float(index) * 100.f / totalLines;
+                progress(value);
+            }
         }
     }
 
@@ -147,6 +157,11 @@ void savePly(std::ostream& out, const std::vector<const TexturedMesh*>& meshes) 
     for (const TexturedMesh* mesh : meshes) {
         for (const TexturedMesh::Face& f : mesh->faces) {
             out << "3 " << offset + f[0] << " " << offset + f[1] << " " << offset + f[2] << "\n";
+            ++index;
+            if (index >= nextProgress) {
+                float value = float(index) * 100.f / totalLines;
+                progress(value);
+            }
         }
         offset += mesh->vertices.size();
     }

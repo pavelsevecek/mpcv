@@ -338,7 +338,8 @@ void OpenGLWidget::paintGL() {
     for (const auto& p : textToRender) {
         if (Pvl::Optional<Pvl::Vec2f> proj = camera_.unproject(p.first)) {
             QRect rect = fontMetrics.boundingRect(p.second);
-            painter.drawText(proj.value()[0] - rect.width() / 2, proj.value()[1] + rect.height() / 2, p.second);
+            painter.drawText(
+                proj.value()[0] - rect.width() / 2, proj.value()[1] + rect.height() / 2, p.second);
         }
     }
     /*  if (Pvl::Optional<Pvl::Vec2f> proj = camera_.unproject(meshBox.center())) {
@@ -619,13 +620,15 @@ void OpenGLWidget::screenshot(const QString& file) {
     writer.write(std::move(image).mirrored().rgbSwapped());
 }
 
-void OpenGLWidget::saveAsMesh(const QString& file, const std::vector<const void*>& handles) {
+void OpenGLWidget::saveAsMesh(const QString& file,
+    const std::vector<const void*>& handles,
+    std::function<bool(float)> progress) {
     std::ofstream ofs(file.toStdString());
     std::vector<const TexturedMesh*> meshes;
     for (auto handle : handles) {
         meshes.push_back(&meshes_[handle].mesh);
     }
-    savePly(ofs, meshes);
+    savePly(ofs, meshes, progress);
 }
 
 void OpenGLWidget::wheelEvent(QWheelEvent* event) {

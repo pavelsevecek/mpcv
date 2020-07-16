@@ -394,7 +394,16 @@ void MainWindow::on_actionSave_triggered() {
                 handles.push_back(list_->item(i));
             }
         }
-        viewport_->saveAsMesh(file, handles);
+
+        QProgressDialog dialog("Saving mesh to '" + file + "'", "Cancel", 0, 100, viewport_);
+        dialog.setWindowModality(Qt::WindowModal);
+        QCoreApplication::processEvents();
+        auto callback = [&dialog](float prog) {
+            dialog.setValue(prog);
+            QCoreApplication::processEvents();
+            return dialog.wasCanceled();
+        };
+        viewport_->saveAsMesh(file, handles, callback);
     }
 }
 

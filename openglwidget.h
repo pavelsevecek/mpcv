@@ -148,7 +148,9 @@ public:
 
     void screenshot(const QString& file);
 
-    void saveAsMesh(const QString& file, const std::vector<const void*>& handles);
+    void saveAsMesh(const QString& file,
+        const std::vector<const void*>& handles,
+        std::function<bool(float)> progress);
 
     void setSunDir(const Pvl::Vec3f& dir) {
         sunDir_ = dir;

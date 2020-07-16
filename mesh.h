@@ -71,12 +71,12 @@ struct TexturedMesh {
     }
 };
 
+using Progress = std::function<bool(float)>;
 
 void savePly(std::ostream& out, const TexturedMesh& mesh);
 
-void savePly(std::ostream& out, const std::vector<const TexturedMesh*>& meshes);
+void savePly(std::ostream& out, const std::vector<const TexturedMesh*>& meshes, const Progress& progress);
 
-using Progress = std::function<bool(float)>;
 TexturedMesh loadPly(std::istream& in, const Progress& prog);
 
 TexturedMesh loadObj(const QString& file, const Progress& prog);

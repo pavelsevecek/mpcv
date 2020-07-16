@@ -268,6 +268,8 @@ void OpenGLWidget::paintGL() {
     glColor3f(0, 0, 0);
     Pvl::Box3f bbox;
     std::vector<std::pair<Pvl::Vec3f, QString>> textToRender;
+    QFont font("Helvetica", 8);
+    QFontMetrics fontMetrics(font);
     for (const auto& p : meshes_) {
         const MeshData& mesh = p.second;
         if (!mesh.enabled) {
@@ -304,7 +306,8 @@ void OpenGLWidget::paintGL() {
             glVertex3f(x1, y2, z1);
             glVertex3f(x1, y2, z2);
             glEnd();
-            textToRender.emplace_back(meshBox.center(), QString::fromStdString(mesh.basename));
+            QString basename = QString::fromStdString(mesh.basename);
+            textToRender.emplace_back(meshBox.center(), basename);
         }
     }
     if (showGrid_) {
@@ -331,10 +334,11 @@ void OpenGLWidget::paintGL() {
     painter.setPen(Qt::black);
     painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
     // if (showGrid_) {
-    painter.setFont(QFont("Helvetica", 8));
+    painter.setFont(font);
     for (const auto& p : textToRender) {
         if (Pvl::Optional<Pvl::Vec2f> proj = camera_.unproject(p.first)) {
-            painter.drawText(proj.value()[0], proj.value()[1], p.second);
+            QRect rect = fontMetrics.boundingRect(p.second);
+            painter.drawText(proj.value()[0] - rect.width() / 2, proj.value()[1] + rect.height() / 2, p.second);
         }
     }
     /*  if (Pvl::Optional<Pvl::Vec2f> proj = camera_.unproject(meshBox.center())) {

@@ -46,6 +46,9 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
         bool hasAo() const {
             return !mesh.ao.empty();
         }
+        bool hasClasses() const {
+            return !mesh.classes.empty();
+        }
         bool hasTexture() const {
             // point cloud cannot have texture
             return !pointCloud() && !mesh.uv.empty();

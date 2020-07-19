@@ -178,6 +178,7 @@ TexturedMesh loadPly(std::istream& in, const Progress& prog) {
     int propIdx = 0;
     int normalProp = -1;
     int colorProp = -1;
+    int classProp = -1;
     while (std::getline(in, line)) {
         sscanf(line.c_str(), "element vertex %zu", &numVertices);
         sscanf(line.c_str(), "element face %zu", &numFaces);
@@ -191,6 +192,8 @@ TexturedMesh loadPly(std::istream& in, const Progress& prog) {
         sscanf(line.c_str(), "property uchar %s", prop);
         if (std::string(prop) == "red") {
             colorProp = propIdx++;
+        } else if (std::string(prop) == "class") {
+            classProp = propIdx++;
         }
 
         if (line == "end_header") {
@@ -253,6 +256,11 @@ TexturedMesh loadPly(std::istream& in, const Progress& prog) {
             sscanf(line.c_str(), "%f%f%f%hhu%hhu%hhu", &p[0], &p[1], &p[2], &c[0], &c[1], &c[2]);
             mesh.vertices.push_back(p);
             mesh.colors.push_back(c);
+        } else if (classProp == 1) {
+            uint8_t classId;
+            sscanf(line.c_str(), "%f%f%f%hhu", &p[0], &p[1], &p[2], &classId);
+            mesh.vertices.push_back(p);
+            mesh.classes.push_back(classId);
         } else {
             sscanf(line.c_str(), "%f%f%f", &p[0], &p[1], &p[2]);
             mesh.vertices.push_back(p);

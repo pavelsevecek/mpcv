@@ -39,6 +39,9 @@ struct TexturedMesh {
     ///< AO color for each vertex of each face (3*faces.size() values)
     std::vector<uint8_t> ao;
 
+    ///< Vertex classes
+    std::vector<uint8_t> classes;
+
     ///< Texture image (deleted once transvered to OpenGL)
     std::unique_ptr<ITexture> texture;
 

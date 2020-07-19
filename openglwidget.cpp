@@ -165,6 +165,7 @@ void OpenGLWidget::paintGL() {
         } else {
             useColors = mesh.hasColors() || (enableAo_ && mesh.hasAo());
         }
+        bool useClasses = mesh.hasClasses();
         bool useTexture = enableTextures_ && mesh.hasTexture();
 
         if (useColors || useTexture || !useNormals) {
@@ -176,6 +177,8 @@ void OpenGLWidget::paintGL() {
         if (useColors) {
             glEnableClientState(GL_COLOR_ARRAY);
             glShadeModel(GL_SMOOTH); // for AO
+        } else if (useClasses) {
+            glEnableClientState(GL_COLOR_ARRAY);
         }
         if (useTexture) {
             glBindTexture(GL_TEXTURE_2D, mesh.texture);
@@ -193,7 +196,7 @@ void OpenGLWidget::paintGL() {
             if (useNormals) {
                 glNormalPointer(GL_FLOAT, stride * 3 * sizeof(float), mesh.vis.normals.data());
             }
-            if (useColors) {
+            if (useColors || useClasses) {
                 glColorPointer(3, GL_UNSIGNED_BYTE, stride * 3 * sizeof(uint8_t), mesh.vis.colors.data());
             }
             if (useTexture) {
@@ -205,7 +208,7 @@ void OpenGLWidget::paintGL() {
             if (useNormals) {
                 glNormalPointer(GL_FLOAT, stride * 3 * sizeof(float), (void*)(numVert * sizeof(float)));
             }
-            if (useColors) {
+            if (useColors || useClasses) {
                 glColorPointer(3,
                     GL_UNSIGNED_BYTE,
                     stride * 3 * sizeof(uint8_t),
@@ -231,6 +234,8 @@ void OpenGLWidget::paintGL() {
         if (useColors) {
             glDisableClientState(GL_COLOR_ARRAY);
             glShadeModel(GL_FLAT);
+        } else if (useClasses) {
+            glDisableClientState(GL_COLOR_ARRAY);
         }
         if (useNormals) {
             glDisableClientState(GL_NORMAL_ARRAY);
@@ -342,21 +347,6 @@ void OpenGLWidget::paintGL() {
                 proj.value()[0] - rect.width() / 2, proj.value()[1] + rect.height() / 2, p.second);
         }
     }
-    /*  if (Pvl::Optional<Pvl::Vec2f> proj = camera_.unproject(meshBox.center())) {
-          painter.drawText(proj.value()[0], proj.value()[1], QString::fromStdString(mesh.basename));
-      }
-      for (float x = x1; x <= x2; x += grid_) {
-          if (Pvl::Optional<Pvl::Vec2f> proj = camera_.unproject(Pvl::Vec3f(x, y1 - 0.1 * grid_, z0))) {
-              painter.drawText(proj.value()[0], proj.value()[1],);
-          }
-      }
-      for (float y = y1; y <= y2; y += grid_) {
-          if (Pvl::Optional<Pvl::Vec2f> proj = camera_.unproject(Pvl::Vec3f(x1 - 0.16 * grid_, y, z0))) {
-              painter.drawText(proj.value()[0], proj.value()[1], QString::number(y - y1));
-          }
-      }
-  }*/
-
     painter.setFont(QFont("Helvetica", 10));
 
     std::size_t numVertex = 0, numFaces = 0;
@@ -393,6 +383,14 @@ inline int toGlFormat(const ImageFormat& format) {
     }
 }
 
+inline Color classToColor(const uint8_t c) {
+    if (c == 7) {
+        // tree
+        return Color(65, 140, 85);
+    } else {
+        return Color(190, 190, 190);
+    }
+}
 
 void OpenGLWidget::view(const void* handle, std::string basename, TexturedMesh&& mesh) {
     bool firstMesh = meshes_.empty();
@@ -444,10 +442,11 @@ void OpenGLWidget::view(const void* handle, std::string basename, TexturedMesh&&
         bool hasColors = !data.mesh.colors.empty();
         bool hasTexture = !data.mesh.uv.empty();
         bool hasAo = !data.mesh.ao.empty();
+        bool hasClasses = !data.mesh.classes.empty();
 
         data.vis.vertices.reserve(data.mesh.faces.size() * 9);
         data.vis.normals.reserve(data.mesh.faces.size() * 9);
-        if (hasAo || hasColors) {
+        if (hasAo || hasColors || hasClasses) {
             data.vis.colors.reserve(data.mesh.faces.size() * 9);
         }
         if (hasTexture) {
@@ -470,6 +469,11 @@ void OpenGLWidget::view(const void* handle, std::string basename, TexturedMesh&&
                     data.vis.colors.push_back(ao);
                     data.vis.colors.push_back(ao);
                     data.vis.colors.push_back(ao);
+                } else if (hasClasses) {
+                    Color c = classToColor(data.mesh.classes[data.mesh.faces[fi][i]]);
+                    data.vis.colors.push_back(c[0]);
+                    data.vis.colors.push_back(c[1]);
+                    data.vis.colors.push_back(c[2]);
                 } else if (hasColors) {
                     Color c = data.mesh.colors[data.mesh.faces[fi][i]];
                     data.vis.colors.push_back(c[0]);

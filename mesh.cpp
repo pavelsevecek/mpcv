@@ -182,6 +182,7 @@ TexturedMesh loadPly(std::istream& in, const Progress& prog) {
     while (std::getline(in, line)) {
         sscanf(line.c_str(), "element vertex %zu", &numVertices);
         sscanf(line.c_str(), "element face %zu", &numFaces);
+        memset(prop, 0, 256);
         sscanf(line.c_str(), "property float %s", prop);
         if (std::string(prop) == "x") {
             propIdx++;

@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+#include "e57.h"
 #include "las.h"
 #include "mesh.h"
 #include "openglwidget.h"
@@ -232,7 +233,7 @@ bool MainWindow::open(const QString& file, int index, int total) {
     QCoreApplication::processEvents();
     try {
         QString ext = QFileInfo(file).suffix();
-        if (ext != "ply" && ext != "obj" && ext != "las" && ext != "laz") {
+        if (ext != "ply" && ext != "obj" && ext != "las" && ext != "laz" && ext != "e57") {
             QMessageBox box(QMessageBox::Warning, "Error", "Unknown file format of file '" + file + "'");
             box.exec();
             return true; // continue opening files
@@ -268,6 +269,8 @@ bool MainWindow::open(const QString& file, int index, int total) {
             geolocalize(mesh, file);
         } else if (ext == "las" || ext == "laz") {
             mesh = loadLas(file.toStdString(), callback);
+        } else if (ext == "e57") {
+            mesh = loadE57(file.toStdString(), callback);
         }
         if (dialog.wasCanceled()) {
             return false;
@@ -304,7 +307,7 @@ void MainWindow::on_actionOpenFile_triggered() {
     QStringList names = QFileDialog::getOpenFileNames(this,
         tr("Open mesh"),
         initialDir.path(),
-        tr("all files (*);;.ply object (*.ply);;LAS point cloud (*.las *.laz)"));
+        tr("all files (*);;.ply object (*.ply);;LAS point cloud (*.las *.laz);;E57 point cloud (*.e57)"));
     if (!names.empty()) {
         QFileInfo info(names.first());
         initialDir = info.dir();

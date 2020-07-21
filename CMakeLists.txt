@@ -28,6 +28,10 @@ include_directories(LAStools/LASlib/inc)
 include_directories(LAStools/LASzip/src)
 add_subdirectory(LAStools)
 
+include_directories(libE57Format/include)
+add_subdirectory(libE57Format)
+include_directories("${CMAKE_BINARY_DIR}/libE57Format") # libE57 codegen
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 
 add_executable(mpcv
@@ -40,6 +44,7 @@ add_executable(mpcv
     mesh.h mesh.cpp
     texture.h texture.cpp
     las.h las.cpp
+    e57.h e57.cpp
     coordinates.h
     bvh.h bvh.cpp
     renderer.h renderer.cpp
@@ -52,6 +57,7 @@ add_executable(mpcv
 set(LIBRARIES
     Qt5::Widgets Qt5::Gui
     LASlib
+    E57Format
     GL GLU
     ${Tbb_LIBRARIES})
 

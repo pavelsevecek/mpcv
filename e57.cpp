@@ -1,5 +1,6 @@
 #include "e57.h"
 #include "E57SimpleReader.h"
+#include <iostream>
 
 namespace Mpcv {
 
@@ -9,50 +10,55 @@ TexturedMesh loadE57(std::string file, const Progress& prog) {
     e57::Data3D scanHeader;
     reader.ReadData3D(scanIndex, scanHeader);
 
-    int64_t nColumn = 0;
-    int64_t nRow = 0;
-    int64_t nPointsSize = 0;
-    int64_t nGroupsSize = 0;
-    int64_t nCountsSize = 0;
-    bool bColumnIndex;
-    reader.GetData3DSizes(scanIndex, nRow, nColumn, nPointsSize, nGroupsSize, nCountsSize, bColumnIndex);
-    int64_t nSize = (nRow > 0) ? nRow : 1024;
+    int64_t column = 0;
+    int64_t row = 0;
+    int64_t pointsSize = 0;
+    int64_t groupsSize = 0;
+    int64_t countsSize = 0;
+    bool columnIndex;
+    reader.GetData3DSizes(scanIndex, row, column, pointsSize, groupsSize, countsSize, columnIndex);
+    std::cout << "Loading E57 with " << pointsSize << " points" << std::endl;
+    int64_t rowSize = (row > 0) ? row : 1024;
 
-    float* xData = new float[nSize];
-    float* yData = new float[nSize];
-    float* zData = new float[nSize];
-    uint8_t* rData = new uint8_t[nSize];
-    uint8_t* gData = new uint8_t[nSize];
-    uint8_t* bData = new uint8_t[nSize];
+    std::vector<float> x(rowSize), y(rowSize), z(rowSize);
+    std::vector<uint8_t> r(rowSize), g(rowSize), b(rowSize);
     e57::Data3DPointsData data;
-    data.cartesianX = xData;
-    data.cartesianY = yData;
-    data.cartesianZ = zData;
-    data.colorRed = rData;
-    data.colorGreen = gData;
-    data.colorBlue = bData;
+    data.cartesianX = x.data();
+    data.cartesianY = y.data();
+    data.cartesianZ = z.data();
+    data.colorRed = r.data();
+    data.colorGreen = g.data();
+    data.colorBlue = b.data();
 
-    e57::CompressedVectorReader dataReader = reader.SetUpData3DPointsData(scanIndex, nSize, data);
+    e57::CompressedVectorReader dataReader = reader.SetUpData3DPointsData(scanIndex, rowSize, data);
 
+    int step = std::max(int(pointsSize / 100), 100);
+    std::size_t nextProg = step;
+    float iToProg = 100.f / pointsSize;
     TexturedMesh mesh;
-    unsigned long size = 0;
+    std::size_t size = 0;
+    std::size_t index = 0;
+    std::size_t nanCnt = 0;
     while ((size = dataReader.read()) > 0) {
-        for (unsigned long i = 0; i < size; i++) {
-            if (!std::isfinite(xData[i]) || !std::isfinite(yData[i]) || !std::isfinite(zData[i])) {
+        for (std::size_t i = 0; i < size; i++) {
+            if (index == nextProg) {
+                if (prog(index * iToProg)) {
+                    return {};
+                }
+                nextProg += step;
+            }
+            ++index;
+            if (!std::isfinite(x[i]) || !std::isfinite(y[i]) || !std::isfinite(z[i])) {
+                nanCnt++;
                 continue;
             }
-            mesh.vertices.push_back(Pvl::Vec3f(xData[i], yData[i], zData[i]));
-            mesh.colors.push_back(Color(rData[i], gData[i], bData[i]));
+            mesh.vertices.push_back(Pvl::Vec3f(x[i], y[i], z[i]));
+            mesh.colors.push_back(Color(r[i], g[i], b[i]));
         }
     }
+    std::cout << "Ignoring " << nanCnt << " NaN points" << std::endl;
 
     dataReader.close();
-    delete xData;
-    delete yData;
-    delete zData;
-    delete rData;
-    delete gData;
-    delete bData;
     return mesh;
 }
 

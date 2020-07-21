@@ -38,6 +38,9 @@ TexturedMesh loadE57(std::string file, const Progress& prog) {
     unsigned long size = 0;
     while ((size = dataReader.read()) > 0) {
         for (unsigned long i = 0; i < size; i++) {
+            if (!std::isfinite(xData[i]) || !std::isfinite(yData[i]) || !std::isfinite(zData[i])) {
+                continue;
+            }
             mesh.vertices.push_back(Pvl::Vec3f(xData[i], yData[i], zData[i]));
             mesh.colors.push_back(Color(rData[i], gData[i], bData[i]));
         }

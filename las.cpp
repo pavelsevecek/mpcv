@@ -39,11 +39,6 @@ TexturedMesh loadLas(std::string file, const Progress& prog) {
             }
             nextProg += step;
         }
-        /*if (i == 10000) {
-            break;
-        }*/
-        /*std::cout << "Added point " << mesh.vertices.back()[0] << " " << mesh.vertices.back()[1] << " "
-                  << mesh.vertices.back()[2] << std::endl;*/
     }
     std::cout << "Loaded " << i << " out of " << lasreader->npoints << " points" << std::endl;
 

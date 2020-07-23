@@ -66,7 +66,7 @@ std::map<std::string, Coords> parseConfig() {
         double ury;
         ss >> ury;
 
-        extents[basename] = Coords((llx + urx) / 2, (lly + ury) / 2);
+        extents[basename] = Coords((llx + urx) / 2, (lly + ury) / 2, 0);
     }
 
     return extents;
@@ -228,7 +228,6 @@ MainWindow::~MainWindow() {
     delete ui_;
 }
 
-
 bool MainWindow::open(const QString& file, int index, int total) {
     QCoreApplication::processEvents();
     try {
@@ -251,27 +250,7 @@ bool MainWindow::open(const QString& file, int index, int total) {
             return dialog.wasCanceled();
         };
 
-        // Pvl::Optional<Mesh> mesh;
-        TexturedMesh mesh;
-        if (ext == "ply") {
-            std::ifstream in;
-            in.exceptions(std::ifstream::badbit | std::ifstream::failbit);
-            in.open(file.toStdString());
-            // Pvl::Optional<Mesh> loaded
-            mesh = loadPly(in, callback);
-            geolocalize(mesh, file);
-            /*if (!loaded) {
-                return;
-            }
-            mesh = std::move(loaded.value());*/
-        } else if (ext == "obj") {
-            mesh = loadObj(file, callback);
-            geolocalize(mesh, file);
-        } else if (ext == "las" || ext == "laz") {
-            mesh = loadLas(file.toStdString(), callback);
-        } else if (ext == "e57") {
-            mesh = loadE57(file.toStdString(), callback);
-        }
+        TexturedMesh mesh = loadMesh(file, callback);
         if (dialog.wasCanceled()) {
             return false;
         }
@@ -300,6 +279,31 @@ bool MainWindow::open(const QString& file, int index, int total) {
         box.exec();
         return true; // continue opening files
     }
+}
+
+TexturedMesh MainWindow::loadMesh(const QString& file, std::function<bool(float)> callback) {
+    TexturedMesh mesh;
+    QString ext = QFileInfo(file).suffix();
+    if (ext == "ply") {
+        std::ifstream in;
+        in.exceptions(std::ifstream::badbit | std::ifstream::failbit);
+        in.open(file.toStdString());
+        // Pvl::Optional<Mesh> loaded
+        mesh = loadPly(in, callback);
+        geolocalize(mesh, file);
+        /*if (!loaded) {
+            return;
+        }
+        mesh = std::move(loaded.value());*/
+    } else if (ext == "obj") {
+        mesh = loadObj(file, callback);
+        geolocalize(mesh, file);
+    } else if (ext == "las" || ext == "laz") {
+        mesh = loadLas(file.toStdString(), callback);
+    } else if (ext == "e57") {
+        mesh = loadE57(file.toStdString(), callback);
+    }
+    return mesh;
 }
 
 void MainWindow::on_actionOpenFile_triggered() {

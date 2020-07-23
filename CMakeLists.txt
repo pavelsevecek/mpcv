@@ -41,6 +41,7 @@ add_executable(mpcv
     utils.h utils.cpp
     camera.h camera.cpp
     quaternion.h
+    parameters.h
     mesh.h mesh.cpp
     texture.h texture.cpp
     las.h las.cpp

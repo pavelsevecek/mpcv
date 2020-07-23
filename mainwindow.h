@@ -11,6 +11,10 @@ class QListWidget;
 class QListWidgetItem;
 QT_END_NAMESPACE
 
+namespace Mpcv {
+class TexturedMesh;
+}
+
 class OpenGLWidget;
 
 class MainWindow : public QMainWindow {
@@ -21,6 +25,8 @@ public:
     ~MainWindow();
 
     bool open(const QString& file, int index = 1, int total = 1);
+
+    static Mpcv::TexturedMesh loadMesh(const QString& file, std::function<bool(float)> progress);
 
 private slots:
     void on_MeshList_itemChanged(QListWidgetItem* item);

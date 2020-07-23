@@ -47,7 +47,12 @@ void parseArgument(const std::string& arg, const std::string& param) {
 int main(int argc, char* argv[]) {
     if (argc == 2 && (argv[1] == std::string("-h") || argv[1] == std::string("--help"))) {
         std::cout << "Mesh and Point Cloud Viewer" << std::endl;
-        std::cout << "Usage: mpcv [FILE]..." << std::endl;
+        std::cout << "Usage: mpcv [OPTIONS] [FILE]..." << std::endl << std::endl;
+        std::cout << "Available parameters:" << std::endl;
+        std::cout << "--extents llx,lly:urx,ury     Specifies filtering extents for any loaded point cloud"
+                  << std::endl;
+        std::cout << "--stride n                    Loads only every n-th point for each point cloud"
+                  << std::endl;
         return 0;
     }
 

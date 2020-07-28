@@ -71,6 +71,8 @@ private slots:
 
     void on_actionOrient_normals_triggered();
 
+    void on_actionClasses_triggered();
+
 private:
     Ui::MainWindow* ui_;
     OpenGLWidget* viewport_;

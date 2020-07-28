@@ -136,6 +136,7 @@
    <addaction name="actionFlat"/>
    <addaction name="actionAo"/>
    <addaction name="actionTexture"/>
+   <addaction name="actionClasses"/>
    <addaction name="separator"/>
    <addaction name="actionScreenshot"/>
    <addaction name="actionResetCamera"/>
@@ -373,6 +374,24 @@
   <action name="actionOrient_normals">
    <property name="text">
     <string>Orient normals</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute normals from trajectory</string>
+   </property>
+  </action>
+  <action name="actionClasses">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/tree.png</normaloff>:/images/tree.png</iconset>
+   </property>
+   <property name="text">
+    <string>Classes</string>
+   </property>
+   <property name="toolTip">
+    <string>Colorize mesh using vertex classes</string>
    </property>
   </action>
  </widget>

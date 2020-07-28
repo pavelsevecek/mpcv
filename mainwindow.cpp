@@ -473,7 +473,10 @@ void MainWindow::on_actionEstimate_normals_triggered() {
 }
 
 void MainWindow::on_actionRender_view_triggered() {
-    viewport_->renderView();
+    if (!viewport_->renderView()) {
+        QMessageBox box(QMessageBox::Critical, "Error", "No meshes to render", QMessageBox::Ok, this);
+        box.exec();
+    }
 }
 
 void MainWindow::on_actionSun_setup_triggered() {
@@ -527,4 +530,9 @@ void MainWindow::on_actionOrient_normals_triggered() {
         };
         viewport_->estimateNormals(file, callback);
     }
+}
+
+void MainWindow::on_actionClasses_triggered() {
+    QAction* act = this->findChild<QAction*>("actionClasses");
+    viewport_->classes(act->isChecked());
 }

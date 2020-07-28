@@ -9,5 +9,6 @@
     <file>images/tex.png</file>
     <file>images/wire.png</file>
     <file>images/window.png</file>
+    <file>images/tree.png</file>
     </qresource>
 </RCC>

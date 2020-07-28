@@ -27,7 +27,8 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
             std::vector<float> vertices;
             std::vector<float> normals;
             std::vector<float> uv;
-            std::vector<uint8_t> colors;
+            std::vector<uint8_t> vertexColors;
+            std::vector<uint8_t> classColors;
         } vis;
 
         GLuint texture;
@@ -65,6 +66,7 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
 
     bool enableAo_ = false;
     bool enableTextures_ = true;
+    bool enableClasses_ = false;
 
     std::map<const void*, MeshData> meshes_;
     bool wireframe_ = false;
@@ -109,6 +111,11 @@ public:
 
     void windows(const bool on) {
         bboxes_ = on;
+        update();
+    }
+
+    void classes(const bool on) {
+        enableClasses_ = on;
         update();
     }
 
@@ -161,7 +168,7 @@ public:
         sunDir_ = dir;
     }
 
-    void renderView();
+    bool renderView();
 
     virtual void wheelEvent(QWheelEvent* event) override;
 

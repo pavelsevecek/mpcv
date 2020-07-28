@@ -166,7 +166,7 @@ void OpenGLWidget::paintGL() {
         } else {
             useColors = mesh.hasColors() || (enableAo_ && mesh.hasAo());
         }
-        bool useClasses = mesh.hasClasses();
+        bool useClasses = enableClasses_ && mesh.hasClasses();
         bool useTexture = enableTextures_ && mesh.hasTexture();
 
         if (useColors || useTexture || !useNormals) {
@@ -178,7 +178,8 @@ void OpenGLWidget::paintGL() {
         if (useColors) {
             glEnableClientState(GL_COLOR_ARRAY);
             glShadeModel(GL_SMOOTH); // for AO
-        } else if (useClasses) {
+        }
+        if (useClasses) {
             glEnableClientState(GL_COLOR_ARRAY);
         }
         if (useTexture) {
@@ -189,7 +190,8 @@ void OpenGLWidget::paintGL() {
 
         int numVert = mesh.vis.vertices.size();
         int numNorm = mesh.vis.normals.size();
-        int numClr = mesh.vis.colors.size();
+        int numClr = mesh.vis.vertexColors.size();
+        int numCls = mesh.vis.classColors.size();
         int stride = mesh.pointCloud() ? int(pointStride_) : 0;
 
         if (!vbos_) {
@@ -197,8 +199,12 @@ void OpenGLWidget::paintGL() {
             if (useNormals) {
                 glNormalPointer(GL_FLOAT, stride * 3 * sizeof(float), mesh.vis.normals.data());
             }
-            if (useColors || useClasses) {
-                glColorPointer(3, GL_UNSIGNED_BYTE, stride * 3 * sizeof(uint8_t), mesh.vis.colors.data());
+            if (useClasses) {
+                glColorPointer(
+                    3, GL_UNSIGNED_BYTE, stride * 3 * sizeof(uint8_t), mesh.vis.vertexColors.data());
+            } else if (useColors) {
+                glColorPointer(
+                    3, GL_UNSIGNED_BYTE, stride * 3 * sizeof(uint8_t), mesh.vis.classColors.data());
             }
             if (useTexture) {
                 // never used by pc
@@ -209,15 +215,22 @@ void OpenGLWidget::paintGL() {
             if (useNormals) {
                 glNormalPointer(GL_FLOAT, stride * 3 * sizeof(float), (void*)(numVert * sizeof(float)));
             }
-            if (useColors || useClasses) {
+            if (useClasses) {
+                glColorPointer(3,
+                    GL_UNSIGNED_BYTE,
+                    stride * 3 * sizeof(uint8_t),
+                    (void*)((numVert + numNorm) * sizeof(float) + numClr * sizeof(uint8_t)));
+            } else if (useColors) {
                 glColorPointer(3,
                     GL_UNSIGNED_BYTE,
                     stride * 3 * sizeof(uint8_t),
                     (void*)((numVert + numNorm) * sizeof(float)));
             }
             if (useTexture) {
-                glTexCoordPointer(
-                    2, GL_FLOAT, 0, (void*)((numVert + numNorm) * sizeof(float) + numClr * sizeof(uint8_t)));
+                glTexCoordPointer(2,
+                    GL_FLOAT,
+                    0,
+                    (void*)((numVert + numNorm) * sizeof(float) + (numClr + numCls) * sizeof(uint8_t)));
             }
         }
 
@@ -235,7 +248,8 @@ void OpenGLWidget::paintGL() {
         if (useColors) {
             glDisableClientState(GL_COLOR_ARRAY);
             glShadeModel(GL_FLAT);
-        } else if (useClasses) {
+        }
+        if (useClasses) {
             glDisableClientState(GL_COLOR_ARRAY);
         }
         if (useNormals) {
@@ -426,10 +440,10 @@ void OpenGLWidget::view(const void* handle, std::string basename, TexturedMesh&&
             data.vis.normals.reserve(data.mesh.vertices.size() * 3);
         }
         if (hasColors) {
-            data.vis.colors.reserve(data.mesh.vertices.size() * 3);
+            data.vis.vertexColors.reserve(data.mesh.vertices.size() * 3);
         }
         if (hasClasses) {
-            data.vis.colors.reserve(data.mesh.vertices.size() * 3);
+            data.vis.classColors.reserve(data.mesh.vertices.size() * 3);
         }
         for (std::size_t vi = 0; vi < data.mesh.vertices.size(); ++vi) {
             Pvl::Vec3f vertex = conv(data.mesh.vertices[vi]);
@@ -445,14 +459,15 @@ void OpenGLWidget::view(const void* handle, std::string basename, TexturedMesh&&
             }
             if (hasClasses) {
                 Color c = classToColor(data.mesh.classes[vi]);
-                data.vis.colors.push_back(c[0]);
-                data.vis.colors.push_back(c[1]);
-                data.vis.colors.push_back(c[2]);
-            } else if (hasColors) {
+                data.vis.classColors.push_back(c[0]);
+                data.vis.classColors.push_back(c[1]);
+                data.vis.classColors.push_back(c[2]);
+            }
+            if (hasColors) {
                 const Color& c = data.mesh.colors[vi];
-                data.vis.colors.push_back(c[0]);
-                data.vis.colors.push_back(c[1]);
-                data.vis.colors.push_back(c[2]);
+                data.vis.vertexColors.push_back(c[0]);
+                data.vis.vertexColors.push_back(c[1]);
+                data.vis.vertexColors.push_back(c[2]);
             }
         }
     } else {
@@ -464,8 +479,11 @@ void OpenGLWidget::view(const void* handle, std::string basename, TexturedMesh&&
 
         data.vis.vertices.reserve(data.mesh.faces.size() * 9);
         data.vis.normals.reserve(data.mesh.faces.size() * 9);
-        if (hasAo || hasColors || hasClasses) {
-            data.vis.colors.reserve(data.mesh.faces.size() * 9);
+        if (hasAo || hasColors) {
+            data.vis.vertexColors.reserve(data.mesh.faces.size() * 9);
+        }
+        if (hasClasses) {
+            data.vis.classColors.reserve(data.mesh.faces.size() * 9);
         }
         if (hasTexture) {
             data.vis.uv.reserve(data.mesh.faces.size() * 6);
@@ -484,19 +502,20 @@ void OpenGLWidget::view(const void* handle, std::string basename, TexturedMesh&&
 
                 if (hasAo) {
                     uint8_t ao = data.mesh.ao[3 * fi + i];
-                    data.vis.colors.push_back(ao);
-                    data.vis.colors.push_back(ao);
-                    data.vis.colors.push_back(ao);
-                } else if (hasClasses) {
-                    Color c = classToColor(data.mesh.classes[data.mesh.faces[fi][i]]);
-                    data.vis.colors.push_back(c[0]);
-                    data.vis.colors.push_back(c[1]);
-                    data.vis.colors.push_back(c[2]);
+                    data.vis.vertexColors.push_back(ao);
+                    data.vis.vertexColors.push_back(ao);
+                    data.vis.vertexColors.push_back(ao);
                 } else if (hasColors) {
                     Color c = data.mesh.colors[data.mesh.faces[fi][i]];
-                    data.vis.colors.push_back(c[0]);
-                    data.vis.colors.push_back(c[1]);
-                    data.vis.colors.push_back(c[2]);
+                    data.vis.vertexColors.push_back(c[0]);
+                    data.vis.vertexColors.push_back(c[1]);
+                    data.vis.vertexColors.push_back(c[2]);
+                }
+                if (hasClasses) {
+                    Color c = classToColor(data.mesh.classes[data.mesh.faces[fi][i]]);
+                    data.vis.classColors.push_back(c[0]);
+                    data.vis.classColors.push_back(c[1]);
+                    data.vis.classColors.push_back(c[2]);
                 }
                 if (hasTexture) {
                     Pvl::Vec2f uv = data.mesh.uv[data.mesh.texIds[fi][i]];
@@ -533,11 +552,12 @@ void OpenGLWidget::view(const void* handle, std::string basename, TexturedMesh&&
         }
         int numVert = data.vis.vertices.size();
         int numNorm = data.vis.normals.size();
-        int numClr = data.vis.colors.size();
+        int numClr = data.vis.vertexColors.size();
+        int numCls = data.vis.classColors.size();
         int numTex = data.vis.uv.size();
         glBindBuffer(GL_ARRAY_BUFFER, data.vbo);
         glBufferData(GL_ARRAY_BUFFER,
-            (numVert + numNorm + numTex) * sizeof(float) + numClr * sizeof(uint8_t),
+            (numVert + numNorm + numTex) * sizeof(float) + (numClr + numCls) * sizeof(uint8_t),
             0,
             GL_STATIC_DRAW);
         glBufferSubData(GL_ARRAY_BUFFER, 0, numVert * sizeof(float), data.vis.vertices.data());
@@ -546,9 +566,13 @@ void OpenGLWidget::view(const void* handle, std::string basename, TexturedMesh&&
         glBufferSubData(GL_ARRAY_BUFFER,
             (numVert + numNorm) * sizeof(float),
             numClr * sizeof(uint8_t),
-            data.vis.colors.data());
+            data.vis.vertexColors.data());
         glBufferSubData(GL_ARRAY_BUFFER,
             (numVert + numNorm) * sizeof(float) + numClr * sizeof(uint8_t),
+            numCls * sizeof(uint8_t),
+            data.vis.classColors.data());
+        glBufferSubData(GL_ARRAY_BUFFER,
+            (numVert + numNorm) * sizeof(float) + (numClr + numCls) * sizeof(uint8_t),
             numTex * sizeof(float),
             data.vis.uv.data());
         glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -1004,7 +1028,7 @@ void OpenGLWidget::computeAmbientOcclusion(std::function<bool(float)> progress) 
     std::map<const void*, int> handleIndexMap;
     for (auto& p : meshes_) {
         const void* handle = p.first;
-        if (p.second.pointCloud() || !p.second.vis.colors.empty()) {
+        if (p.second.pointCloud() || !p.second.vis.vertexColors.empty()) {
             // pc or already computed
             continue;
         }
@@ -1023,13 +1047,16 @@ void OpenGLWidget::computeAmbientOcclusion(std::function<bool(float)> progress) 
     enableAo(true);
 }
 
-void OpenGLWidget::renderView() {
+bool OpenGLWidget::renderView() {
     std::vector<TexturedMesh*> meshesToRender;
     for (auto& p : meshes_) {
         if (p.second.pointCloud() || !p.second.enabled) {
             continue;
         }
         meshesToRender.push_back(&p.second.mesh);
+    }
+    if (meshesToRender.empty()) {
+        return false;
     }
     FrameBufferWidget* frame = new FrameBufferWidget(this);
     frame->show();
@@ -1042,4 +1069,5 @@ void OpenGLWidget::renderView() {
         }
         renderMeshes(frame, meshesToRender, sunDir_, camera_, wire);
     });
+    return true;
 }

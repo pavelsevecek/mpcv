@@ -6,6 +6,7 @@ Camera::Camera(Pvl::Vec3f eye, Pvl::Vec3f target, Pvl::Vec3f up, float fov_y, co
     : eye_(eye)
     , target_(target)
     , up_(up)
+    , fov_(fov_y)
     , size_(size)
     , srs_(srs) {
     dir_ = Pvl::normalize(target - eye);
@@ -13,7 +14,7 @@ Camera::Camera(Pvl::Vec3f eye, Pvl::Vec3f target, Pvl::Vec3f up, float fov_y, co
     up_ = Pvl::normalize(up_ - Pvl::dotProd(up_, dir_) * dir_);
 
     const float aspect = float(size_[0]) / float(size_[1]);
-    const float tgfov = tan(0.5f * fov_y);
+    const float tgfov = tan(0.5f * fov_);
     up_ = tgfov * up_;
     left_ = aspect * tgfov * Pvl::normalize(Pvl::crossProd(up_, dir_));
     std::cout << "Creating camera with aspect " << aspect << std::endl;
@@ -35,10 +36,11 @@ void Camera::pan(const Pvl::Vec2i& dp) {
 void Camera::transform(const Pvl::Mat33f& m) {
     dir_ = Pvl::normalize(Pvl::prod(m, dir_));
 
-    float upLength = Pvl::norm(up_);
-    float leftLength = Pvl::norm(left_);
-    up_ = Pvl::normalize(Pvl::prod(m, up_)) * upLength;
-    left_ = Pvl::normalize(Pvl::prod(m, left_)) * leftLength;
+    const float aspect = float(size_[0]) / float(size_[1]);
+    const float tgfov = tan(0.5f * fov_);
+
+    up_ = Pvl::normalize(Pvl::prod(m, up_)) * tgfov;
+    left_ = Pvl::normalize(Pvl::prod(m, left_)) * aspect * tgfov;
 
     float dist = Pvl::norm(eye_ - target_);
     eye_ = target_ - dir_ * dist;

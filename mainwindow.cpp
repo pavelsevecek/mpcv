@@ -232,7 +232,7 @@ bool MainWindow::open(const QString& file, int index, int total) {
     QCoreApplication::processEvents();
     try {
         QString ext = QFileInfo(file).suffix();
-        if (ext != "ply" && ext != "obj" && ext != "las" && ext != "laz" && ext != "e57") {
+        if (ext != "ply" && ext != "obj" && ext != "xyz" && ext != "las" && ext != "laz" && ext != "e57") {
             QMessageBox box(QMessageBox::Warning, "Error", "Unknown file format of file '" + file + "'");
             box.exec();
             return true; // continue opening files
@@ -289,15 +289,13 @@ TexturedMesh MainWindow::loadMesh(const QString& file, std::function<bool(float)
         std::ifstream in;
         in.exceptions(std::ifstream::badbit | std::ifstream::failbit);
         in.open(file.toStdString());
-        // Pvl::Optional<Mesh> loaded
         mesh = loadPly(in, callback);
         geolocalize(mesh, file);
-        /*if (!loaded) {
-            return;
-        }
-        mesh = std::move(loaded.value());*/
     } else if (ext == "obj") {
         mesh = loadObj(file, callback);
+        geolocalize(mesh, file);
+    } else if (ext == "xyz") {
+        mesh = loadXyz(file, callback);
         geolocalize(mesh, file);
     } else if (ext == "las" || ext == "laz") {
         mesh = loadLas(file.toStdString(), callback);
@@ -312,7 +310,8 @@ void MainWindow::on_actionOpenFile_triggered() {
     QStringList names = QFileDialog::getOpenFileNames(this,
         tr("Open mesh"),
         initialDir.path(),
-        tr("all files (*);;.ply object (*.ply);;LAS point cloud (*.las *.laz);;E57 point cloud (*.e57)"));
+        tr("all files (*);;.ply object (*.ply);;LAS point cloud (*.las *.laz);;E57 point cloud "
+           "(*.e57);;ASCII point cloud (*.xyz)"));
     if (!names.empty()) {
         QFileInfo info(names.first());
         initialDir = info.dir();

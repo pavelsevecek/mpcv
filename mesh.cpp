@@ -1,4 +1,5 @@
 #include "mesh.h"
+#include "pvl/Box.hpp"
 #include "texture.h"
 #include <QDir>
 #include <QFileInfo>
@@ -297,6 +298,32 @@ TexturedMesh loadPly(std::istream& in, const Progress& prog) {
               << std::endl;
     return mesh;
 }
+
+TexturedMesh loadXyz(const QString& file, const Progress&) {
+    std::ifstream in(file.toStdString());
+    std::string line;
+    std::vector<Coords> points;
+    Pvl::Box3f box;
+    while (std::getline(in, line)) {
+        if (line.empty() || line[0] == '#') {
+            continue;
+        }
+        std::stringstream ss(line);
+        Coords p;
+        ss >> p[0] >> p[1] >> p[2];
+        points.push_back(p);
+        box.extend(vec3f(p));
+    }
+    TexturedMesh mesh;
+    mesh.srs = Srs(coords(box.center()));
+    mesh.vertices.resize(points.size());
+    for (std::size_t i = 0; i < points.size(); ++i) {
+        mesh.vertices[i] = vec3f(mesh.srs.worldToLocal(points[i]));
+    }
+    std::cout << "Added " << mesh.vertices.size() << " vertices " << std::endl;
+    return mesh;
+}
+
 
 static bool startsWith(const std::string& s, const std::string& p) {
     return s.size() >= p.size() && s.substr(0, p.size()) == p;

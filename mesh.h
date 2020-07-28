@@ -85,6 +85,8 @@ void savePly(std::ostream& out, const std::vector<const TexturedMesh*>& meshes, 
 
 TexturedMesh loadPly(std::istream& in, const Progress& prog);
 
+TexturedMesh loadXyz(const QString& file, const Progress& prog);
+
 TexturedMesh loadObj(const QString& file, const Progress& prog);
 
 } // namespace Mpcv

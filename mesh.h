@@ -27,6 +27,9 @@ struct TexturedMesh {
     ///< Vertex colors
     std::vector<Color> colors;
 
+    ///< GPS times
+    std::vector<double> times;
+
     ///< Face indices
     std::vector<Face> faces;
 

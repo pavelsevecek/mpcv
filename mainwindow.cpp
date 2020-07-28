@@ -508,3 +508,23 @@ void MainWindow::on_actionWindows_triggered() {
     QAction* act = this->findChild<QAction*>("actionWindows");
     viewport_->windows(act->isChecked());
 }
+
+void MainWindow::on_actionOrient_normals_triggered() {
+    QDir& initialDir = openFileDialogInitialDir();
+    QString file = QFileDialog::getOpenFileName(
+        this, tr("Open trajectory file"), initialDir.path(), tr(".csv trajectory (*.csv)"));
+    if (!file.isEmpty()) {
+        QFileInfo info(file);
+        initialDir = info.dir();
+
+        QProgressDialog dialog("Computing normals", "Cancel", 0, 100, viewport_);
+        dialog.setWindowModality(Qt::WindowModal);
+        QCoreApplication::processEvents();
+        auto callback = [&dialog](float prog) {
+            dialog.setValue(prog);
+            QCoreApplication::processEvents();
+            return dialog.wasCanceled();
+        };
+        viewport_->estimateNormals(file, callback);
+    }
+}

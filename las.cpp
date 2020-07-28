@@ -33,7 +33,8 @@ TexturedMesh loadLas(std::string file, const Progress& prog) {
     mesh.vertices.reserve(lasreader->npoints);
     mesh.colors.reserve(lasreader->npoints);
     mesh.classes.reserve(lasreader->npoints);
-    bool hasColors = false;    
+    mesh.times.reserve(lasreader->npoints);
+    bool hasColors = false;
     while (lasreader->read_point()) {
         const LASpoint& p = lasreader->point;
         Coords coords(p.get_x(), p.get_y(), p.get_z());
@@ -44,6 +45,7 @@ TexturedMesh loadLas(std::string file, const Progress& prog) {
             mesh.vertices.push_back(vec3f(local));
             mesh.colors.push_back(color);
             mesh.classes.push_back(p.get_classification());
+            mesh.times.push_back(p.get_gps_time());
         }
         hasColors |= (color != Color(0, 0, 0));
 
@@ -57,11 +59,12 @@ TexturedMesh loadLas(std::string file, const Progress& prog) {
     }
     mesh.vertices.shrink_to_fit();
     mesh.classes.shrink_to_fit();
+    mesh.times.shrink_to_fit();
     if (hasColors) {
         mesh.colors.shrink_to_fit();
     } else {
         mesh.colors = {};
-    }    
+    }
     std::cout << "Loaded " << i << " out of " << lasreader->npoints << " points" << std::endl;
 
     lasreader->close();

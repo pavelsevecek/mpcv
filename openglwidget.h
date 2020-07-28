@@ -122,6 +122,8 @@ public:
 
     void estimateNormals(std::function<bool(float)> progress);
 
+    void estimateNormals(const QString& trajectory, std::function<bool(float)> progress);
+
     void computeAmbientOcclusion(std::function<bool(float)> progress);
 
     void enableAo(bool on) {

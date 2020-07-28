@@ -97,6 +97,7 @@
      <string>Point cloud</string>
     </property>
     <addaction name="actionEstimate_normals"/>
+    <addaction name="actionOrient_normals"/>
    </widget>
    <widget class="QMenu" name="menuRender">
     <property name="title">
@@ -367,6 +368,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+B</string>
+   </property>
+  </action>
+  <action name="actionOrient_normals">
+   <property name="text">
+    <string>Orient normals</string>
    </property>
   </action>
  </widget>

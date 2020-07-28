@@ -317,8 +317,11 @@ TexturedMesh loadXyz(const QString& file, const Progress&) {
     TexturedMesh mesh;
     mesh.srs = Srs(coords(box.center()));
     mesh.vertices.resize(points.size());
+    mesh.colors.resize(points.size());
     for (std::size_t i = 0; i < points.size(); ++i) {
         mesh.vertices[i] = vec3f(mesh.srs.worldToLocal(points[i]));
+        /// \todo
+        mesh.colors[i] = Color(255, 128, 0);
     }
     std::cout << "Added " << mesh.vertices.size() << " vertices " << std::endl;
     return mesh;

@@ -923,12 +923,12 @@ void OpenGLWidget::estimateNormals(std::function<bool(float)> progress) {
 }
 
 struct TrajPoint {
-    Pvl::Vec3f p;
-    float t;
+    Coords p;
+    double t;
 
     TrajPoint() = default;
 
-    TrajPoint(const Pvl::Vec3f& p, float t)
+    TrajPoint(const Coords& p, double t)
         : p(p)
         , t(t) {}
 
@@ -952,41 +952,55 @@ void OpenGLWidget::estimateNormals(const QString& trajectory, std::function<bool
     if (!trajectory.isEmpty()) {
         std::ifstream ifs(trajectory.toStdString());
         std::string line;
+        double t_min = 1.e20;
+        double t_max = 0;
         while (std::getline(ifs, line)) {
             std::stringstream ss(line);
             double x, y, z, t;
             ss >> x >> y >> z >> t;
-            traj.emplace_back(Pvl::Vec3f(x, y, z), t);
+            traj.emplace_back(Coords(x, y, z), t);
+            t_min = std::min(t_min, t);
+            t_max = std::max(t_max, t);
         }
+        std::sort(traj.begin(), traj.end());
+        std::cout << "Trajectory time extent = " << t_min << " " << t_max
+                  << std::endl;
     }
 
     for (const auto& p : meshData) {
         /// \todo only update? (add normals)
         const void* handle = p.first;
 
-        const std::vector<Pvl::Vec3f>& points = p.second->mesh.vertices;
-        const std::vector<double>& times = p.second->mesh.times;
+        std::vector<Pvl::Vec3f>& points = p.second->mesh.vertices;
+        std::vector<double>& times = p.second->mesh.times;
         std::vector<Pvl::Vec3f>& normals = p.second->mesh.normals;
         normals = Pvl::estimateNormals<Pvl::ParallelTag>(points, progress);
 
         if (!traj.empty() && !times.empty()) {
-            for (std::size_t i = 0; i < points.size(); ++i) {
+            std::size_t count = points.size();
+            double t_min = 1.e20;
+            double t_max = 0;
+            for (std::size_t i = 0; i < count; ++i) {
                 auto iter =
                     std::lower_bound(traj.begin(), traj.end(), times[i], [](const TrajPoint& tr, double t) {
                         return tr.t < t;
                     });
-                Pvl::Vec3f sensor;
+                Coords sensor;                
                 if (iter != traj.end()) {
                     sensor = iter->p;
                 } else {
                     sensor = traj.back().p;
                 }
-                sensor = vec3f(p.second->mesh.srs.worldToLocal(coords(sensor)));
-                float dot = Pvl::dotProd(normals[i], sensor - points[i]);
+                sensor = p.second->mesh.srs.worldToLocal(sensor);
+                float dot = Pvl::dotProd(normals[i], vec3f(sensor) - points[i]);
                 if (dot < 0) {
                     normals[i] *= -1;
                 }
+                t_min = std::min(t_min, times[i]);
+                t_max = std::max(t_max, times[i]);
             }
+            std::cout << "Lidar time extents = " << t_min << " " << t_max
+                      << std::endl;
         }
 
         TexturedMesh mesh = std::move(p.second->mesh);

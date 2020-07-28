@@ -199,7 +199,7 @@ void OpenGLWidget::paintGL() {
             if (useNormals) {
                 glNormalPointer(GL_FLOAT, stride * 3 * sizeof(float), mesh.vis.normals.data());
             }
-            if (useClasses) {
+            if (useClasses && !enableAo_) {
                 glColorPointer(
                     3, GL_UNSIGNED_BYTE, stride * 3 * sizeof(uint8_t), mesh.vis.vertexColors.data());
             } else if (useColors) {
@@ -215,7 +215,7 @@ void OpenGLWidget::paintGL() {
             if (useNormals) {
                 glNormalPointer(GL_FLOAT, stride * 3 * sizeof(float), (void*)(numVert * sizeof(float)));
             }
-            if (useClasses) {
+            if (useClasses && !enableAo_) {
                 glColorPointer(3,
                     GL_UNSIGNED_BYTE,
                     stride * 3 * sizeof(uint8_t),
@@ -987,8 +987,7 @@ void OpenGLWidget::estimateNormals(const QString& trajectory, std::function<bool
             t_max = std::max(t_max, t);
         }
         std::sort(traj.begin(), traj.end());
-        std::cout << "Trajectory time extent = " << t_min << " " << t_max
-                  << std::endl;
+        std::cout << "Trajectory time extent = " << t_min << " " << t_max << std::endl;
     }
 
     for (const auto& p : meshData) {
@@ -1009,7 +1008,7 @@ void OpenGLWidget::estimateNormals(const QString& trajectory, std::function<bool
                     std::lower_bound(traj.begin(), traj.end(), times[i], [](const TrajPoint& tr, double t) {
                         return tr.t < t;
                     });
-                Coords sensor;                
+                Coords sensor;
                 if (iter != traj.end()) {
                     sensor = iter->p;
                 } else {
@@ -1023,8 +1022,7 @@ void OpenGLWidget::estimateNormals(const QString& trajectory, std::function<bool
                 t_min = std::min(t_min, times[i]);
                 t_max = std::max(t_max, times[i]);
             }
-            std::cout << "Lidar time extents = " << t_min << " " << t_max
-                      << std::endl;
+            std::cout << "Lidar time extents = " << t_min << " " << t_max << std::endl;
         }
 
         TexturedMesh mesh = std::move(p.second->mesh);

@@ -32,15 +32,22 @@ TexturedMesh loadLas(std::string file, const Progress& prog) {
     float iToProg = 100.f / lasreader->npoints;
     mesh.vertices.reserve(lasreader->npoints);
     mesh.colors.reserve(lasreader->npoints);
+    mesh.classes.reserve(lasreader->npoints);
+    bool hasColors = false;
+    bool hasClasses = false;
     while (lasreader->read_point()) {
         const LASpoint& p = lasreader->point;
         Coords coords(p.get_x(), p.get_y(), p.get_z());
         Coords local = mesh.srs.worldToLocal(coords);
 
+        Color color(p.get_R() >> 8, p.get_G() >> 8, p.get_B() >> 8);
         if ((i % stride == 0) && globals.extents.contains(coords)) {
             mesh.vertices.push_back(vec3f(local));
-            mesh.colors.push_back(Color(p.get_R() >> 8, p.get_G() >> 8, p.get_B() >> 8));
+            mesh.colors.push_back(color);
+            mesh.classes.push_back(p.get_classification());
         }
+        hasClasses |= (p.get_classification() != 0);
+        hasColors |= (color != Color(0, 0, 0));
 
         i++;
         if (i == nextProg) {
@@ -51,7 +58,16 @@ TexturedMesh loadLas(std::string file, const Progress& prog) {
         }
     }
     mesh.vertices.shrink_to_fit();
-    mesh.colors.shrink_to_fit();
+    if (hasColors) {
+        mesh.colors.shrink_to_fit();
+    } else {
+        mesh.colors = {};
+    }
+    if (hasClasses) {
+        mesh.classes.shrink_to_fit();
+    } else {
+        mesh.classes = {};
+    }
     std::cout << "Loaded " << i << " out of " << lasreader->npoints << " points" << std::endl;
 
     lasreader->close();

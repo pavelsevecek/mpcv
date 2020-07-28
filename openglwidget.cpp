@@ -384,7 +384,7 @@ inline int toGlFormat(const ImageFormat& format) {
 }
 
 inline Color classToColor(const uint8_t c) {
-    if (c == 7) {
+    if (c == 1 || c == 7) {
         // tree
         return Color(65, 140, 85);
     } else {
@@ -411,11 +411,15 @@ void OpenGLWidget::view(const void* handle, std::string basename, TexturedMesh&&
     if (data.pointCloud()) {
         bool hasNormals = !data.mesh.normals.empty();
         bool hasColors = !data.mesh.colors.empty();
+        bool hasClasses = !data.mesh.classes.empty();
         data.vis.vertices.reserve(data.mesh.vertices.size() * 3);
         if (hasNormals) {
             data.vis.normals.reserve(data.mesh.vertices.size() * 3);
         }
         if (hasColors) {
+            data.vis.colors.reserve(data.mesh.vertices.size() * 3);
+        }
+        if (hasClasses) {
             data.vis.colors.reserve(data.mesh.vertices.size() * 3);
         }
         for (std::size_t vi = 0; vi < data.mesh.vertices.size(); ++vi) {
@@ -430,7 +434,12 @@ void OpenGLWidget::view(const void* handle, std::string basename, TexturedMesh&&
                 data.vis.normals.push_back(normal[1]);
                 data.vis.normals.push_back(normal[2]);
             }
-            if (hasColors) {
+            if (hasClasses) {
+                Color c = classToColor(data.mesh.classes[vi]);
+                data.vis.colors.push_back(c[0]);
+                data.vis.colors.push_back(c[1]);
+                data.vis.colors.push_back(c[2]);
+            } else if (hasColors) {
                 const Color& c = data.mesh.colors[vi];
                 data.vis.colors.push_back(c[0]);
                 data.vis.colors.push_back(c[1]);

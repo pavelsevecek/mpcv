@@ -256,6 +256,7 @@ bool MainWindow::open(const QString& file, int index, int total) {
         }
         dialog.close();
         if (mesh.vertices.empty()) {
+            std::cout << "Skipping empty mesh '" << file.toStdString() << "'" << std::endl;
             return true; // continue opening files
         }
 

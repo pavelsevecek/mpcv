@@ -22,6 +22,19 @@ TexturedMesh loadLas(std::string file, const Progress& prog) {
         return {};
     }
     int stride = globals.pointStride;
+    int skipValue;
+    switch (globals.subset) {
+    case CloudSubset::AERIAL_ONLY:
+        skipValue = 1;
+        break;
+    case CloudSubset::STREET_ONLY:
+        skipValue = 0;
+        break;
+    default:
+        skipValue = -1;
+        break;
+    }
+
     // to local coordinates
     Coords center = extents.center();
     std::cout << "Cloud center at " << center[0] << " " << center[1] << " " << center[2] << std::endl;
@@ -41,7 +54,7 @@ TexturedMesh loadLas(std::string file, const Progress& prog) {
         Coords local = mesh.srs.worldToLocal(coords);
 
         Color color(p.get_R() >> 8, p.get_G() >> 8, p.get_B() >> 8);
-        if ((i % stride == 0) && globals.extents.contains(coords)) {
+        if (p.user_data != skipValue && (i % stride == 0) && globals.extents.contains(coords)) {
             mesh.vertices.push_back(vec3f(local));
             mesh.colors.push_back(color);
             mesh.classes.push_back(p.get_classification());

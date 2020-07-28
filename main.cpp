@@ -38,6 +38,15 @@ void parseArgument(const std::string& arg, const std::string& param) {
         int stride = std::stoi(param);
         std::cout << "Setting point stride to " << stride << std::endl;
         Mpcv::Parameters::global().pointStride = stride;
+    } else if (arg == "--subset") {
+        if (param == "street") {
+            Mpcv::Parameters::global().subset = Mpcv::CloudSubset::STREET_ONLY;
+        } else if (param == "aerial") {
+            Mpcv::Parameters::global().subset = Mpcv::CloudSubset::AERIAL_ONLY;
+        } else {
+            std::cout << "Unknown subset type, expected 'street' or 'aerial'" << std::endl;
+            exit(-1);
+        }
     } else {
         std::cout << "Unknown parameter '" << arg << "'" << std::endl;
         exit(-1);

@@ -384,10 +384,18 @@ inline int toGlFormat(const ImageFormat& format) {
 }
 
 inline Color classToColor(const uint8_t c) {
-    if (c == 1 || c == 7) {
-        // tree
-        return Color(65, 140, 85);
-    } else {
+    switch (c) {
+    case 1:
+        return Color(220, 220, 50); // interiors
+    case 2:
+        return Color(65, 140, 85); // tree
+    case 3:
+        return Color(150, 80, 10); // trunks
+    case 4:
+        return Color(20, 20, 20); // wire
+    case 5:
+        return Color(20, 20, 150); // cars
+    default:
         return Color(190, 190, 190);
     }
 }

@@ -373,7 +373,7 @@
   </action>
   <action name="actionOrient_normals">
    <property name="text">
-    <string>Orient normals</string>
+    <string>Compute normals from trajectory</string>
    </property>
    <property name="toolTip">
     <string>Compute normals from trajectory</string>

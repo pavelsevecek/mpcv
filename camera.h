@@ -67,6 +67,9 @@ public:
 
     Pvl::Optional<Pvl::Vec2f> unproject(const Pvl::Vec3f& r) const;
 
+private:
+    void orthogonalize();
+
 }; // namespace Mpcv
 
 using Triangle = std::array<Pvl::Vec3f, 3>;

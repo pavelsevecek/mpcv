@@ -391,7 +391,10 @@
     <string>Classes</string>
    </property>
    <property name="toolTip">
-    <string>Colorize mesh using vertex classes</string>
+    <string>Colorize mesh using vertex classes (Ctrl+C)</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
    </property>
   </action>
  </widget>

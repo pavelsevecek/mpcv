@@ -113,6 +113,9 @@ uint8_t* PngTexture::data() {
 #endif
 
 std::unique_ptr<ITexture> makeTexture(const QString& filename) {
+    if (!QFileInfo(filename).exists()) {
+        throw std::runtime_error("Texture image '" + filename.toStdString() + "' does not exist");
+    }
     QString ext = QFileInfo(filename).suffix();
     QImageReader reader(filename);
     QSize size = reader.size();

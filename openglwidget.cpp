@@ -142,7 +142,7 @@ void OpenGLWidget::paintGL() {
     }
     //  updateLights(camera_);
 
-
+    glEnable(GL_LIGHTING);
     glColor3f(0.75, 0.75, 0.75);
     // glColor3f(0, 0, 0);
     // glEnable(GL_TEXTURE_2D);
@@ -349,7 +349,9 @@ void OpenGLWidget::paintGL() {
         }
         glEnd();
     }
+    glFlush();
 
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
     QPainter painter(this);
     painter.setPen(Qt::black);
     painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
@@ -376,9 +378,7 @@ void OpenGLWidget::paintGL() {
     painter.drawText(30, height() - 30, "Faces:");
     painter.drawText(100, height() - 30, QString("%L1").arg(numFaces));
     painter.end();
-    glEnable(GL_LIGHTING);
-
-    glFlush();
+    glPopAttrib();
 }
 
 inline int toGlFormat(const ImageFormat& format) {

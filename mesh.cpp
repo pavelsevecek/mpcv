@@ -369,6 +369,10 @@ TexturedMesh loadObj(const QString& file, const Progress& prog) {
         /// \todo path resolving
         QFileInfo info(file);
         std::string mtlPath = info.dir().path().toStdString() + "/" + mtl;
+        if (!QFileInfo(mtlPath.c_str()).exists()) {
+            throw std::runtime_error("Material file '" + mtlPath + "' does not exist");
+        }
+
         std::cout << "opening mtl path = " << mtlPath << std::endl;
         std::ifstream mtlin(mtlPath);
         while (std::getline(mtlin, line)) {

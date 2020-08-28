@@ -201,10 +201,10 @@ void OpenGLWidget::paintGL() {
             }
             if (useClasses && !enableAo_) {
                 glColorPointer(
-                    3, GL_UNSIGNED_BYTE, stride * 3 * sizeof(uint8_t), mesh.vis.vertexColors.data());
+                    3, GL_UNSIGNED_BYTE, stride * 3 * sizeof(uint8_t), mesh.vis.classColors.data());
             } else if (useColors) {
                 glColorPointer(
-                    3, GL_UNSIGNED_BYTE, stride * 3 * sizeof(uint8_t), mesh.vis.classColors.data());
+                    3, GL_UNSIGNED_BYTE, stride * 3 * sizeof(uint8_t), mesh.vis.vertexColors.data());
             }
             if (useTexture) {
                 // never used by pc

@@ -18,7 +18,7 @@ TexturedMesh loadDem(std::string file, const Progress&) {
     GDALDataset* dataset = (GDALDataset*)GDALOpen(file.c_str(), GA_ReadOnly);
     if (dataset == nullptr) {
         throw std::runtime_error("Cannot open GeoTIFF '" + file + "'");
-    }    
+    }
     printf("Driver: %s/%s\n",
            dataset->GetDriver()->GetDescription(),
            dataset->GetDriver()->GetMetadataItem(GDAL_DMD_LONGNAME));
@@ -108,22 +108,25 @@ TexturedMesh loadDem(std::string file, const Progress&) {
         }
     }
     uint32_t index = 0;
-    for (uint32_t y = 0; y < height - 1; ++y ){
-        for (uint32_t x = 0; x < width - 1; ++x) {
-          /*  if (mesh.vertices[index][2] == nodata ||
+    for (uint32_t y = 0; y < height - 1; ++y, ++index) {
+        for (uint32_t x = 0; x < width - 1; ++x, ++index) {
+            if (mesh.vertices[index][2] == nodata ||
                 mesh.vertices[index + 1][2] == nodata ||
                 mesh.vertices[index + width][2] == nodata ||
                 mesh.vertices[index + width + 1][2] == nodata) {
                 continue;
-            }*/
-          mesh.faces.emplace_back(
-              TexturedMesh::Face{ index + 1, index, index + width });
-          mesh.faces.emplace_back(TexturedMesh::Face{ index + 1,
-                                                      index + width,
-                                                      index + width + 1 });
-          ++index;
+            }
+            mesh.faces.emplace_back(TexturedMesh::Face{
+                index + 1,
+                index,
+                index + width,
+            });
+            mesh.faces.emplace_back(TexturedMesh::Face{
+                index + 1,
+                index + width,
+                index + width + 1,
+            });
         }
-        ++index;
     }
 
     for (std::size_t vi = 0; vi < mesh.vertices.size(); ++vi) {

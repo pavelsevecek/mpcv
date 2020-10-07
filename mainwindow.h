@@ -73,6 +73,8 @@ private slots:
 
     void on_actionClasses_triggered();
 
+    void on_actionBuid_configuration_triggered();
+
 private:
     Ui::MainWindow* ui_;
     OpenGLWidget* viewport_;

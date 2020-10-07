@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
-#include "e57.h"
 #include "dem.h"
+#include "e57.h"
 #include "las.h"
 #include "mesh.h"
 #include "openglwidget.h"
@@ -238,7 +238,8 @@ bool MainWindow::open(const QString& file, int index, int total) {
     QCoreApplication::processEvents();
     try {
         QString ext = QFileInfo(file).suffix();
-        if (ext != "ply" && ext != "obj" && ext != "xyz" && ext != "las" && ext != "laz" && ext != "e57" && ext != "tif") {
+        if (ext != "ply" && ext != "obj" && ext != "xyz" && ext != "las" && ext != "laz" && ext != "e57" &&
+            ext != "tif") {
             QMessageBox box(QMessageBox::Warning, "Error", "Unknown file format of file '" + file + "'");
             box.exec();
             return true; // continue opening files
@@ -494,7 +495,6 @@ void MainWindow::on_actionSun_setup_triggered() {
 }
 
 void MainWindow::on_actionControls_triggered() {
-    std::cout << "Showing help" << std::endl;
     QString text;
     text += "Ctrl+[1-9]   view only n-th mesh\n";
     text += "Shift+[1-9]  toggle visibility of n-th mesh\n";
@@ -543,4 +543,43 @@ void MainWindow::on_actionOrient_normals_triggered() {
 void MainWindow::on_actionClasses_triggered() {
     QAction* act = this->findChild<QAction*>("actionClasses");
     viewport_->classes(act->isChecked());
+}
+
+void MainWindow::on_actionBuid_configuration_triggered() {
+    QString text;
+#ifdef NDEBUG
+    text += "RELEASE build\n\n";
+#else
+    text += "DEBUG build\n\n";
+#endif
+    bool png = false, jpg = false, gdal = false, oidn = false, openvdb = false;
+#ifdef HAS_PNG
+    png = true;
+#endif
+#ifdef HAS_JPEG
+    jpg = true;
+#endif
+#ifdef HAS_GDAL
+    gdal = true;
+#endif
+#ifdef HAS_OIDN
+    oidn = true;
+#endif
+#ifdef HAS_OPENVDB
+    openvdb = true;
+#endif
+
+    auto opt = [](bool enable) -> QString { return enable ? "enabled\n" : "disabled\n"; };
+
+    text += "libjpeg -  " + opt(jpg);
+    text += "libpng  -  " + opt(png);
+    text += "GDAL    -  " + opt(gdal);
+    text += "OIDN    -  " + opt(oidn);
+    text += "OpenVDB -  " + opt(openvdb);
+
+    QMessageBox box(QMessageBox::Information, "Configuration", text, QMessageBox::Ok, this);
+    QFont font = box.font();
+    font.setFamily("Courier New");
+    box.setFont(font);
+    box.exec();
 }

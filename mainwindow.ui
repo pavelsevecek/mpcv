@@ -115,6 +115,7 @@
      <string>Help</string>
     </property>
     <addaction name="actionControls"/>
+    <addaction name="actionBuid_configuration"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuMesh"/>
@@ -399,6 +400,14 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+C</string>
+   </property>
+  </action>
+  <action name="actionBuid_configuration">
+   <property name="text">
+    <string>Buid configuration</string>
+   </property>
+   <property name="toolTip">
+    <string>Shows currently enabled program options</string>
    </property>
   </action>
  </widget>

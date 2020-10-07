@@ -87,8 +87,9 @@ if (WITH_PNG)
 endif()
 
 if (WITH_GDAL)
-    list(APPEND LIBRARIES gdal)
-    target_include_directories(mpcv PUBLIC "/usr/include/gdal")
+    find_package(GDAL)
+    list(APPEND LIBRARIES ${GDAL_LIBRARIES})
+    target_include_directories(mpcv PUBLIC ${GDAL_INCLUDE_DIRS})
     add_definitions(-DHAS_GDAL)
 endif()
 

@@ -6,6 +6,7 @@ option(WITH_OPENVDB "Link OpenVDB to enable mesh repair"                 OFF)
 option(WITH_OIDN    "Link OpenImageDenoise to enable render denoising"   OFF)
 option(WITH_JPEG    "Link libjpeg to enable opening large jpeg textures" OFF)
 option(WITH_PNG     "Link libpng to enable opening large png textures"   OFF)
+option(WITH_GDAL    "Link GDAL to enable reading DEMs/DSMs"              OFF)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -46,6 +47,7 @@ add_executable(mpcv
     texture.h texture.cpp
     las.h las.cpp
     e57.h e57.cpp
+    dem.h dem.cpp
     coordinates.h
     bvh.h bvh.cpp
     renderer.h renderer.cpp
@@ -82,6 +84,12 @@ endif()
 if (WITH_PNG)
     list(APPEND LIBRARIES png)
     add_definitions(-DHAS_PNG)
+endif()
+
+if (WITH_GDAL)
+    list(APPEND LIBRARIES gdal)
+    target_include_directories(mpcv PUBLIC "/usr/include/gdal")
+    add_definitions(-DHAS_GDAL)
 endif()
 
 target_link_libraries(mpcv PRIVATE ${LIBRARIES})

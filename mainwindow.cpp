@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include "e57.h"
+#include "dem.h"
 #include "las.h"
 #include "mesh.h"
 #include "openglwidget.h"
@@ -237,7 +238,7 @@ bool MainWindow::open(const QString& file, int index, int total) {
     QCoreApplication::processEvents();
     try {
         QString ext = QFileInfo(file).suffix();
-        if (ext != "ply" && ext != "obj" && ext != "xyz" && ext != "las" && ext != "laz" && ext != "e57") {
+        if (ext != "ply" && ext != "obj" && ext != "xyz" && ext != "las" && ext != "laz" && ext != "e57" && ext != "tif") {
             QMessageBox box(QMessageBox::Warning, "Error", "Unknown file format of file '" + file + "'");
             box.exec();
             return true; // continue opening files
@@ -306,6 +307,8 @@ TexturedMesh MainWindow::loadMesh(const QString& file, std::function<bool(float)
         mesh = loadLas(file.toStdString(), callback);
     } else if (ext == "e57") {
         mesh = loadE57(file.toStdString(), callback);
+    } else if (ext == "tif") {
+        mesh = loadDem(file.toStdString(), callback);
     }
     return mesh;
 }
@@ -316,7 +319,7 @@ void MainWindow::on_actionOpenFile_triggered() {
         tr("Open mesh"),
         initialDir.path(),
         tr("all files (*);;.ply object (*.ply);;LAS point cloud (*.las *.laz);;E57 point cloud "
-           "(*.e57);;ASCII point cloud (*.xyz)"));
+           "(*.e57);;ASCII point cloud (*.xyz);;GeoTIFF (*.tif)"));
     if (!names.empty()) {
         QFileInfo info(names.first());
         initialDir = info.dir();

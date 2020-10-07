@@ -13,6 +13,7 @@
 #include <QMessageBox>
 #include <QProgressDialog>
 #include <QShortcut>
+#include <QStatusBar>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -89,8 +90,12 @@ MainWindow::MainWindow(QWidget* parent)
     , ui_(new Ui::MainWindow) {
     ui_->setupUi(this);
 
+    QStatusBar* bar = new QStatusBar(this);
+    ui_->verticalLayout->addWidget(bar);
+
     viewport_ = findChild<OpenGLWidget*>("Viewport");
     viewport_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    viewport_->mouseMotionCallback = [bar](const QString& text) { bar->showMessage(text); };
 
     list_ = findChild<QListWidget*>("MeshList");
 

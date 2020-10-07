@@ -83,8 +83,12 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
     Pvl::Vec3f sunDir_ = Pvl::normalize(Pvl::Vec3f(1.f, 1.f, 4.f));
 
 public:
+    std::function<void(const QString& text)> mouseMotionCallback;
+
     OpenGLWidget(QWidget* parent)
-        : QOpenGLWidget(parent) {}
+        : QOpenGLWidget(parent) {
+        setMouseTracking(true);
+    }
 
     virtual void initializeGL() override;
 

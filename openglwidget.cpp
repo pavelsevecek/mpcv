@@ -774,17 +774,33 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent* ev) {
     if (meshes_.empty()) {
         return;
     }
-    camera_ = mouse_.state;
     if (ev->buttons() & Qt::RightButton) {
+        camera_ = mouse_.state;
         QPoint p = ev->pos();
         Pvl::Mat33f m = mouse_.ab.drag(Pvl::Vec2i(p.x(), p.y()));
         camera_.transform(m);
-    } else {
-        QPoint dp = ev->pos() - mouse_.pos0;
+        update();
+    } else if (ev->buttons() & Qt::LeftButton) {
+        camera_ = mouse_.state;
+        QPoint p = ev->pos();
+        QPoint dp = p - mouse_.pos0;
         camera_.pan(Pvl::Vec2i(dp.x(), dp.y()));
+        update();
     }
 
-    update();
+    if (mouseMotionCallback) {
+        QPoint p = ev->pos();
+        CameraRay ray = camera_.project(Pvl::Vec2f(p.x(), p.y()));
+        // intersection with z=0
+        if (std::abs(ray.dir[2]) < 1.e-6) {
+            mouseMotionCallback("Coordinate: N/A");
+        } else {
+            double t = -ray.origin[2] / ray.dir[2];
+            Coords p = camera_.srs().localToWorld(coords(ray.origin + t * ray.dir));
+            mouseMotionCallback(
+                "Coordinate: " + QString::number(p[0], 'f') + ", " + QString::number(p[1], 'f'));
+        }
+    }
 }
 
 template <typename MeshFunc>

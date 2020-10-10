@@ -365,7 +365,7 @@ TexturedMesh loadObj(const QString& file, const Progress& prog) {
             std::cout << "Unknown line '" << line << "', skipping" << std::endl;
         }
     }
-    if (!mtl.empty()) {
+    if (!mtl.empty() && !mesh.faces.empty()) {
         /// \todo path resolving
         QFileInfo info(file);
         std::string mtlPath = info.dir().path().toStdString() + "/" + mtl;

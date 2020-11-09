@@ -659,9 +659,12 @@ void OpenGLWidget::screenshot(const QString& file) {
     glReadBuffer(GL_FRONT);
     std::vector<uint8_t> pixels(width() * height() * 3);
     QRect rect = geometry();
-    glReadPixels(
-        rect.x(), rect.y(), rect.width(), rect.height(), GL_BGR_EXT, GL_UNSIGNED_BYTE, pixels.data());
-    QImage image(pixels.data(), rect.width(), rect.height(), rect.width() * 3, QImage::Format_RGB888);
+    const int barHeight = 27;
+    glReadPixels(rect.x(), rect.y() + barHeight,
+                 rect.width(), rect.height() - barHeight,
+                 GL_BGR_EXT, GL_UNSIGNED_BYTE, pixels.data());
+    QImage image(pixels.data(), rect.width(), rect.height() - barHeight,
+                 rect.width() * 3, QImage::Format_RGB888);
     QImageWriter writer(file);
     writer.write(std::move(image).mirrored().rgbSwapped());
 }

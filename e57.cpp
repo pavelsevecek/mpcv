@@ -9,6 +9,8 @@ TexturedMesh loadE57(std::string file, const Progress& prog) {
     int scanIndex = 0;
     e57::Data3D scanHeader;
     reader.ReadData3D(scanIndex, scanHeader);
+    const auto& tr = scanHeader.pose.translation;
+    std::cout << "Translation = " << tr.x << "," << tr.y << "," << tr.z << std::endl;
 
     int64_t column = 0;
     int64_t row = 0;
@@ -57,6 +59,7 @@ TexturedMesh loadE57(std::string file, const Progress& prog) {
         }
     }
     std::cout << "Ignoring " << nanCnt << " NaN points" << std::endl;
+    mesh.srs = Srs(Coords(tr.x, tr.y, tr.z));
 
     dataReader.close();
     return mesh;

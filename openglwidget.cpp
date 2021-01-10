@@ -1059,8 +1059,8 @@ void OpenGLWidget::computeAmbientOcclusion(std::function<bool(float)> progress) 
     std::map<const void*, int> handleIndexMap;
     for (auto& p : meshes_) {
         const void* handle = p.first;
-        if (p.second.pointCloud() || !p.second.vis.vertexColors.empty()) {
-            // pc or already computed
+        if (p.second.pointCloud() || !p.second.enabled || !p.second.vis.vertexColors.empty()) {
+            // pc, not visible or already computed
             continue;
         }
         handleIndexMap[handle] = meshes.size();
@@ -1072,7 +1072,9 @@ void OpenGLWidget::computeAmbientOcclusion(std::function<bool(float)> progress) 
         }
         for (auto& p : meshes_) {
             const void* handle = p.first;
-            view(handle, p.second.basename, std::move(meshes[handleIndexMap[handle]]));
+            if (handleIndexMap.find(handle) != handleIndexMap.end()) {
+                view(handle, p.second.basename, std::move(meshes[handleIndexMap[handle]]));
+            }
         }
     }
     enableAo(true);

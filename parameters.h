@@ -2,6 +2,7 @@
 
 #include "coordinates.h"
 #include "pvl/Box.hpp"
+#include <string>
 
 namespace Mpcv {
 
@@ -15,12 +16,14 @@ struct Parameters {
     Pvl::BoundingBox<Coords> extents;
     int pointStride;
     CloudSubset subset;
+    float textureScale;
 
     Parameters() {
         extents.lower() = Coords(std::numeric_limits<double>::lowest());
         extents.upper() = Coords(std::numeric_limits<double>::max());
         pointStride = 1;
         subset = CloudSubset::ALL;
+        textureScale = 1.f;
     }
 
     static Parameters& global() {

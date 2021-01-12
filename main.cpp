@@ -47,6 +47,10 @@ void parseArgument(const std::string& arg, const std::string& param) {
             std::cout << "Unknown subset type, expected 'street' or 'aerial'" << std::endl;
             exit(-1);
         }
+    } else if (arg == "--textureScale") {
+        float scale = std::stof(param);
+        std::cout << "Setting texture scale to " << scale << std::endl;
+        Mpcv::Parameters::global().textureScale = scale;
     } else {
         std::cout << "Unknown parameter '" << arg << "'" << std::endl;
         exit(-1);
@@ -63,6 +67,7 @@ int main(int argc, char* argv[]) {
         std::cout << "--stride n                    Loads only every n-th point for each point cloud"
                   << std::endl;
         std::cout << "--subset [street,aerial]      Loads only a specific category of points" << std::endl;
+        std::cout << "--textureScale f              Resizes the loaded textures by given factor" << std::endl;
         return 0;
     }
 

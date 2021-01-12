@@ -1,4 +1,5 @@
 #include "texture.h"
+#include "parameters.h"
 #include <QFileInfo>
 #include <QImageReader>
 #include <iostream>
@@ -119,6 +120,12 @@ std::unique_ptr<ITexture> makeTexture(const QString& filename) {
     QString ext = QFileInfo(filename).suffix();
     QImageReader reader(filename);
     QSize size = reader.size();
+    float scale = Mpcv::Parameters::global().textureScale;
+    if (scale < 1.f) {
+        size *= scale;
+        reader.setScaledSize(size);
+    }
+
     const int maxQtSize = (1 << 15) - 1;
     if (size.width() <= maxQtSize && size.height() <= maxQtSize) {
         std::cout << "Loading image '" + filename.toStdString() + "' using Qt reader" << std::endl;

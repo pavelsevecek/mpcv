@@ -350,7 +350,7 @@
   </action>
   <action name="actionSun_setup">
    <property name="text">
-    <string>Sun setup</string>
+    <string>Settings</string>
    </property>
   </action>
   <action name="actionControls">

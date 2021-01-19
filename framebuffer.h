@@ -57,6 +57,8 @@ public:
 
     void setProgress(int pass, int prog);
 
+    void setNumIters(int numIters);
+
     void run(const std::function<void()>& func);
 
 private slots:

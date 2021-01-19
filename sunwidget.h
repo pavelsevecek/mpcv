@@ -13,6 +13,10 @@ class SunWidget;
 }
 QT_END_NAMESPACE
 
+namespace Mpcv {
+struct RenderSettings;
+}
+
 class SunWidget : public QMainWindow {
     Q_OBJECT
 
@@ -20,7 +24,7 @@ public:
     SunWidget(QWidget* parent = nullptr);
     ~SunWidget();
 
-    void setFunc(std::function<void(Pvl::Vec3f)> func) {
+    void setFunc(std::function<void(Mpcv::RenderSettings)> func) {
         sunDirFunc_ = func;
     }
 
@@ -29,5 +33,5 @@ private slots:
 
 private:
     Ui::SunWidget* ui_;
-    std::function<void(Pvl::Vec3f)> sunDirFunc_;
+    std::function<void(Mpcv::RenderSettings)> sunDirFunc_;
 };

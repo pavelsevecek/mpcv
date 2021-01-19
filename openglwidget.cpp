@@ -1100,7 +1100,14 @@ bool OpenGLWidget::renderView() {
         } else if (dots_) {
             wire = RenderWire::DOTS;
         }
-        renderMeshes(frame, meshesToRender, sunDir_, camera_, wire);
+        renderSettings_.wire = wire;
+        Camera renderCamera(camera_.eye(),
+                            camera_.target(),
+                            camera_.up(),
+                            camera_.fov(),
+                            camera_.srs(),
+                            renderSettings_.resolution);
+        renderMeshes(frame, meshesToRender, renderCamera, renderSettings_);
     });
     return true;
 }

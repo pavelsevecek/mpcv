@@ -6,6 +6,7 @@
 #include "pvl/Box.hpp"
 #include "pvl/Optional.hpp"
 #include "quaternion.h"
+#include "renderer.h"
 #include <GL/glu.h>
 #include <QFileInfo>
 #include <QImageWriter>
@@ -80,7 +81,7 @@ class OpenGLWidget : public QOpenGLWidget, public QOpenGLFunctions {
         Mpcv::Camera state;
     } mouse_;
 
-    Pvl::Vec3f sunDir_ = Pvl::normalize(Pvl::Vec3f(1.f, 1.f, 4.f));
+    Mpcv::RenderSettings renderSettings_;
 
 public:
     std::function<void(const QString& text)> mouseMotionCallback;
@@ -165,11 +166,11 @@ public:
     void screenshot(const QString& file);
 
     void saveAsMesh(const QString& file,
-        const std::vector<const void*>& handles,
-        std::function<bool(float)> progress);
+                    const std::vector<const void*>& handles,
+                    std::function<bool(float)> progress);
 
-    void setSunDir(const Pvl::Vec3f& dir) {
-        sunDir_ = dir;
+    void setRenderSettings(const Mpcv::RenderSettings& settings) {
+        renderSettings_ = settings;
     }
 
     bool renderView();

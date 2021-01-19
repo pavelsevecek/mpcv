@@ -490,7 +490,9 @@ void MainWindow::on_actionRender_view_triggered() {
 
 void MainWindow::on_actionSun_setup_triggered() {
     static SunWidget* sun = new SunWidget(this);
-    sun->setFunc([this](Pvl::Vec3f dir) { viewport_->setSunDir(dir); });
+    sun->setFunc([this](const Mpcv::RenderSettings& settings) {
+        viewport_->setRenderSettings(settings);
+    });
     sun->show();
 }
 

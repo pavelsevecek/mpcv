@@ -43,6 +43,10 @@ public:
         return dir_;
     }
 
+    float fov() const {
+        return fov_;
+    }
+
     Pvl::Mat33f matrix() const {
         return Pvl::Mat33f(Pvl::normalize(left_), Pvl::normalize(up_), dir_);
     }

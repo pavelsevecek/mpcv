@@ -28,15 +28,22 @@ enum class RenderWire {
     EDGES,
 };
 
+struct RenderSettings {
+    Pvl::Vec2i resolution = Pvl::Vec2i(1024, 768);
+    int numIters = 10;
+    Pvl::Vec3f dirToSun = Pvl::normalize(Pvl::Vec3f(1.f, 1.f, 4.f));
+    RenderWire wire = RenderWire::NOTHING;
+    bool denoise = false;
+};
+
 void renderMeshes(FrameBufferWidget* widget,
-    const std::vector<TexturedMesh*>& meshes,
-    const Pvl::Vec3f& dirToSun,
-    const Camera camera,
-    const RenderWire wire = RenderWire::NOTHING);
+                  const std::vector<TexturedMesh*>& meshes,
+                  const Camera camera,
+                  const RenderSettings& settings);
 
 bool ambientOcclusion(std::vector<TexturedMesh>& meshes,
-    std::function<bool(float)> progress,
-    int sampleCntX = 20,
-    int sampleCntY = 10);
+                      std::function<bool(float)> progress,
+                      int sampleCntX = 20,
+                      int sampleCntY = 10);
 
 } // namespace Mpcv

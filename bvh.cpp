@@ -219,6 +219,14 @@ void Bvh<TBvhObject>::build(std::vector<TBvhObject>&& objs) {
 }
 
 template <typename TBvhObject>
+void Bvh<TBvhObject>::clear() {
+    objects.clear();
+    objects.shrink_to_fit();
+    nodes.clear();
+    nodes.shrink_to_fit();
+}
+
+template <typename TBvhObject>
 Pvl::Box3f Bvh<TBvhObject>::getBoundingBox() const {
     return nodes[0].box;
 }

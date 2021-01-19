@@ -164,6 +164,9 @@ public:
     /// This erased previously stored objects.
     void build(std::vector<TBvhObject>&& objects);
 
+    /// \brief Releases the allocated data.
+    void clear();
+
     bool getFirstIntersection(const Ray& ray, IntersectionInfo& intersection) const;
 
     /// \brief Returns true if the ray is occluded by some geometry

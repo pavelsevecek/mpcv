@@ -216,12 +216,13 @@ inline float vertexShader(const Pvl::Vec3f& v, const std::array<Pvl::Vec3f, 3>& 
     return 1.f;
 }
 
-Pvl::Vec3f radiance(const Scene& scene,
-    const Mpcv::Ray& ray,
-    const Mpcv::Bvh<Mpcv::BvhTriangle>& bvh,
-    Rng& rng,
-    const RenderWire wire,
-    const int depth = 0) {
+std::pair<Pvl::Vec3f, Pvl::Vec3f>
+radiance(const Scene& scene,
+         const Mpcv::Ray& ray,
+         const Mpcv::Bvh<Mpcv::BvhTriangle>& bvh,
+         Rng& rng,
+         const RenderWire wire,
+         const int depth = 0) {
     float eps = 0.01f;
     Mpcv::IntersectionInfo is;
     if (bvh.getFirstIntersection(ray, is)) {
@@ -248,10 +249,18 @@ Pvl::Vec3f radiance(const Scene& scene,
             Pvl::Mat33f rotator = Pvl::getRotatorTo(normal);
             int numGiSamples = 10;
             for (int i = 0; i < numGiSamples; ++i) {
-                Pvl::Vec3f outDir = Pvl::prod(rotator, sampleUnitHemiSphere(rng(), rng()));
-                Pvl::Vec3f gi =
-                    radiance(scene, Mpcv::Ray(pos + eps * outDir, outDir), bvh, rng, wire, depth + 1);
-                float bsdfCos = albedo * std::max(Pvl::dotProd(outDir, normal), 0.f);
+                Pvl::Vec3f outDir =
+                    Pvl::prod(rotator, sampleUnitHemiSphere(rng(), rng()));
+                Pvl::Vec3f gi;
+                std::tie(gi, std::ignore) =
+                    radiance(scene,
+                             Mpcv::Ray(pos + eps * outDir, outDir),
+                             bvh,
+                             rng,
+                             wire,
+                             depth + 1);
+                float bsdfCos =
+                    albedo * std::max(Pvl::dotProd(outDir, normal), 0.f);
                 result += gi * bsdfCos / numGiSamples;
             }
         }
@@ -280,22 +289,60 @@ Pvl::Vec3f radiance(const Scene& scene,
                 result += albedo * intensity * std::max(Pvl::dotProd(normal, dirToLight), 0.f);
             }
         }
-        return result;
+        return std::make_pair(result, normal);
     } else {
-        return scene.skyMult * scene.sunSky.evalSky(ray.direction());
+        Pvl::Vec3f result =
+            scene.skyMult * scene.sunSky.evalSky(ray.direction());
+        return std::make_pair(result, Pvl::Vec3f(0));
     }
 }
 
 #ifdef HAS_OIDN
-void denoise(FrameBuffer& framebuffer) {
+void denoise(FrameBuffer& colorBuffer, FrameBuffer& normalBuffer) {
     oidn::DeviceRef device = oidn::newDevice();
     device.commit();
 
     oidn::FilterRef filter = device.newFilter("RT");
-    int width = framebuffer.dimension()[0];
-    int height = framebuffer.dimension()[1];
-    filter.setImage("color", framebuffer.data(), oidn::Format::Float3, width, height, 0, sizeof(Pixel));
-    filter.setImage("output", framebuffer.data(), oidn::Format::Float3, width, height, 0, sizeof(Pixel));
+    int width = colorBuffer.dimension()[0];
+    int height = colorBuffer.dimension()[1];
+    FrameBuffer albedoBuffer(Pvl::Vec2i(width, height));
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            Pvl::Vec2i pix(x, y);
+            albedoBuffer(pix).color = normalBuffer(pix).color == Pvl::Vec3f(0)
+                                          ? Pvl::Vec3f(0)
+                                          : Pvl::Vec3f(1);
+        }
+    }
+
+    filter.setImage("color",
+                    colorBuffer.data(),
+                    oidn::Format::Float3,
+                    width,
+                    height,
+                    0,
+                    sizeof(Pixel));
+    filter.setImage("albedo",
+                    albedoBuffer.data(),
+                    oidn::Format::Float3,
+                    width,
+                    height,
+                    0,
+                    sizeof(Pixel));
+    filter.setImage("normal",
+                    normalBuffer.data(),
+                    oidn::Format::Float3,
+                    width,
+                    height,
+                    0,
+                    sizeof(Pixel));
+    filter.setImage("output",
+                    colorBuffer.data(),
+                    oidn::Format::Float3,
+                    width,
+                    height,
+                    0,
+                    sizeof(Pixel));
     filter.set("hdr", true);
     filter.commit();
     filter.execute();
@@ -306,16 +353,16 @@ void denoise(FrameBuffer& framebuffer) {
     }
 }
 #else
-void denoise(FrameBuffer&) {}
+void denoise(FrameBuffer&, FrameBuffer&) {}
 #endif
 
 void renderMeshes(FrameBufferWidget* frame,
-    const std::vector<TexturedMesh*>& meshes,
-    const Pvl::Vec3f& dirToSun,
-    const Camera camera,
-    const RenderWire wire) {
+                  const std::vector<TexturedMesh*>& meshes,
+                  const Camera camera,
+                  const RenderSettings& settings) {
+    frame->setNumIters(settings.numIters);
     std::cout << "Starting the renderer" << std::endl;
-    Scene scene(dirToSun);
+    Scene scene(settings.dirToSun);
 
     /// \todo deduplicate
 
@@ -349,22 +396,25 @@ void renderMeshes(FrameBufferWidget* frame,
     bvh.build(std::move(triangles));
     triangles = {};
 
-    Pvl::Vec2i dims = camera.dimensions();
+    Pvl::Vec2i dims = settings.resolution;
     std::random_device rd;
     tbb::enumerable_thread_specific<Rng> threadRng([&rd] { return rd(); });
 
-    FrameBuffer framebuffer(dims);
-    int numPasses = 10;
+    FrameBuffer colorBuffer(dims);
+    FrameBuffer normalBuffer(dims);
+    int numPasses = settings.numIters;
     for (int pass = 0; pass < numPasses; ++pass) {
-        /*QProgressDialog dialog("Rendering - iteration " + QString::number(pass + 1), "Cancel", 0, 100,
-        frame); dialog.setWindowModality(Qt::WindowModal); dialog.show();*/
-        auto meter = Pvl::makeProgressMeter(dims[0] * dims[1], [&frame, pass](float prog) {
-            // dialog.setValue(prog);
-            // QCoreApplication::processEvents();
-            // return dialog.wasCanceled();
-            frame->setProgress(pass, prog);
-            return frame->cancelled();
-        });
+        /*QProgressDialog dialog("Rendering - iteration " + QString::number(pass
+        + 1), "Cancel", 0, 100, frame);
+        dialog.setWindowModality(Qt::WindowModal); dialog.show();*/
+        auto meter = Pvl::makeProgressMeter(dims[0] * dims[1],
+                                            [&frame, pass](float prog) {
+                                                // dialog.setValue(prog);
+                                                // QCoreApplication::processEvents();
+                                                // return dialog.wasCanceled();
+                                                frame->setProgress(pass, prog);
+                                                return frame->cancelled();
+                                            });
 
         Pvl::ParallelFor<Pvl::ParallelTag>()(0, dims[1], [&](int y) {
             if (frame->cancelled()) {
@@ -378,29 +428,34 @@ void renderMeshes(FrameBufferWidget* frame,
                 Pvl::Vec2i pix(x, y);
                 float dx = rng();
                 float dy = rng();
-                CameraRay cameraRay = camera.project(Pvl::Vec2f(x + dx, y + dy));
+                CameraRay cameraRay =
+                    camera.project(Pvl::Vec2f(x + dx, y + dy));
                 Mpcv::Ray ray(cameraRay.origin, cameraRay.dir);
-                Pvl::Vec3f color = radiance(scene, ray, bvh, rng, wire);
-                framebuffer(pix).add(color);
+                Pvl::Vec3f color, normal;
+                std::tie(color, normal) =
+                    radiance(scene, ray, bvh, rng, settings.wire);
+                colorBuffer(pix).add(color);
+                normalBuffer(pix).add(normal);
             }
         });
         if (frame->cancelled()) {
             return;
         }
-        if (pass == numPasses - 1) {
-            denoise(framebuffer);
+        if (settings.denoise && pass == numPasses - 1) {
+            bvh.clear();
+            denoise(colorBuffer, normalBuffer);
         }
         Image image(dims);
         Pvl::ParallelFor<Pvl::ParallelTag>()(0, dims[1], [&](int y) {
             for (int x = 0; x < dims[0]; ++x) {
                 Pvl::Vec2i pix(x, y);
-                image(pix) = framebuffer(pix).color;
+                image(pix) = colorBuffer(pix).color;
             }
         });
         frame->setImage(std::move(image));
     }
     // set complete
-    frame->setProgress(10, 100);
+    frame->setProgress(settings.numIters, 100);
 }
 
 
@@ -419,9 +474,9 @@ void renderMeshes(FrameBufferWidget* frame,
 }*/
 
 bool ambientOcclusion(std::vector<TexturedMesh>& meshes,
-    std::function<bool(float)> progress,
-    int sampleCntX,
-    int sampleCntY) {
+                      std::function<bool(float)> progress,
+                      int sampleCntX,
+                      int sampleCntY) {
     Mpcv::Bvh<Mpcv::BvhTriangle> bvh(10);
     Srs referenceSrs = meshes.front().srs;
 

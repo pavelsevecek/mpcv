@@ -149,6 +149,10 @@ FrameBufferWidget::~FrameBufferWidget() {
     delete ui_;
 }
 
+void FrameBufferWidget::setNumIters(int numIters) {
+    iterationBar_->setMaximum(numIters);
+}
+
 void FrameBufferWidget::setProgress(const int pass, const int prog) {
     passValue_ = pass;
     progressValue_ = prog;

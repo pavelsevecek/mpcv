@@ -10,5 +10,6 @@
     <file>images/wire.png</file>
     <file>images/window.png</file>
     <file>images/tree.png</file>
+    <file>images/up.png</file>
     </qresource>
 </RCC>

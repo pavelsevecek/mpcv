@@ -469,6 +469,10 @@ void MainWindow::on_actionResetCamera_triggered() {
     viewport_->resetCamera();
 }
 
+void MainWindow::on_actionCameraUp_triggered() {
+    viewport_->cameraUp();
+}
+
 void MainWindow::on_actionEstimate_normals_triggered() {
     QProgressDialog dialog("Computing normals", "Cancel", 0, 100, viewport_);
     dialog.setWindowModality(Qt::WindowModal);

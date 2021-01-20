@@ -654,6 +654,12 @@ void OpenGLWidget::resetCamera(const Srs& srs) {
     }
 }
 
+void OpenGLWidget::cameraUp() {
+    camera_ = Camera(camera_.eye(), camera_.target(), Pvl::Vec3f(0, 0, 1),
+                     camera_.fov(), camera_.srs(), camera_.dimensions());
+    update();
+}
+
 void OpenGLWidget::screenshot(const QString& file) {
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
     glReadBuffer(GL_FRONT);

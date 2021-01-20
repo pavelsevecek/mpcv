@@ -163,6 +163,8 @@ public:
 
     void resetCamera(const Mpcv::Srs& srs);
 
+    void cameraUp();
+
     void screenshot(const QString& file);
 
     void saveAsMesh(const QString& file,

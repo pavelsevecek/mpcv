@@ -75,6 +75,8 @@ private slots:
 
     void on_actionBuid_configuration_triggered();
 
+    void on_actionCameraUp_triggered();
+
 private:
     Ui::MainWindow* ui_;
     OpenGLWidget* viewport_;

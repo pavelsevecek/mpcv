@@ -145,6 +145,7 @@
    <addaction name="separator"/>
    <addaction name="actionScreenshot"/>
    <addaction name="actionResetCamera"/>
+   <addaction name="actionCameraUp"/>
   </widget>
   <action name="actionOpenFile">
    <property name="text">
@@ -408,6 +409,18 @@
    </property>
    <property name="toolTip">
     <string>Shows currently enabled program options</string>
+   </property>
+  </action>
+  <action name="actionCameraUp">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/up.png</normaloff>:/images/up.png</iconset>
+   </property>
+   <property name="text">
+    <string>CameraUp</string>
+   </property>
+   <property name="toolTip">
+    <string>Resets camera tilt</string>
    </property>
   </action>
  </widget>

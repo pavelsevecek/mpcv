@@ -655,7 +655,13 @@ void OpenGLWidget::resetCamera(const Srs& srs) {
 }
 
 void OpenGLWidget::cameraUp() {
-    camera_ = Camera(camera_.eye(), camera_.target(), Pvl::Vec3f(0, 0, 1),
+    const Pvl::Vec3f zup(0, 0, 1);
+    const Pvl::Vec3f dir = camera_.target() - camera_.eye();
+    if (Pvl::norm(Pvl::crossProd(zup, dir)) < 1.e-6f) {
+        // cannot reset tilt
+        return;
+    }
+    camera_ = Camera(camera_.eye(), camera_.target(), zup,
                      camera_.fov(), camera_.srs(), camera_.dimensions());
     update();
 }

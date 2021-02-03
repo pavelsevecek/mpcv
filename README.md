@@ -5,6 +5,7 @@ On Ubuntu system, the following packages are required:
 - `cmake`
 - `qt5-default`
 - `libtbb-dev`
+- `libxerces-c-dev`
 
 Additional optional dependencies are:
 - `libjpeg-dev`  - needed for loading large jpeg textures (Qt can only handle up to 32767x32767)

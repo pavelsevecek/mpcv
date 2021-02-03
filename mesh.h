@@ -51,6 +51,9 @@ struct TexturedMesh {
     ///< Specifies the coordinates of the mesh
     Srs srs;
 
+    ///< Class-to-color mapping
+    std::map<int, Color> classToColor;
+
     Pvl::Vec3f normal(const uint32_t fi) const {
         Pvl::Vec3f p0 = vertices[faces[fi][0]];
         Pvl::Vec3f p1 = vertices[faces[fi][1]];

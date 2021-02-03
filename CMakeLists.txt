@@ -46,6 +46,7 @@ add_executable(mpcv
     mesh.h mesh.cpp
     texture.h texture.cpp
     las.h las.cpp
+    json11.hpp json11.cpp
     e57.h e57.cpp
     dem.h dem.cpp
     coordinates.h

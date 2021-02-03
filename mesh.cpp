@@ -327,7 +327,6 @@ TexturedMesh loadXyz(const QString& file, const Progress&) {
     return mesh;
 }
 
-
 static bool startsWith(const std::string& s, const std::string& p) {
     return s.size() >= p.size() && s.substr(0, p.size()) == p;
 }

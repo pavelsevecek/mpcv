@@ -1,5 +1,6 @@
 #include "las.h"
 #include "lasreader.hpp"
+#include "json11.hpp"
 #include "parameters.h"
 #include <iostream>
 
@@ -22,23 +23,37 @@ TexturedMesh loadLas(std::string file, const Progress& prog) {
         return {};
     }
     int stride = globals.pointStride;
-    int skipValue;
-    switch (globals.subset) {
-    case CloudSubset::AERIAL_ONLY:
-        skipValue = 1;
-        break;
-    case CloudSubset::STREET_ONLY:
-        skipValue = 0;
-        break;
-    default:
-        skipValue = -1;
-        break;
-    }
 
     // to local coordinates
     Coords center = extents.center();
     std::cout << "Cloud center at " << center[0] << " " << center[1] << " " << center[2] << std::endl;
     mesh.srs = Srs(center);
+
+    const LASvlr* vlr = header.get_vlr("vadstena", 0);
+    if (vlr) {
+        std::cout << "Parsing VLR" << std::endl;
+        std::string data(reinterpret_cast<char*>(vlr->data));
+        std::cout << "Data = " << data << std::endl;
+        std::string err;
+        json11::Json json = json11::Json::parse(data, err);
+        json11::Json classToId = json["class_to_id"];
+        std::map<std::string, int> classIdMap;
+        for (const auto& p : classToId.object_items()) {
+            classIdMap[p.first] = p.second.int_value();
+        }
+        json11::Json classToColor = json["class_to_color"];
+        for (const auto& p : classToColor.object_items()) {
+            std::string hex = p.second.string_value();
+            std::size_t pos;
+            int r = std::stoi(hex.substr(0, 2), &pos, 16);
+            int g = std::stoi(hex.substr(2, 2), &pos, 16);
+            int b = std::stoi(hex.substr(4, 2), &pos, 16);
+            int id = classIdMap[p.first];
+            mesh.classToColor[id] = Color(r, g, b);
+            std::cout << id << " -> " << r << "," << g << "," << b << std::endl;
+        }
+    }
+
     int i = 0;
     int step = std::max(lasreader->npoints / 100, I64(100));
     int nextProg = step;
@@ -54,7 +69,7 @@ TexturedMesh loadLas(std::string file, const Progress& prog) {
         Coords local = mesh.srs.worldToLocal(coords);
 
         Color color(p.get_R() >> 8, p.get_G() >> 8, p.get_B() >> 8);
-        if (p.user_data != skipValue && (i % stride == 0) && globals.extents.contains(coords)) {
+        if ((i % stride == 0) && globals.extents.contains(coords)) {
             mesh.vertices.push_back(vec3f(local));
             mesh.colors.push_back(color);
             mesh.classes.push_back(p.get_classification());

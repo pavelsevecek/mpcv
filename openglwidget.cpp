@@ -398,20 +398,29 @@ inline int toGlFormat(const ImageFormat& format) {
     }
 }
 
-inline Color classToColor(const uint8_t c) {
-    switch (c) {
-    case 2:
-        return Color(220, 220, 50); // interiors
-    case 3:
-        return Color(65, 140, 85); // tree
-    case 4:
-        return Color(150, 80, 10); // trunks
-    case 5:
-        return Color(20, 20, 20); // wire
-    case 6:
-        return Color(20, 20, 150); // cars
-    default:
-        return Color(190, 190, 190);
+inline Color classToColor(const TexturedMesh& mesh, int vi) {
+    if (!mesh.classToColor.empty()) {
+        auto iter = mesh.classToColor.find(mesh.classes[vi]);
+        if (iter != mesh.classToColor.end()) {
+            return iter->second;
+        } else {
+            return Color(190, 190, 190);
+        }
+    } else {
+        switch (mesh.classes[vi]) {
+        case 2:
+            return Color(220, 220, 50); // interiors
+        case 3:
+            return Color(65, 140, 85); // tree
+        case 4:
+            return Color(150, 80, 10); // trunks
+        case 5:
+            return Color(20, 20, 20); // wire
+        case 6:
+            return Color(20, 20, 150); // cars
+        default:
+            return Color(190, 190, 190);
+        }
     }
 }
 
@@ -458,7 +467,7 @@ void OpenGLWidget::view(const void* handle, std::string basename, TexturedMesh&&
                 data.vis.normals.push_back(normal[2]);
             }
             if (hasClasses) {
-                Color c = classToColor(data.mesh.classes[vi]);
+                Color c = classToColor(data.mesh, vi);
                 data.vis.classColors.push_back(c[0]);
                 data.vis.classColors.push_back(c[1]);
                 data.vis.classColors.push_back(c[2]);
@@ -512,7 +521,7 @@ void OpenGLWidget::view(const void* handle, std::string basename, TexturedMesh&&
                     data.vis.vertexColors.push_back(c[2]);
                 }
                 if (hasClasses) {
-                    Color c = classToColor(data.mesh.classes[data.mesh.faces[fi][i]]);
+                    Color c = classToColor(data.mesh, data.mesh.faces[fi][i]);
                     data.vis.classColors.push_back(c[0]);
                     data.vis.classColors.push_back(c[1]);
                     data.vis.classColors.push_back(c[2]);

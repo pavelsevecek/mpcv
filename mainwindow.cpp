@@ -509,7 +509,8 @@ void MainWindow::on_actionCameraUp_triggered() {
 void MainWindow::on_actionEstimate_normals_triggered() {
     QProgressDialog* dialog = createProgressDialog("Computing normals");
     QCoreApplication::processEvents();
-    auto callback = [dialog](float prog) {
+    auto callback = [dialog](std::string label, float prog) {
+        dialog->setLabelText(label.c_str());
         dialog->setValue(prog);
         QCoreApplication::processEvents();
         return dialog->wasCanceled();
@@ -569,7 +570,8 @@ void MainWindow::on_actionOrient_normals_triggered() {
 
         QProgressDialog* dialog = createProgressDialog("Computing normals");
         QCoreApplication::processEvents();
-        auto callback = [dialog](float prog) {
+        auto callback = [dialog](std::string label, float prog) {
+            dialog->setLabelText(label.c_str());
             dialog->setValue(prog);
             QCoreApplication::processEvents();
             return dialog->wasCanceled();

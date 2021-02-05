@@ -132,9 +132,9 @@ public:
 
     void repair();
 
-    void estimateNormals(std::function<bool(float)> progress);
+    void estimateNormals(std::function<bool(std::string, float)> progress);
 
-    void estimateNormals(const QString& trajectory, std::function<bool(float)> progress);
+    void estimateNormals(const QString& trajectory, std::function<bool(std::string, float)> progress);
 
     void computeAmbientOcclusion(std::function<bool(float)> progress);
 

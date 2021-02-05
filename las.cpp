@@ -32,7 +32,7 @@ TexturedMesh loadLas(std::string file, const Progress& prog) {
     const LASvlr* vlr = header.get_vlr("vadstena", 0);
     if (vlr) {
         std::cout << "Parsing VLR" << std::endl;
-        std::string data(reinterpret_cast<char*>(vlr->data));
+        std::string data(reinterpret_cast<char*>(vlr->data), vlr->record_length_after_header);
         std::cout << "Data = " << data << std::endl;
         std::string err;
         json11::Json json = json11::Json::parse(data, err);

@@ -982,7 +982,7 @@ void OpenGLWidget::repair() {}
 
 #endif
 
-void OpenGLWidget::estimateNormals(std::function<bool(float)> progress) {
+void OpenGLWidget::estimateNormals(std::function<bool(std::string, float)> progress) {
     estimateNormals({}, progress);
 }
 
@@ -1001,7 +1001,12 @@ struct TrajPoint {
     }
 };
 
-void OpenGLWidget::estimateNormals(const QString& trajectory, std::function<bool(float)> progress) {
+static std::size_t filesize(const std::string& filename) {
+    std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
+    return in.tellg();
+}
+
+void OpenGLWidget::estimateNormals(const QString& trajectory, std::function<bool(std::string, float)> progress) {
     std::vector<std::pair<const void*, MeshData*>> meshData;
     // cannot erase from meshes_ while iterating, so add it to a vector
     for (auto& p : meshes_) {
@@ -1018,13 +1023,29 @@ void OpenGLWidget::estimateNormals(const QString& trajectory, std::function<bool
         std::string line;
         double t_min = 1.e20;
         double t_max = 0;
+        int lineCnt = 0;
+        std::size_t finalPos = filesize(trajectory.toStdString());
         while (std::getline(ifs, line)) {
+            // commas -> whitespaces
+            for (char& c : line) {
+                if (c == ',') {
+                    c = ' ';
+                }
+            }
             std::stringstream ss(line);
             double x, y, z, t;
             ss >> x >> y >> z >> t;
             traj.emplace_back(Coords(x, y, z), t);
             t_min = std::min(t_min, t);
             t_max = std::max(t_max, t);
+
+            lineCnt++;
+            if (lineCnt % 100 == 0) {
+                std::size_t pos = ifs.tellg();
+                if (progress("Parsing trajectory", pos * 100.f / finalPos)) {
+                    return;
+                }
+            }
         }
         std::sort(traj.begin(), traj.end());
         std::cout << "Trajectory time extent = " << t_min << " " << t_max << std::endl;
@@ -1037,7 +1058,9 @@ void OpenGLWidget::estimateNormals(const QString& trajectory, std::function<bool
         std::vector<Pvl::Vec3f>& points = p.second->mesh.vertices;
         std::vector<double>& times = p.second->mesh.times;
         std::vector<Pvl::Vec3f>& normals = p.second->mesh.normals;
-        normals = Pvl::estimateNormals<Pvl::ParallelTag>(points, progress);
+        normals = Pvl::estimateNormals<Pvl::ParallelTag>(points, [progress](float p) {
+            return progress("Estimating normals", p);
+        });
 
         if (!traj.empty() && !times.empty()) {
             std::size_t count = points.size();

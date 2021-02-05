@@ -2,6 +2,7 @@
 
 #include <QMainWindow>
 #include <QResizeEvent>
+#include <QProgressDialog>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -24,7 +25,9 @@ public:
     MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
-    bool open(const QString& file, int index = 1, int total = 1);
+    bool open(const QString& file);
+
+    void openAll(const std::vector<QString>& file);
 
     static Mpcv::TexturedMesh loadMesh(const QString& file, std::function<bool(float)> progress);
 
@@ -81,7 +84,10 @@ private:
     Ui::MainWindow* ui_;
     OpenGLWidget* viewport_;
     QListWidget* list_;
-    std::vector<QListWidgetItem*> itemsA, itemsB;
 
     void buttonPushed(QAction* pushed);
+
+    bool open(const QString& file, QProgressDialog* dialog);
+
+    QProgressDialog* createProgressDialog(const QString& message);
 };

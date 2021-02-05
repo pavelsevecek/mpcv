@@ -99,11 +99,6 @@ int main(int argc, char* argv[]) {
 #endif
     w.showMaximized();
 
-    for (std::size_t i = 0; i < files.size(); ++i) {
-        if (!w.open(files[i], i + 1, files.size())) {
-            // cancelled, skip the rest
-            break;
-        }
-    }
+    w.openAll(files);
     return a.exec();
 }

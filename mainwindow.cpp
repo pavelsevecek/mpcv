@@ -12,9 +12,9 @@
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QMessageBox>
-#include <QProgressDialog>
 #include <QShortcut>
 #include <QStatusBar>
+#include <QScreen>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -234,7 +234,49 @@ MainWindow::~MainWindow() {
     delete ui_;
 }
 
-bool MainWindow::open(const QString& file, int index, int total) {
+QProgressDialog* MainWindow::createProgressDialog(const QString& message) {
+    QProgressDialog* dialog = new QProgressDialog(message, "Cancel", 0, 100, this);
+    dialog->setWindowModality(Qt::WindowModal);
+    dialog->show();
+    QRect screen = QGuiApplication::primaryScreen()->geometry();
+    int x = (screen.width() - dialog->width()) / 2;
+    int y = (screen.height() - dialog->height()) / 2;
+    dialog->move(x, y);
+    return dialog;
+}
+
+
+bool MainWindow::open(const QString& file) {
+    QString message = "Loading '" + file + "'";
+    QProgressDialog* dialog = createProgressDialog(message);
+    bool retval = open(file, dialog);
+    dialog->close();
+    return retval;
+}
+
+void MainWindow::openAll(const std::vector<QString>& files) {
+    if (files.empty()) {
+        return;
+    }
+    QString message = "Loading '" + files.front() + "'";
+    QProgressDialog* dialog = createProgressDialog(message);
+    for (std::size_t i = 0; i < files.size(); ++i) {
+        QString message = "Loading '" + files[i] + "'";
+        if (files.size() > 1) {
+            message += " (" + QString::number(i+1) + " of " + QString::number(files.size()) + ")";
+        }
+        dialog->setLabelText(message);
+
+        if (!open(files[i], dialog)) {
+            // cancelled, skip the rest
+            break;
+        }
+    }
+    dialog->close();
+}
+
+
+bool MainWindow::open(const QString& file, QProgressDialog* dialog) {
     QCoreApplication::processEvents();
     try {
         QString ext = QFileInfo(file).suffix();
@@ -245,23 +287,16 @@ bool MainWindow::open(const QString& file, int index, int total) {
             return true; // continue opening files
         }
 
-        QString message = "Loading '" + file + "'";
-        if (total > 1) {
-            message += " (" + QString::number(index) + " of " + QString::number(total) + ")";
-        }
-        QProgressDialog dialog(message, "Cancel", 0, 100, viewport_);
-        dialog.setWindowModality(Qt::WindowModal);
-        auto callback = [&dialog](float prog) {
-            dialog.setValue(prog);
+        auto callback = [dialog](float prog) {
+            dialog->setValue(prog);
             QCoreApplication::processEvents();
-            return dialog.wasCanceled();
+            return dialog->wasCanceled();
         };
 
         TexturedMesh mesh = loadMesh(file, callback);
-        if (dialog.wasCanceled()) {
+        if (dialog->wasCanceled()) {
             return false;
         }
-        dialog.close();
         if (mesh.vertices.empty()) {
             std::cout << "Skipping empty mesh '" << file.toStdString() << "'" << std::endl;
             return true; // continue opening files
@@ -324,13 +359,11 @@ void MainWindow::on_actionOpenFile_triggered() {
     if (!names.empty()) {
         QFileInfo info(names.first());
         initialDir = info.dir();
-        int index = 1;
+        std::vector<QString> list;
         for (QString name : names) {
-            if (!open(name, index++, names.size())) {
-                // cancelled, skip the rest
-                return;
-            }
+            list.push_back(name);
         }
+        openAll(list);
     }
 }
 void MainWindow::on_MeshList_itemChanged(QListWidgetItem* item) {
@@ -411,15 +444,15 @@ void MainWindow::on_actionSave_triggered() {
             }
         }
 
-        QProgressDialog dialog("Saving mesh to '" + file + "'", "Cancel", 0, 100, viewport_);
-        dialog.setWindowModality(Qt::WindowModal);
+        QProgressDialog* dialog = createProgressDialog("Saving mesh to '" + file + "'");
         QCoreApplication::processEvents();
-        auto callback = [&dialog](float prog) {
-            dialog.setValue(prog);
+        auto callback = [dialog](float prog) {
+            dialog->setValue(prog);
             QCoreApplication::processEvents();
-            return dialog.wasCanceled();
+            return dialog->wasCanceled();
         };
         viewport_->saveAsMesh(file, handles, callback);
+        dialog->close();
     }
 }
 
@@ -436,15 +469,15 @@ void MainWindow::buttonPushed(QAction* pushed) {
 }
 
 void MainWindow::on_actionAo_triggered() {
-    QProgressDialog dialog("Computing A0", "Cancel", 0, 100, viewport_);
-    dialog.setWindowModality(Qt::WindowModal);
+    QProgressDialog* dialog = createProgressDialog("Computing A0");
     QCoreApplication::processEvents();
-    auto callback = [&dialog](float prog) {
-        dialog.setValue(prog);
+    auto callback = [dialog](float prog) {
+        dialog->setValue(prog);
         QCoreApplication::processEvents();
-        return dialog.wasCanceled();
+        return dialog->wasCanceled();
     };
     viewport_->computeAmbientOcclusion(callback);
+    dialog->close();
     buttonPushed(findChild<QAction*>("actionAo"));
 }
 
@@ -474,15 +507,15 @@ void MainWindow::on_actionCameraUp_triggered() {
 }
 
 void MainWindow::on_actionEstimate_normals_triggered() {
-    QProgressDialog dialog("Computing normals", "Cancel", 0, 100, viewport_);
-    dialog.setWindowModality(Qt::WindowModal);
+    QProgressDialog* dialog = createProgressDialog("Computing normals");
     QCoreApplication::processEvents();
-    auto callback = [&dialog](float prog) {
-        dialog.setValue(prog);
+    auto callback = [dialog](float prog) {
+        dialog->setValue(prog);
         QCoreApplication::processEvents();
-        return dialog.wasCanceled();
+        return dialog->wasCanceled();
     };
     viewport_->estimateNormals(callback);
+    dialog->close();
 }
 
 void MainWindow::on_actionRender_view_triggered() {
@@ -534,15 +567,15 @@ void MainWindow::on_actionOrient_normals_triggered() {
         QFileInfo info(file);
         initialDir = info.dir();
 
-        QProgressDialog dialog("Computing normals", "Cancel", 0, 100, viewport_);
-        dialog.setWindowModality(Qt::WindowModal);
+        QProgressDialog* dialog = createProgressDialog("Computing normals");
         QCoreApplication::processEvents();
-        auto callback = [&dialog](float prog) {
-            dialog.setValue(prog);
+        auto callback = [dialog](float prog) {
+            dialog->setValue(prog);
             QCoreApplication::processEvents();
-            return dialog.wasCanceled();
+            return dialog->wasCanceled();
         };
         viewport_->estimateNormals(file, callback);
+        dialog->close();
     }
 }
 

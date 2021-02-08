@@ -17,6 +17,7 @@ struct Parameters {
     int pointStride;
     CloudSubset subset;
     float textureScale;
+    int dsmResolution;
 
     Parameters() {
         extents.lower() = Coords(std::numeric_limits<double>::lowest());
@@ -24,6 +25,7 @@ struct Parameters {
         pointStride = 1;
         subset = CloudSubset::ALL;
         textureScale = 1.f;
+        dsmResolution = 1000;
     }
 
     static Parameters& global() {

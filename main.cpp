@@ -51,6 +51,10 @@ void parseArgument(const std::string& arg, const std::string& param) {
         float scale = std::stof(param);
         std::cout << "Setting texture scale to " << scale << std::endl;
         Mpcv::Parameters::global().textureScale = scale;
+    } else if (arg == "--dsmResolution") {
+        int res = std::stoi(param);
+        std::cout << "Setting DSM resolution " << res << std::endl;
+        Mpcv::Parameters::global().dsmResolution = res;
     } else {
         std::cout << "Unknown parameter '" << arg << "'" << std::endl;
         exit(-1);
@@ -68,6 +72,7 @@ int main(int argc, char* argv[]) {
                   << std::endl;
         std::cout << "--subset [street,aerial]      Loads only a specific category of points" << std::endl;
         std::cout << "--textureScale f              Resizes the loaded textures by given factor" << std::endl;
+        std::cout << "--dsmResolution n             Resolution of the loaded GeoTIFF DSMs" << std::endl;
         return 0;
     }
 

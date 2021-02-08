@@ -108,12 +108,12 @@ TexturedMesh loadDem(std::string file, const Progress& progress) {
     std::vector<float> scanline(bandWidth);
     Parameters& globals = Parameters::global();
     int step = std::max(std::max(bandWidth, bandHeight) / globals.dsmResolution, 1u);
-    uint32_t width = bandWidth / step;
-    uint32_t height = bandHeight / step; 
+    uint32_t width = (bandWidth + step - 1) / step;
+    uint32_t height = (bandHeight + step - 1) / step;
     for (uint32_t y = 0; y <= height; ++y) {
         CPLErr err = rasterBand->RasterIO(GF_Read,
                                           0,
-                                          std::min(y * step, bandHeight),
+                                          std::min(y * step, bandHeight-1),
                                           bandWidth,
                                           1,
                                           scanline.data(),
@@ -129,12 +129,12 @@ TexturedMesh loadDem(std::string file, const Progress& progress) {
             Pvl::Vec3f v(x * pixelX * step, y * pixelY * step, scanline[std::min(x * step, bandWidth - 1)]);
             mesh.vertices.push_back(v);
         }
-		if (textured) {
-	        for (uint32_t x = 0; x <= width; ++x) {
-				Pvl::Vec2f v(float(x) / width, 1.f - float(y) / height);
-				mesh.uv.push_back(v);
-			}
-		}
+        if (textured) {
+            for (uint32_t x = 0; x <= width; ++x) {
+                Pvl::Vec2f v(float(x) / width, 1.f - float(y) / height);
+                mesh.uv.push_back(v);
+            }
+        }
         if (progress(y * 100.f / height)) {
             return {};
         }
@@ -159,10 +159,10 @@ TexturedMesh loadDem(std::string file, const Progress& progress) {
                 index + width + 2,
             });
 
-			if (textured) {
-				mesh.texIds.push_back(mesh.faces[mesh.faces.size() - 2]);
-				mesh.texIds.push_back(mesh.faces[mesh.faces.size() - 1]);
-			}
+            if (textured) {
+                mesh.texIds.push_back(mesh.faces[mesh.faces.size() - 2]);
+                mesh.texIds.push_back(mesh.faces[mesh.faces.size() - 1]);
+            }
         }
     }
 

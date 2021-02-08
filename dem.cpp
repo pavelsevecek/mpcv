@@ -12,25 +12,25 @@ namespace Mpcv {
 
 static bool fileExists(const std::string& name) {
     struct stat buffer;
-	return (stat (name.c_str(), &buffer) == 0);
+    return (stat(name.c_str(), &buffer) == 0);
 }
 
 std::string getDsmFile(const std::string& file) {
-	std::string base = file.substr(0, file.size() - 4);
-	return base + "-dsm.tif";
+    std::string base = file.substr(0, file.size() - 4);
+    return base + "-dsm.tif";
 }
 
 #ifdef HAS_GDAL
 TexturedMesh loadDem(std::string file, const Progress& progress) {
     std::string dsmFile = getDsmFile(file);
-	std::string textureFile;
-	bool textured = false;
-	if (fileExists(dsmFile)) {
+    std::string textureFile;
+    bool textured = false;
+    if (fileExists(dsmFile)) {
         std::cout << "Found DSM file " << dsmFile << std::endl;
-		textureFile = file;
-		file = dsmFile;
-		textured = true;
-	}
+        textureFile = file;
+        file = dsmFile;
+        textured = true;
+    }
 
     static bool firstTime = true;
     if (firstTime) {
@@ -107,7 +107,7 @@ TexturedMesh loadDem(std::string file, const Progress& progress) {
     TexturedMesh mesh;
     std::vector<float> scanline(bandWidth);
     Parameters& globals = Parameters::global();
-    int step = std::max(std::max(bandWidth, bandHeight) / globals.dsmResolution, 1);
+    int step = std::max(std::max(bandWidth, bandHeight) / globals.dsmResolution, 1u);
     uint32_t width = bandWidth / step;
     uint32_t height = bandHeight / step; 
     for (uint32_t y = 0; y <= height; ++y) {

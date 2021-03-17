@@ -331,6 +331,11 @@ static bool startsWith(const std::string& s, const std::string& p) {
     return s.size() >= p.size() && s.substr(0, p.size()) == p;
 }
 
+static std::size_t filesize(const std::string& filename) {
+    std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
+    return in.tellg();
+}
+
 TexturedMesh loadObj(const QString& file, const Progress& prog) {
     std::ifstream in;
     in.exceptions(std::ifstream::badbit);
@@ -338,6 +343,10 @@ TexturedMesh loadObj(const QString& file, const Progress& prog) {
     TexturedMesh mesh;
     std::string line;
     std::string mtl;
+    std::size_t totalSize = filesize(file.toStdString());
+    std::size_t step = 100;
+    std::size_t counter = 0;
+    std::size_t nextProgress = step;
     while (std::getline(in, line)) {
         if (line.size() < 3 || line[0] == '#') {
             // <3 so that we can safely check for identifiers
@@ -363,6 +372,15 @@ TexturedMesh loadObj(const QString& file, const Progress& prog) {
         } else {
             std::cout << "Unknown line '" << line << "', skipping" << std::endl;
         }
+        ++counter;
+        if (counter >= nextProgress) {
+            nextProgress += step;
+            std::size_t pos = in.tellg();
+            if (prog(100. * pos / totalSize)) {
+                return {};
+            }
+        }
+
     }
     if (!mtl.empty() && !mesh.faces.empty()) {
         /// \todo path resolving
@@ -384,6 +402,11 @@ TexturedMesh loadObj(const QString& file, const Progress& prog) {
                           << std::endl;
             }
         }
+    }
+
+    if (!mesh.texture) {
+        mesh.texIds.clear();
+        mesh.uv.clear();
     }
     (void)prog;
     std::cout << "Loaded mesh with " << mesh.vertices.size() << " vertices, " << mesh.uv.size()

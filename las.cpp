@@ -27,7 +27,7 @@ TexturedMesh loadLas(std::string file, const Progress& prog) {
     // to local coordinates
     Coords center = extents.center();
     std::cout << "Cloud center at " << center[0] << " " << center[1] << " " << center[2] << std::endl;
-    mesh.srs = Srs(center);
+    mesh.srs = Srs(Coords(center[0], center[1], 0));
 
     const LASvlr* vlr = header.get_vlr("vadstena", 0);
     if (vlr) {

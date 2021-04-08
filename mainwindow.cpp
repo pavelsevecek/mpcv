@@ -419,10 +419,6 @@ void MainWindow::on_actionRepair_triggered() {
     viewport_->repair();
 }
 
-void MainWindow::on_actionSimplify_triggered() {
-    viewport_->simplify();
-}
-
 void MainWindow::on_actionQuit_triggered() {
     close();
 }

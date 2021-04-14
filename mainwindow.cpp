@@ -19,6 +19,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <regex>
 
 using namespace Mpcv;
 
@@ -31,11 +32,13 @@ std::string findBasename(const QString& file) {
     }
     QFileInfo info(file);
     std::string name = info.baseName().toStdString();
-    int p1, p2;
     std::cout << "Checking path '" << name << "' for basename" << std::endl;
-    if (sscanf(name.c_str(), "0%d-%d", &p1, &p2) == 2) {
-        std::cout << "Detected " << name << " as window basename" << std::endl;
-        return name;
+    std::regex re_window("0\\d+-\\d+");
+    std::smatch match;
+    if(std::regex_search(name, match, re_window)){
+        std::string basename = name.substr(match.position(), match.position() + match.length());
+        std::cout << "Detected " << basename << " as window basename" << std::endl;
+        return basename;
     }
     if (!info.isRoot()) {
         return findBasename(info.dir().absolutePath());
@@ -77,7 +80,7 @@ std::map<std::string, Coords> parseConfig() {
 static std::map<std::string, Coords> config;
 
 void geolocalize(TexturedMesh& mesh, const QString& file) {
-    std::string basename = findBasename(QFileInfo(file).absolutePath());
+    std::string basename = findBasename(QFileInfo(file).absoluteFilePath());
     if (!basename.empty() && config.find(basename) != config.end()) {
         std::cout << "Setting srs to " << config[basename][0] << "," << config[basename][1] << std::endl;
         mesh.srs = Srs(config[basename]);

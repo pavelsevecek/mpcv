@@ -315,7 +315,7 @@ TexturedMesh loadXyz(const QString& file, const Progress&) {
         box.extend(p);
     }
     TexturedMesh mesh;
-    mesh.srs = Srs(coords(box.center()));
+    mesh.srs = Srs(box.center());
     mesh.vertices.resize(points.size());
     mesh.colors.resize(points.size());
     for (std::size_t i = 0; i < points.size(); ++i) {

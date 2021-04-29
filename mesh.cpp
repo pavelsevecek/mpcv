@@ -303,7 +303,7 @@ TexturedMesh loadXyz(const QString& file, const Progress&) {
     std::ifstream in(file.toStdString());
     std::string line;
     std::vector<Coords> points;
-    Pvl::Box3f box;
+    Pvl::BoundingBox<Coords> box;
     while (std::getline(in, line)) {
         if (line.empty() || line[0] == '#') {
             continue;
@@ -312,7 +312,7 @@ TexturedMesh loadXyz(const QString& file, const Progress&) {
         Coords p;
         ss >> p[0] >> p[1] >> p[2];
         points.push_back(p);
-        box.extend(vec3f(p));
+        box.extend(p);
     }
     TexturedMesh mesh;
     mesh.srs = Srs(coords(box.center()));

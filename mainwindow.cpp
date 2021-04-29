@@ -341,7 +341,6 @@ TexturedMesh MainWindow::loadMesh(const QString& file, std::function<bool(float)
         geolocalize(mesh, file);
     } else if (ext == "xyz") {
         mesh = loadXyz(file, callback);
-        geolocalize(mesh, file);
     } else if (ext == "las" || ext == "laz") {
         mesh = loadLas(file.toStdString(), callback);
     } else if (ext == "e57") {

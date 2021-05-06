@@ -1,6 +1,7 @@
 #include "mesh.h"
 #include "pvl/Box.hpp"
 #include "texture.h"
+#include "parameters.h"
 #include <QDir>
 #include <QFileInfo>
 #include <chrono>
@@ -304,6 +305,9 @@ TexturedMesh loadXyz(const QString& file, const Progress&) {
     std::string line;
     std::vector<Coords> points;
     Pvl::BoundingBox<Coords> box;
+    Parameters& globals = Parameters::global();
+    int stride = globals.pointStride;
+    std::size_t i = 0;
     while (std::getline(in, line)) {
         if (line.empty() || line[0] == '#') {
             continue;
@@ -311,8 +315,12 @@ TexturedMesh loadXyz(const QString& file, const Progress&) {
         std::stringstream ss(line);
         Coords p;
         ss >> p[0] >> p[1] >> p[2];
-        points.push_back(p);
-        box.extend(p);
+
+        if ((i % stride == 0) && globals.extents.contains(p)) {
+            points.push_back(p);
+            box.extend(p);
+        }
+        ++i;
     }
     TexturedMesh mesh;
     mesh.srs = Srs(box.center());

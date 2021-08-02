@@ -46,8 +46,6 @@ private slots:
 
     void on_actionRepair_triggered();
 
-    void on_actionSimplify_triggered();
-
     void on_actionQuit_triggered();
 
     void on_actionSave_triggered();

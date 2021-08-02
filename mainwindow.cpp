@@ -58,17 +58,21 @@ std::map<std::string, Coords> parseConfig() {
         std::string basename;
         std::getline(ss, basename, ',');
 
-        std::string value;
-        std::getline(ss, value, ',');
-        double llx = std::stod(value);
-        std::getline(ss, value, ',');
-        double lly = std::stod(value);
-        std::getline(ss, value, ',');
-        double urx = std::stod(value);
-        double ury;
-        ss >> ury;
+        try {
+            std::string value;
+            std::getline(ss, value, ',');
+            double llx = std::stod(value);
+            std::getline(ss, value, ',');
+            double lly = std::stod(value);
+            std::getline(ss, value, ',');
+            double urx = std::stod(value);
+            double ury;
+            ss >> ury;
 
-        extents[basename] = Coords((llx + urx) / 2, (lly + ury) / 2, 0);
+            extents[basename] = Coords((llx + urx) / 2, (lly + ury) / 2, 0);
+        } catch (...) {
+            std::cout << "Skipping invalid line '" << line << "'" << std::endl;
+        }
     }
 
     return extents;

@@ -58,24 +58,35 @@ TexturedMesh loadLas(std::string file, const Progress& prog) {
     int step = std::max(lasreader->npoints / 100, I64(100));
     int nextProg = step;
     float iToProg = 100.f / lasreader->npoints;
-    mesh.vertices.reserve(lasreader->npoints);
-    mesh.colors.reserve(lasreader->npoints);
-    mesh.classes.reserve(lasreader->npoints);
+    const int capacity = lasreader->npoints / stride;
+    mesh.vertices.reserve(capacity);
+    mesh.colors.reserve(capacity);
+    mesh.classes.reserve(capacity);
     mesh.times.reserve(lasreader->npoints);
+    std::vector<uint8_t> extendedClasses;
+    extendedClasses.reserve(capacity);
     bool hasColors = false;
+    bool hasClasses = false;
+    bool hasExtendedClasses = false;
     while (lasreader->read_point()) {
         const LASpoint& p = lasreader->point;
         Coords coords(p.get_x(), p.get_y(), p.get_z());
         Coords local = mesh.srs.worldToLocal(coords);
 
         Color color(p.get_R() >> 8, p.get_G() >> 8, p.get_B() >> 8);
+        uint8_t classIdx = p.get_classification();
+        uint8_t extClassIdx =
+            (p.is_extended_point_type()) ? p.get_extended_classification() : 0;
         if ((i % stride == 0) && globals.extents.contains(coords)) {
             mesh.vertices.push_back(vec3f(local));
             mesh.colors.push_back(color);
-            mesh.classes.push_back(p.get_classification());
+            mesh.classes.push_back(classIdx);
             mesh.times.push_back(p.get_gps_time());
+            extendedClasses.push_back(extClassIdx);
         }
         hasColors |= (color != Color(0, 0, 0));
+        hasClasses |= (classIdx != 0);
+        hasExtendedClasses |= (extClassIdx != 0);
 
         i++;
         if (i == nextProg) {
@@ -92,6 +103,11 @@ TexturedMesh loadLas(std::string file, const Progress& prog) {
         mesh.colors.shrink_to_fit();
     } else {
         mesh.colors = {};
+    }
+    if (hasExtendedClasses && !hasClasses) {
+        std::cout << "Using extended point classifications" << std::endl;
+        // replace with extended classifications
+        mesh.classes = std::move(extendedClasses);
     }
     std::cout << "Loaded " << i << " out of " << lasreader->npoints << " points" << std::endl;
 

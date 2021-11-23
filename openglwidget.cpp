@@ -398,6 +398,27 @@ inline int toGlFormat(const ImageFormat& format) {
     }
 }
 
+inline std::size_t xorShift(std::size_t n, int i)
+{
+    return n ^ (n >> i);
+}
+
+inline std::size_t hash(std::size_t n)
+{
+    constexpr std::size_t p = 0x5555555555555555;
+    constexpr std::size_t c = 17316035218449499591ull;
+    return c * xorShift(p * xorShift(n, 32), 32);
+}
+
+inline Color indexToColor(std::size_t idx)
+{
+    std::size_t x = hash(idx);
+    std::uint8_t r = (x & 0x0000000000FF);
+    std::uint8_t g = (x & 0x000000FF0000) >> 16;
+    std::uint8_t b = (x & 0x00FF00000000) >> 32;
+    return Color(b, g, r);
+}
+
 inline Color classToColor(const TexturedMesh& mesh, int vi) {
     if (!mesh.classToColor.empty()) {
         auto iter = mesh.classToColor.find(mesh.classes[vi]);
@@ -408,6 +429,8 @@ inline Color classToColor(const TexturedMesh& mesh, int vi) {
         }
     } else {
         switch (mesh.classes[vi]) {
+        case 1:
+            return Color(0, 0, 0);
         case 2:
             return Color(220, 220, 50); // interiors
         case 3:
@@ -419,7 +442,8 @@ inline Color classToColor(const TexturedMesh& mesh, int vi) {
         case 6:
             return Color(20, 20, 150); // cars
         default:
-            return Color(190, 190, 190);
+            // random color
+            return indexToColor(mesh.classes[vi]);
         }
     }
 }

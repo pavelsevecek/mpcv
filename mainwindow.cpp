@@ -4,6 +4,7 @@
 #include "e57.h"
 #include "las.h"
 #include "mesh.h"
+#include "parameters.h"
 #include "openglwidget.h"
 #include "sunwidget.h"
 #include "utils.h"
@@ -90,6 +91,23 @@ void geolocalize(TexturedMesh& mesh, const QString& file) {
         mesh.srs = Srs(config[basename]);
     } else {
         std::cout << "No srs found in config" << std::endl;
+    }
+}
+
+void clip(TexturedMesh& mesh) {
+    Parameters& globals = Parameters::global();
+    Parameters defaults;
+    if (globals.extents.lower() == defaults.extents.lower() && globals.extents.upper() == defaults.extents.upper()) {
+        return;
+    }
+
+    Pvl::BoundingBox<Coords> extents;
+    for (const auto& v : mesh.vertices) {
+        extents.extend(mesh.srs.localToWorld(coords(v)));
+    }
+    if (!Pvl::overlaps(extents, globals.extents)) {
+        std::cout << "Skipping mesh due to extents" << std::endl;
+        mesh = {};
     }
 }
 
@@ -310,7 +328,7 @@ bool MainWindow::open(const QString& file, QProgressDialog* dialog) {
         }
 
         QFileInfo info(file);
-        QString identifier = info.absoluteDir().dirName() + "/" + info.baseName();
+        QString identifier = info.absoluteDir().dirName() + "/" + info.completeBaseName();
         QListWidgetItem* item = new QListWidgetItem(identifier, list_);
         list_->addItem(item);
 
@@ -340,9 +358,11 @@ TexturedMesh MainWindow::loadMesh(const QString& file, std::function<bool(float)
         in.open(file.toStdString());
         mesh = loadPly(in, callback);
         geolocalize(mesh, file);
+        clip(mesh);
     } else if (ext == "obj") {
         mesh = loadObj(file, callback);
         geolocalize(mesh, file);
+        clip(mesh);
     } else if (ext == "xyz") {
         mesh = loadXyz(file, callback);
     } else if (ext == "las" || ext == "laz") {
